@@ -1,0 +1,65 @@
+h1 {
+  text-align: center;          /* center text */
+  font-size: 2rem;             /* size */
+  font-weight: bold;           /* bold */
+  color: #ff4081;              /* match your SwineTech theme */
+  margin: 30px 0;              /* spacing */
+  text-transform: uppercase;   /* ALL CAPS */
+  letter-spacing: 2px;         /* spacing between letters */
+}
+
+/* Profile Page */
+.profile-body {
+  background: #f8f9fa;
+  padding-top: 100px; /* space for navbar */
+  display: flex;
+  justify-content: center;
+}
+
+.profile-container {
+  display: flex;
+  gap: 40px;
+  max-width: 900px;
+  width: 100%;
+  padding: 20px;
+}
+
+.profile-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  flex: 1;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.profile-card img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 15px;
+}
+
+.profile-form {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  flex: 2;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.profile-form h3 {
+  margin-bottom: 20px;
+  color: #ff4081;
+}
+.profile-img {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-img input[type="file"] {
+  display: block;
+  margin: 10px auto 0;
+  font-size: 0.9rem;
+}

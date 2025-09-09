@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Inquiries</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html">Dashboard</a>
+      <a href="manage-users.html">Manage Users</a>
+      <a href="pig-records.html">Pig Records</a>
+      <a href="feeding-schedule.html">Feeding Schedule</a>
+      <a href="supplies.html">Supplies</a>
+      <a href="expenses.html">Expenses</a>
+      <a href="sales.html">Sales</a>
+      <a href="bookings.html">Bookings</a>
+      <a href="feedback-admin.html">Feedback</a>
+      <a href="inquiries.html" class="active">Inquiries</a>
+      <a href="admin-reports.html">Reports</a>
+      <a href="logout.php" class="btn-logout">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Client Inquiries</h1>
+
+    <!-- Inquiries Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Inquiry ID</th>
+          <th>Client</th>
+          <th>Question</th>
+          <th>Date</th>
+          <th>Response</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Sample Data -->
+        <tr>
+          <td>1</td>
+          <td>Maria Santos</td>
+          <td>Do you offer bulk discounts for 10 pigs?</td>
+          <td>2025-09-05</td>
+          <td>Pending</td>
+          <td>
+            <button class="btn-edit" onclick="openInquiryModal()">Reply</button>
+          </td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Jose Ramirez</td>
+          <td>What vaccines do your pigs receive?</td>
+          <td>2025-09-07</td>
+          <td>Answered</td>
+          <td>
+            <button class="btn-edit" onclick="openInquiryModal()">Reply</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal (Hidden by Default) -->
+  <div id="inquiryModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeInquiryModal()">&times;</span>
+      <h2>Reply to Inquiry</h2>
+      <form action="save_inquiry_reply.php" method="POST">
+        <div class="form-group">
+          <label for="inquiry_id">Inquiry ID</label>
+          <input type="text" id="inquiry_id" name="inquiry_id" value="1" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="reply">Your Response</label>
+          <textarea id="reply" name="reply" rows="4" required></textarea>
+        </div>
+
+        <button type="submit" class="btn-auth">Send Reply</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openInquiryModal() {
+      document.getElementById("inquiryModal").style.display = "block";
+    }
+    function closeInquiryModal() {
+      document.getElementById("inquiryModal").style.display = "none";
+    }
+    window.onclick = function(event) {
+      let modal = document.getElementById("inquiryModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Feeding Schedule</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html">Dashboard</a>
+      <a href="manage-users.html">Manage Users</a>
+      <a href="pig-records.html">Pig Records</a>
+      <a href="feeding-schedule.html" class="active">Feeding Schedule</a>
+      <a href="supplies.html">Supplies</a>
+      <a href="expenses.html">Expenses</a>
+      <a href="sales.html">Sales</a>
+      <a href="bookings.html">Bookings</a>
+      <a href="feedback-admin.html">Feedback</a>
+      <a href="inquiries.html">Inquiries</a>
+      <a href="admin-reports.html">Reports</a>
+      <a href="logout.php" class="btn-logout">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Feeding Schedule</h1>
+
+    <!-- Add Feeding Schedule Button -->
+    <button class="btn-add" onclick="openFeedingModal()">+ Add Feeding Schedule</button>
+
+    <!-- Feeding Schedule Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Schedule ID</th>
+          <th>Pig ID</th>
+          <th>Feed Type</th>
+          <th>Quantity (kg)</th>
+          <th>Feeding Time</th>
+          <th>Remarks</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Sample Data -->
+        <tr>
+          <td>1</td>
+          <td>101</td>
+          <td>Grower Feed</td>
+          <td>2.5</td>
+          <td>2025-09-09 08:00 AM</td>
+          <td>Morning Feeding</td>
+          <td>
+            <button class="btn-edit" onclick="openFeedingModal()">Edit</button>
+            <button class="btn-delete">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal (Hidden by Default) -->
+  <div id="feedingModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeFeedingModal()">&times;</span>
+      <h2>Add/Edit Feeding Schedule</h2>
+      <form action="save_feeding.php" method="POST">
+        <div class="form-group">
+          <label for="pig_id">Pig ID</label>
+          <input type="number" id="pig_id" name="pig_id" required>
+        </div>
+
+        <div class="form-group">
+          <label for="feed_type">Feed Type</label>
+          <input type="text" id="feed_type" name="feed_type" required>
+        </div>
+
+        <div class="form-group">
+          <label for="quantity">Quantity (kg)</label>
+          <input type="number" id="quantity" name="quantity" min="0" step="0.1" required>
+        </div>
+
+        <div class="form-group">
+          <label for="feeding_time">Feeding Time</label>
+          <input type="datetime-local" id="feeding_time" name="feeding_time" required>
+        </div>
+
+        <div class="form-group">
+          <label for="remarks">Remarks</label>
+          <input type="text" id="remarks" name="remarks" placeholder="Optional">
+        </div>
+
+        <button type="submit" class="btn-auth">Save Schedule</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openFeedingModal() {
+      document.getElementById("feedingModal").style.display = "block";
+    }
+    function closeFeedingModal() {
+      document.getElementById("feedingModal").style.display = "none";
+    }
+    window.onclick = function(event) {
+      let modal = document.getElementById("feedingModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

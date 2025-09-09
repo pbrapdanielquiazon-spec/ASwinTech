@@ -1,0 +1,62 @@
+.guest-body {
+  padding: 100px 20px 40px;
+  background: #f8f9fa;
+  text-align: center;
+}
+
+.guest-body h1 {
+  font-size: 2rem;
+  color: #ff4081;
+  margin-bottom: 10px;
+}
+
+.guest-info {
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.pig-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.pig-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.pig-card:hover {
+  transform: translateY(-5px);
+}
+
+.pig-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.pig-card h3 {
+  margin: 10px 0 5px;
+  color: #333;
+}
+
+.pig-card p {
+  margin: 4px 0;
+  color: #666;
+}
+.btn-guest {
+  background: #ff4081;
+  color: #fff;
+}
+
+.btn-guest:hover {
+  background: #e73370;
+}

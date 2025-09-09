@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Bookings</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html">Dashboard</a>
+      <a href="manage-users.html">Manage Users</a>
+      <a href="pig-records.html">Pig Records</a>
+      <a href="feeding-schedule.html">Feeding Schedule</a>
+      <a href="supplies.html">Supplies</a>
+      <a href="expenses.html">Expenses</a>
+      <a href="sales.html">Sales</a>
+      <a href="bookings.html" class="active">Bookings</a>
+      <a href="feedback-admin.html">Feedback</a>
+      <a href="inquiries.html">Inquiries</a>
+      <a href="admin-reports.html">Reports</a>
+      <a href="logout.php" class="btn-logout">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Bookings</h1>
+
+    <!-- Add Booking Button -->
+    <button class="btn-add" onclick="openBookingModal()">+ Add New Booking</button>
+
+    <!-- Bookings Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Booking ID</th>
+          <th>Pig ID</th>
+          <th>Client</th>
+          <th>Booking Date</th>
+          <th>Status</th>
+          <th>Remarks</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Sample Data -->
+        <tr>
+          <td>1</td>
+          <td>105</td>
+          <td>Carlos Dela Cruz</td>
+          <td>2025-09-09</td>
+          <td>Pending</td>
+          <td>Client will confirm by Sept 12</td>
+          <td>
+            <button class="btn-edit" onclick="openBookingModal()">Edit</button>
+            <button class="btn-delete">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal (Hidden by Default) -->
+  <div id="bookingModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeBookingModal()">&times;</span>
+      <h2>Add/Edit Booking</h2>
+      <form action="save_booking.php" method="POST">
+        <div class="form-group">
+          <label for="pig_id">Pig ID</label>
+          <input type="number" id="pig_id" name="pig_id" required>
+        </div>
+
+        <div class="form-group">
+          <label for="client">Client Name</label>
+          <input type="text" id="client" name="client" required>
+        </div>
+
+        <div class="form-group">
+          <label for="booking_date">Booking Date</label>
+          <input type="date" id="booking_date" name="booking_date" required>
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="remarks">Remarks</label>
+          <input type="text" id="remarks" name="remarks" placeholder="Optional">
+        </div>
+
+        <button type="submit" class="btn-auth">Save Booking</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openBookingModal() {
+      document.getElementById("bookingModal").style.display = "block";
+    }
+    function closeBookingModal() {
+      document.getElementById("bookingModal").style.display = "none";
+    }
+    window.onclick = function(event) {
+      let modal = document.getElementById("bookingModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

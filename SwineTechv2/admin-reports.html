@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Admin Reports</title>
+  <link rel="stylesheet" href="admin.css">
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html">Dashboard</a>
+      <a href="manage-users.html">Manage Users</a>
+      <a href="pig-records.html">Pig Records</a>
+      <a href="feeding-schedule.html">Feeding Schedule</a>
+      <a href="supplies.html">Supplies</a>
+      <a href="expenses.html">Expenses</a>
+      <a href="sales.html">Sales</a>
+      <a href="bookings.html">Bookings</a>
+      <a href="feedback-admin.html">Feedback</a>
+      <a href="inquiries.html">Inquiries</a>
+      <a href="admin-reports.html" class="active">Reports</a>
+      <a href="logout.php" class="btn-logout">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Reports</h1>
+
+    <!-- Filter Section -->
+    <form class="report-filter">
+      <label for="report-type">Report Type:</label>
+      <select id="report-type" name="report-type">
+        <option value="sales">Sales</option>
+        <option value="expenses">Expenses</option>
+        <option value="bookings">Bookings</option>
+      </select>
+
+      <label for="date-from">From:</label>
+      <input type="date" id="date-from" name="date-from">
+
+      <label for="date-to">To:</label>
+      <input type="date" id="date-to" name="date-to">
+
+      <button type="submit" class="btn-generate"><i class="fa-solid fa-filter"></i> Generate</button>
+    </form>
+
+    <!-- Report Actions -->
+    <div class="report-actions">
+      <button class="btn-export"><i class="fa-solid fa-file-excel"></i> Export to Excel</button>
+      <button class="btn-pdf"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+      <button class="btn-print"><i class="fa-solid fa-print"></i> Print</button>
+    </div>
+
+    <!-- Report Results -->
+    <div class="report-results">
+      <h2><i class="fa-solid fa-chart-line"></i> Report Output</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Details</th>
+            <th>Amount</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="4">No data yet. Select filters and click Generate.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

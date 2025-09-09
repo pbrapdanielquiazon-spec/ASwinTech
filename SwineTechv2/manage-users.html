@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Users</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html">Dashboard</a>
+      <a href="manage-users.html" class="active">Manage Users</a>
+      <a href="pig-records.html">Pig Records</a>
+      <a href="feeding-schedule.html">Feeding Schedule</a>
+      <a href="supplies.html">Supplies</a>
+      <a href="expenses.html">Expenses</a>
+      <a href="sales.html">Sales</a>
+      <a href="bookings.html">Bookings</a>
+      <a href="feedback-admin.html">Feedback</a>
+      <a href="inquiries.html">Inquiries</a>
+      <a href="admin-reports.html">Reports</a>
+      <a href="logout.php" class="btn-logout">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Users</h1>
+
+    <!-- Add New User Button -->
+    <button class="btn-add" onclick="openUserModal()">+ Add New User</button>
+
+    <!-- Users Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Sample Data -->
+        <tr>
+          <td>1</td>
+          <td>Juan Dela Cruz</td>
+          <td>juan@email.com</td>
+          <td>Staff</td>
+          <td>Active</td>
+          <td>
+            <button class="btn-edit" onclick="openUserModal()">Edit</button>
+            <button class="btn-delete">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal (Hidden by Default) -->
+  <div id="userModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUserModal()">&times;</span>
+      <h2>Add/Edit User</h2>
+      <form action="save_user.php" method="POST">
+        <div class="form-group">
+          <label for="fullname">Full Name</label>
+          <input type="text" id="fullname" name="fullname" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" name="role">
+            <option value="admin">Admin</option>
+            <option value="staff">Staff</option>
+            <option value="client">Client</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-auth">Save User</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openUserModal() {
+      document.getElementById("userModal").style.display = "block";
+    }
+    function closeUserModal() {
+      document.getElementById("userModal").style.display = "none";
+    }
+    window.onclick = function(event) {
+      let modal = document.getElementById("userModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>
