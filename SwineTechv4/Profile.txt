@@ -1,0 +1,13 @@
+🔹 Making it Reusable for All Roles
+
+Admin → Full profile + email + picture + password change.
+
+Staff (Sales/Procurement/Caretaker) → Same as admin, but role is fixed (not editable).
+
+Client → Only name, email, password, picture.
+
+👉 Use backend logic to control what fields load:
+
+<?php if($_SESSION['role'] == 'admin') { ?>
+  <!-- show extra fields -->
+<?php } ?>

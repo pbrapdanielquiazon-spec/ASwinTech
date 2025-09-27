@@ -1,0 +1,289 @@
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 220px;
+  height: 100vh;
+  background: #ff4081;
+  color: #fff;
+  padding: 20px;
+}
+
+.sidebar-logo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.sidebar nav a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+  background: #fff;
+  color: #ff4081;
+}
+
+/* Main Dashboard */
+.dashboard {
+  margin-left: 240px;
+  padding: 20px;
+}
+
+.dashboard h1 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.card h2 {
+  margin-bottom: 10px;
+  color: #555;
+}
+
+/* Table */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table th, .admin-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.admin-table th {
+  background: #f4f4f4;
+  color: #333;
+}
+
+.btn-add {
+  background: #ff4081;
+  color: #fff;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.btn-edit {
+  background: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.btn-delete {
+  background: #f44336;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-left: 6px;
+}
+
+/* Reports */
+.report-filter {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.report-filter label {
+  margin-right: 10px;
+  font-weight: 600;
+}
+
+.report-filter input,
+.report-filter select {
+  margin-right: 15px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.btn-generate {
+  background: #ff4081;
+  color: #fff;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background: #fff;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 500px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+  color: #ff4081;
+}
+
+.close {
+  float: right;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+}
+
+.close:hover {
+  color: #333;
+}
+h1 {
+  text-align: center;          /* center text */
+  font-size: 2rem;             /* size */
+  font-weight: bold;           /* bold */
+  color: #ff4081;              /* match your SwineTech theme */
+  margin: 30px 0;              /* spacing */
+  text-transform: uppercase;   /* ALL CAPS */
+  letter-spacing: 2px;         /* spacing between letters */
+}
+
+/* Report Filter Section */
+.report-filter {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.report-filter label {
+  font-weight: 600;
+  color: #444;
+}
+
+.report-filter select,
+.report-filter input[type="date"] {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* Report Actions */
+.report-actions {
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.report-actions button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #ff4081;
+  color: #fff;
+  transition: background 0.3s;
+}
+
+.report-actions button:hover {
+  background: #e73370;
+}
+
+/* Report Results */
+.report-results {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-top: 20px;
+}
+
+.report-results h2 {
+  margin-bottom: 15px;
+  color: #333;
+}
+.report-results table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Buttons with icons */
+.btn-generate i,
+.report-actions button i {
+  margin-right: 6px;
+}
+
+/* Style different report action buttons */
+.btn-export {
+  background: #1d6f42; /* Excel green */
+}
+.btn-export:hover {
+  background: #155c34;
+}
+
+.btn-pdf {
+  background: #c0392b; /* PDF red */
+}
+.btn-pdf:hover {
+  background: #a93226;
+}
+
+.btn-print {
+  background: #2980b9; /* Print blue */
+}
+.btn-print:hover {
+  background: #21618c;
+}
+.btn-email {
+  background: #8e44ad; /* Email purple */
+}
+.btn-email:hover {
+  background: #6c3483;
+}
+h1 {
+  text-align: center;          /* center text */
+  font-size: 2rem;             /* size */
+  font-weight: bold;           /* bold */          
+color: #ff4081;              /* match your SwineTech theme */
+  margin: 30px 0;              /* spacing */
+  text-transform: uppercase;   /* ALL CAPS */
+  letter-spacing: 2px;         /* spacing between letters */  
+}      

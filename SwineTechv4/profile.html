@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | User Profile</title>
+  <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="navbar">
+    <div class="logo">🐖 SwineTech</div>
+    <nav>
+      <a href="#index">Home</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="profile-admin.html" class="btn-profile active">Profile</a>
+      <a href="logout.php" class="btn-logout">Logout</a>
+    </nav>
+  </header>
+  
+  <h1>Profile</h1>
+<div class="profile-body">
+ 
+  <!-- Profile Container -->
+  <div class="profile-container">
+    <div class="profile-card">
+      <div class="profile-img">
+        <img src="img/default-user.png" alt="Profile Picture" id="preview-img">
+        <input type="file" id="upload-img" name="profile_picture" accept="image/*">
+      </div>
+
+      <h2 id="user-name">John Doe</h2>
+      <p id="user-role">Role: Admin</p>
+    </div>
+
+    <div class="profile-form">
+      <h3>Update Profile</h3>
+      <form action="update_profile.php" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="fullname">Full Name</label>
+          <input type="text" id="fullname" name="fullname" value="John Doe" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" value="johndoe@email.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" value="johndoe" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="password">New Password</label>
+          <input type="password" id="password" name="password" placeholder="Leave blank to keep current">
+        </div>
+
+        <button type="submit" class="btn btn-auth">Save Changes</button>
+      </form>
+    </div>
+  </div>
+
+  </div>
+<script src="js/profile.js"></script>
+  <footer class="profile-footer">
+    <p>© 2025 SwineTech | Group 5 - Ruloma Farms Project</p>
+  </footer>
+</body>
+</html>

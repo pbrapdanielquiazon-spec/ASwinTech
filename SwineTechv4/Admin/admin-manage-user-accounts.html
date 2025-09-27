@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Users</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+ <!-- Sidebar -->
+    <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-manage-user-accounts.html" class="active"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i>Mange Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i>Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i>Manage Sales, Expenses, & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="inquiries.html"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i>Generate Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Users</h1>
+
+    <!-- Add New User Button -->
+    <button class="btn-add" onclick="openUserModal()">+ Add New User</button>
+
+    <!-- Users Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Full Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Profile Picture</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Sample Data -->
+        <tr>
+          <td>1</td>
+          <td>Juan Dela Cruz</td>
+          <td>juandelacruz</td>
+          <td>juan@email.com</td>
+          <td>Sales</td>
+          <td>Active</td>
+          <td><img src="uploads/profile1.jpg" alt="Profile" width="40"></td>
+          <td>
+            <button class="btn-edit" onclick="openUserModal()">Edit</button>
+            <button class="btn-archive">Archive</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal (Hidden by Default) -->
+  <div id="userModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeUserModal()">&times;</span>
+      <h2>Add/Edit User</h2>
+      <form action="save_user.php" method="POST" enctype="multipart/form-data">
+        <input type="hidden" id="user_id" name="user_id"> <!-- For edit -->
+
+        <div class="form-group">
+          <label for="fullname">Full Name</label>
+          <input type="text" id="fullname" name="fullname" required>
+        </div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="••••••••">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" name="role">
+            <option value="admin">Admin</option>
+            <option value="sales">Sales Staff</option>
+            <option value="procurement">Procurement Staff</option>
+            <option value="caretaker">Caretaker</option>
+            <option value="client">Client</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="profile_picture">Profile Picture</label>
+          <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
+        </div>
+
+        <button type="submit" class="btn-auth">Save User</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openUserModal() {
+      document.getElementById("userModal").style.display = "block";
+    }
+    function closeUserModal() {
+      document.getElementById("userModal").style.display = "none";
+    }
+    window.onclick = function(event) {
+      let modal = document.getElementById("userModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

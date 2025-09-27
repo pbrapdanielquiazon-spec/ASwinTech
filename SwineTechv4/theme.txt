@@ -1,0 +1,231 @@
+/* 🎨 Minimal Neutral Palette */
+:root {
+  --color-primary: #2E3B4E;   /* Dark Slate */
+  --color-accent-green: #43A047; /* Fresh Green */
+  --color-accent-blue: #29B6F6;  /* Sky Blue */
+  --color-accent-beige: #FFF3E0; /* Beige */
+  --color-bg: #f5f6f8;        /* Light Neutral */
+  --color-dark: #333;
+  --color-light: #fff;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 220px;
+  height: 100vh;
+  background: var(--color-primary);
+  color: var(--color-light);
+  padding: 20px;
+}
+
+.sidebar-logo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.sidebar nav a {
+  display: block;
+  color: var(--color-light);
+  text-decoration: none;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active {
+  background: var(--color-accent-green);
+  color: var(--color-light);
+}
+
+/* Main Dashboard */
+.dashboard {
+  margin-left: 240px;
+  padding: 20px;
+}
+
+.dashboard h1 {
+  margin-bottom: 20px;
+  color: var(--color-primary);
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--color-light);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.card h2 {
+  margin-bottom: 10px;
+  color: var(--color-dark);
+}
+
+/* Tables */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: var(--color-light);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table th, .admin-table td {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.admin-table th {
+  background: var(--color-bg);
+  color: var(--color-primary);
+}
+
+/* Buttons */
+.btn-add {
+  background: var(--color-accent-green);
+  color: var(--color-light);
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.btn-edit {
+  background: var(--color-accent-blue);
+  color: var(--color-light);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.btn-delete {
+  background: #e53935; /* delete stays red */
+  color: var(--color-light);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-left: 6px;
+}
+
+/* Reports */
+.report-filter {
+  background: var(--color-light);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.report-filter label {
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.report-filter input,
+.report-filter select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  margin-right: 15px;
+}
+
+.btn-generate {
+  background: var(--color-accent-green);
+  color: var(--color-light);
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+  background: var(--color-light);
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 500px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+  color: var(--color-accent-green);
+}
+
+.close {
+  float: right;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #999;
+}
+
+.close:hover {
+  color: var(--color-dark);
+}
+
+/* Report Actions */
+.report-actions {
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.report-actions button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--color-primary);
+  color: var(--color-light);
+  transition: 0.3s;
+}
+
+.report-actions button:hover {
+  background: var(--color-accent-blue);
+}
+
+/* Specific export buttons */
+.btn-export { background: #1d6f42; }
+.btn-export:hover { background: #155c34; }
+
+.btn-pdf { background: #c0392b; }
+.btn-pdf:hover { background: #a93226; }
+
+.btn-print { background: #2980b9; }
+.btn-print:hover { background: #21618c; }
+
+.btn-email { background: #8e44ad; }
+.btn-email:hover { background: #6c3483; }
