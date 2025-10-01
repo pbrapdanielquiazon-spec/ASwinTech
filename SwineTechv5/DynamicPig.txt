@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Pig Records</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Tabs */
+    .tabs { margin: 20px 0; }
+    .tab-btn {
+      background: #f0f0f0; border: none; padding: 10px 20px;
+      cursor: pointer; margin-right: 5px; border-radius: 5px;
+    }
+    .tab-btn.active { background: #43A047; color: #fff; }
+    .record-view { display: none; }
+    .record-view.active { display: block; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content {
+      background: #fff; margin: 5% auto; padding: 20px; border-radius: 8px;
+      width: 500px; max-width: 90%;
+    }
+    .modal h2 { margin-bottom: 15px; }
+    .close { float: right; font-size: 22px; cursor: pointer; }
+
+    /* Forms */
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    .btn-auth { background: #43A047; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+    .btn-auth:hover { background: #2e7d32; }
+    .btn-add, .btn-edit, .btn-archive {
+      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
+    }
+    .btn-add { background: #29B6F6; color: #fff; }
+    .btn-edit { background: #FFA726; color: #fff; }
+    .btn-archive { background: #EF5350; color: #fff; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html" class="active"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Sales & Expenses</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Client Feedback</a>
+      <a href="inquiries.html"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Pig Records</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('litter')">🐖 Litter Records</button>
+      <button class="tab-btn" onclick="showView('individual')">🐷 Individual Pigs</button>
+      <button class="tab-btn" onclick="showView('health')">❤️ Health Records</button>
+      <button class="tab-btn" onclick="showView('breeding')">🧬 Breeding Records</button>
+    </div>
+
+    <!-- Litter View -->
+    <section id="litter" class="record-view active">
+      <h2>Litter Records</h2>
+      <button class="btn-add" onclick="openModal('addLitterModal')">+ Add New Litter</button>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Litter ID</th><th>Sow ID</th><th>Birth Date</th><th>Litter Size</th><th>Caretaker</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="litterTable"></tbody>
+      </table>
+    </section>
+
+    <!-- Individual Pigs -->
+    <section id="individual" class="record-view">
+      <h2>Individual Pig Records</h2>
+      <button class="btn-add" onclick="openModal('addPigModal')">+ Add New Pig</button>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Pig ID</th><th>Litter ID</th><th>Sow Identifier</th><th>Birth Date</th><th>Status</th><th>Availability</th><th>Notes</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="pigTable"></tbody>
+      </table>
+    </section>
+
+    <!-- Health Records -->
+    <section id="health" class="record-view">
+      <h2>Pig Health Records</h2>
+      <button class="btn-add" onclick="openModal('addHealthModal')">+ Add Health Record</button>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Record ID</th><th>Pig ID</th><th>Symptoms</th><th>Diagnosis</th><th>Treatment</th><th>Mortality</th><th>Recorded At</th><th>Caretaker</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="healthTable"></tbody>
+      </table>
+    </section>
+
+    <!-- Breeding Records -->
+    <section id="breeding" class="record-view">
+      <h2>Breeding Records</h2>
+      <button class="btn-add" onclick="openModal('addBreedingModal')">+ Add Breeding Record</button>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Breeding ID</th><th>Sow ID</th><th>Boar ID</th><th>Date</th><th>Expected Farrowing</th><th>Outcome</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="breedingTable"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add Modals -->
+  <div id="addLitterModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addLitterModal')">&times;</span>
+    <h2>Add Litter</h2>
+    <form onsubmit="return addLitter(event)">
+      <div class="form-group"><label>Sow ID</label><input type="text" id="addSowId" required></div>
+      <div class="form-group"><label>Birth Date</label><input type="date" id="addBirthDate" required></div>
+      <div class="form-group"><label>Litter Size</label><input type="number" id="addLitterSize" min="1" required></div>
+      <div class="form-group"><label>Caretaker ID</label><input type="text" id="addCaretakerId" required></div>
+      <button type="submit" class="btn-auth">Save Litter</button>
+    </form>
+  </div></div>
+
+  <div id="addPigModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addPigModal')">&times;</span>
+    <h2>Add Pig</h2>
+    <form onsubmit="return addPig(event)">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="pigLitterId" required></div>
+      <div class="form-group"><label>Sow Identifier</label><input type="text" id="sowIdentifier" required></div>
+      <div class="form-group"><label>Birth Date</label><input type="date" id="pigBirthDate" required></div>
+      <div class="form-group"><label>Status</label>
+        <select id="pigStatus"><option>Healthy</option><option>Sick</option><option>Sold</option><option>Deceased</option></select>
+      </div>
+      <div class="form-group"><label>Availability</label>
+        <select id="pigAvailability"><option>For Sale</option><option>For Breeding</option><option>Not Available</option></select>
+      </div>
+      <div class="form-group"><label>Notes</label><textarea id="pigNotes"></textarea></div>
+      <button type="submit" class="btn-auth">Save Pig</button>
+    </form>
+  </div></div>
+
+  <div id="addHealthModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addHealthModal')">&times;</span>
+    <h2>Add Health Record</h2>
+    <form onsubmit="return addHealth(event)">
+      <div class="form-group"><label>Pig ID</label><input type="number" id="healthPigId" required></div>
+      <div class="form-group"><label>Symptoms</label><input type="text" id="symptoms" required></div>
+      <div class="form-group"><label>Diagnosis</label><input type="text" id="diagnosis" required></div>
+      <div class="form-group"><label>Treatment</label><input type="text" id="treatment"></div>
+      <div class="form-group"><label>Mortality</label>
+        <select id="mortality"><option>No</option><option>Yes</option></select>
+      </div>
+      <div class="form-group"><label>Date Recorded</label><input type="date" id="recordedAt" required></div>
+      <div class="form-group"><label>Caretaker ID</label><input type="text" id="healthCaretaker" required></div>
+      <button type="submit" class="btn-auth">Save Health</button>
+    </form>
+  </div></div>
+
+  <div id="addBreedingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addBreedingModal')">&times;</span>
+    <h2>Add Breeding Record</h2>
+    <form onsubmit="return addBreeding(event)">
+      <div class="form-group"><label>Sow ID</label><input type="text" id="breedingSow" required></div>
+      <div class="form-group"><label>Boar ID</label><input type="text" id="breedingBoar" required></div>
+      <div class="form-group"><label>Date</label><input type="date" id="breedingDate" required></div>
+      <div class="form-group"><label>Expected Farrowing</label><input type="date" id="expectedFarrowing" required></div>
+      <div class="form-group"><label>Outcome</label><input type="text" id="breedingOutcome" value="Pending"></div>
+      <button type="submit" class="btn-auth">Save Breeding</button>
+    </form>
+  </div></div>
+
+  <!-- Success & Error -->
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3>✅ Record saved successfully!</h3>
+    <button onclick="closeModal('successModal')">OK</button>
+  </div></div>
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3>❌ Error: Please check your inputs</h3>
+    <button onclick="closeModal('errorModal')">OK</button>
+  </div></div>
+
+<script>
+  function showView(view) {
+    document.querySelectorAll(".record-view").forEach(v => v.classList.remove("active"));
+    document.getElementById(view).classList.add("active");
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelector(`.tab-btn[onclick="showView('${view}')"]`).classList.add("active");
+  }
+  function openModal(id){ document.getElementById(id).style.display = "block"; }
+  function closeModal(id){ document.getElementById(id).style.display = "none"; }
+
+  // Dynamic Add Functions
+  function addLitter(e){
+    e.preventDefault();
+    let sow = addSowId.value, birth = addBirthDate.value, size = addLitterSize.value, caretaker = addCaretakerId.value;
+    if(!sow||!birth||size<=0||!caretaker){ openModal("errorModal"); return false; }
+    litterTable.insertRow().innerHTML = `<td>NEW</td><td>${sow}</td><td>${birth}</td><td>${size}</td><td>${caretaker}</td>
+      <td><button class='btn-edit'>Edit</button><button class='btn-archive'>Archive</button></td>`;
+    closeModal("addLitterModal"); openModal("successModal"); return true;
+  }
+  function addPig(e){
+    e.preventDefault();
+    let litter = pigLitterId.value, sow = sowIdentifier.value, birth = pigBirthDate.value, status = pigStatus.value, avail = pigAvailability.value, notes = pigNotes.value;
+    if(!litter||!sow||!birth){ openModal("errorModal"); return false; }
+    pigTable.insertRow().innerHTML = `<td>NEW</td><td>${litter}</td><td>${sow}</td><td>${birth}</td><td>${status}</td><td>${avail}</td><td>${notes}</td>
+      <td><button class='btn-edit'>Edit</button><button class='btn-archive'>Archive</button></td>`;
+    closeModal("addPigModal"); openModal("successModal"); return true;
+  }
+  function addHealth(e){
+    e.preventDefault();
+    let pigId = healthPigId.value, sym = symptoms.value, diag = diagnosis.value, treat = treatment.value, mort = mortality.value, date = recordedAt.value, caretaker = healthCaretaker.value;
+    if(!pigId||!sym||!diag||!date){ openModal("errorModal"); return false; }
+    healthTable.insertRow().innerHTML = `<td>NEW</td><td>${pigId}</td><td>${sym}</td><td>${diag}</td><td>${treat}</td><td>${mort}</td><td>${date}</td><td>${caretaker}</td>
+      <td><button class='btn-edit'>Edit</button><button class='btn-archive'>Archive</button></td>`;
+    closeModal("addHealthModal"); openModal("successModal"); return true;
+  }
+  function addBreeding(e){
+    e.preventDefault();
+    let sow = breedingSow.value, boar = breedingBoar.value, date = breedingDate.value, farrow = expectedFarrowing.value, outcome = breedingOutcome.value;
+    if(!sow||!boar||!date||!farrow){ openModal("errorModal"); return false; }
+    breedingTable.insertRow().innerHTML = `<td>NEW</td><td>${sow}</td><td>${boar}</td><td>${date}</td><td>${farrow}</td><td>${outcome}</td>
+      <td><button class='btn-edit'>Edit</button><button class='btn-archive'>Archive</button></td>`;
+    closeModal("addBreedingModal"); openModal("successModal"); return true;
+  }
+</script>
+</body>
+</html>

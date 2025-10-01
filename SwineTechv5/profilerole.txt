@@ -1,0 +1,70 @@
+Exactly ✅ You don’t need to maintain 3 separate HTML files (Admin, Staff, Client).
+
+You can just use this single profile.html as your template, and then let your backend (PHP) or JavaScript decide:
+
+What role to display (Admin, Staff, or Client)
+
+Which fields are visible (Admin has Account Status, Staff has Username readonly, Client only has Full Name, Email, Password)
+
+🔹 Why Use Only One profile.html?
+
+Easier to maintain → You don’t repeat the same layout three times.
+
+Role-based rendering → Your backend knows the user role (from login/session).
+
+Consistent design → Same CSS works for everyone.
+
+🔹 Example: PHP Role Handling
+<p id="user-role">Role: <?php echo $_SESSION['role']; ?></p>
+
+<form action="update_profile.php" method="POST" enctype="multipart/form-data">
+  <!-- Common Fields -->
+  <div class="form-group">
+    <label for="fullname">Full Name</label>
+    <input type="text" id="fullname" name="fullname" value="<?php echo $user['fullname']; ?>" required>
+  </div>
+
+  <div class="form-group">
+    <label for="email">Email Address</label>
+    <input type="email" id="email" name="email" value="<?php echo $user['email']; ?>" required>
+  </div>
+
+  <!-- Username (Admin & Staff only) -->
+  <?php if ($_SESSION['role'] == 'admin' || $_SESSION['role'] == 'staff') { ?>
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username"
+             value="<?php echo $user['username']; ?>"
+             <?php echo ($_SESSION['role'] == 'staff') ? 'readonly' : ''; ?>>
+    </div>
+  <?php } ?>
+
+  <!-- Password (Everyone) -->
+  <div class="form-group">
+    <label for="password">New Password</label>
+    <input type="password" id="password" name="password" placeholder="Leave blank to keep current">
+  </div>
+
+  <!-- Status (Admin only) -->
+  <?php if ($_SESSION['role'] == 'admin') { ?>
+    <div class="form-group">
+      <label for="status">Account Status</label>
+      <select id="status" name="status">
+        <option value="active" <?php echo $user['status']=='active'?'selected':''; ?>>Active</option>
+        <option value="inactive" <?php echo $user['status']=='inactive'?'selected':''; ?>>Inactive</option>
+      </select>
+    </div>
+  <?php } ?>
+
+  <button type="submit" class="btn btn-auth">Save Changes</button>
+</form>
+
+✅ So Yes:
+
+You only need ONE profile.html (or profile.php).
+
+Your backend fills in the correct role and decides which fields to show.
+
+Your CSS stays the same — works for all roles.
+
+👉 Do you want me to rewrite your profile.html into a PHP version with role checks, so it’s 100% ready for Admin/Staff/Client without duplicating pages?

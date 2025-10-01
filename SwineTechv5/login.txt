@@ -1,0 +1,114 @@
+Good question 👌 — since you’re doing role-based access, the login page (login.html) itself won’t handle the logic. Instead, the logic will happen in your backend (PHP, Node.js, or whatever you’re using).
+
+But let me break it down for you in front-end + backend flow:
+
+🔹 Role-Based Login Flow
+
+User enters credentials in login.html.
+
+Form sends data (username + password) → backend (e.g., login.php).
+
+Backend checks database:
+
+If user exists ✅ and password matches ✅ → fetch the role (admin, sales, procurement, caretaker, client).
+
+If invalid ❌ → return error message.
+
+Backend sets a session with user_id and role.
+
+Based on the role, user is redirected to the right dashboard:
+
+Admin → admin/dashboard-admin.html
+
+Sales Staff → sales/dashboard-sales.html
+
+Procurement Staff → procurement/dashboard-procurement.html
+
+Caretaker → caretaker/dashboard-caretaker.html
+
+Client → client/dashboard-client.html
+
+🔹 Example (PHP backend)
+login.html form
+<form action="login.php" method="POST">
+  <div class="form-group">
+    <label for="username">Username</label>
+    <input type="text" name="username" required>
+  </div>
+  <div class="form-group">
+    <label for="password">Password</label>
+    <input type="password" name="password" required>
+  </div>
+  <button type="submit" class="btn btn-auth">Login</button>
+</form>
+
+login.php
+<?php
+session_start();
+include("db_connect.php"); // your DB connection file
+
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+// Check user in DB
+$sql = "SELECT * FROM users WHERE username='$username' LIMIT 1";
+$result = mysqli_query($conn, $sql);
+
+if (mysqli_num_rows($result) == 1) {
+    $row = mysqli_fetch_assoc($result);
+
+    // Verify password
+    if (password_verify($password, $row['password'])) {
+        $_SESSION['user_id'] = $row['user_id'];
+        $_SESSION['role'] = $row['role'];
+
+        // Redirect based on role
+        switch ($row['role']) {
+            case 'admin':
+                header("Location: admin/dashboard-admin.html");
+                break;
+            case 'sales':
+                header("Location: sales/dashboard-sales.html");
+                break;
+            case 'procurement':
+                header("Location: procurement/dashboard-procurement.html");
+                break;
+            case 'caretaker':
+                header("Location: caretaker/dashboard-caretaker.html");
+                break;
+            case 'client':
+                header("Location: client/dashboard-client.html");
+                break;
+            default:
+                echo "Invalid role!";
+        }
+    } else {
+        echo "Invalid password!";
+    }
+} else {
+    echo "User not found!";
+}
+?>
+
+🔹 Protecting Pages (Role Restriction)
+
+Inside each dashboard file (e.g., dashboard-admin.php), add:
+
+<?php
+session_start();
+if (!isset($_SESSION['role']) || $_SESSION['role'] != 'admin') {
+    header("Location: ../login.html");
+    exit();
+}
+?>
+
+
+That way, even if someone manually types admin/dashboard-admin.html, they can’t access it unless logged in as Admin.
+
+✅ Summary
+
+login.html = just UI (form).
+
+login.php = verifies credentials + role → redirects.
+
+Dashboards = protected using $_SESSION['role'].
