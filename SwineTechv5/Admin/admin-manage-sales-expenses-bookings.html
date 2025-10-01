@@ -1,51 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>SwineTech | Manage Sales, Expenses, Bookings & Inquiries</title>
-  <link rel="stylesheet" href="admin.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style>
+   
+    main.dashboard { flex:1; padding:24px; box-sizing:border-box; overflow:auto; }
+
     /* Tabs */
-    .tabs { margin: 20px 0; }
-    .tab-btn {
-      background: #f0f0f0; border: none; padding: 10px 20px;
-      cursor: pointer; margin-right: 5px; border-radius: 5px;
-    }
-    .tab-btn.active { background: #43A047; color: #fff; }
-    .record-view { display: none; }
-    .record-view.active { display: block; }
+    .tabs { margin:20px 0; }
+    .tab-btn { background:#f0f0f0; border:none; padding:10px 14px; cursor:pointer; margin-right:6px; border-radius:6px; }
+    .tab-btn.active { background:#43A047; color:#fff; }
 
-    /* Modal */
-    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
-      width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-    .modal-content {
-      background: #fff; margin: 5% auto; padding: 20px; border-radius: 8px;
-      width: 500px; max-width: 90%;
+    /* Tables */
+    .admin-table { width:100%; border-collapse:collapse; margin-top:12px; }
+    .admin-table th, .admin-table td { border:1px solid #ddd; padding:8px; text-align:center; font-size:14px; }
+    .admin-table th { background:#f7f7f7; }
+    .btn-add, .btn-edit, .btn-archive, .btn-restore, .btn-review, .btn-respond {
+      padding:6px 10px; margin:2px; border:none; border-radius:6px; cursor:pointer; font-size:13px;
     }
-    .modal h2 { margin-bottom: 15px; }
-    .close { float: right; font-size: 22px; cursor: pointer; }
+    .btn-add { background:#29B6F6; color:#fff; }
+    .btn-edit { background:#FFA726; color:#fff; }
+    .btn-archive { background:#EF5350; color:#fff; }
+    .btn-restore { background:#29B6F6; color:#fff; }
+    .btn-review { background:#8E44AD; color:#fff; }
+    .btn-respond { background:#6C9A2E; color:#fff; }
 
-    /* Forms & Buttons */
-    .form-group { margin-bottom: 12px; }
-    .form-group label { display: block; margin-bottom: 5px; }
-    .form-group input, .form-group select, .form-group textarea {
-      width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+   
+    /* small screens */
+    @media (max-width:900px){
+      aside.sidebar{ display:none; }
+      .modal .modal-content{ width:94%; margin:10% auto; }
     }
-    .btn-auth { background: #43A047; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
-    .btn-auth:hover { background: #2e7d32; }
-    .btn-add, .btn-edit, .btn-archive, .btn-restore {
-      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
-    }
-    .btn-add { background: #29B6F6; color: #fff; }
-    .btn-edit { background: #FFA726; color: #fff; }
-    .btn-archive { background: #EF5350; color: #fff; }
-    .btn-restore { background: #29B6F6; color: #fff; }
-    .filter-box { margin: 10px 0; }
-    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
-    .admin-table th { background: #f9f9f9; }
   </style>
 </head>
 <body>
@@ -58,7 +47,7 @@
       <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
       <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Feeding & Schedule</a>
       <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Supplies</a>
-      <a href="admin-manage-sales-expenses-bookings.html" class="active"><i class="fa-solid fa-money-bill-trend-up"></i> Sales & Expenses</a>
+      <a href="admin-manage-sales-expenses-bookings.html"  class="active"><i class="fa-solid fa-money-bill-trend-up"></i> Sales & Expenses</a>
       <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Client Feedback</a>
       <a href="inquiries.html"><i class="fa-solid fa-envelope"></i> Inquiries</a>
       <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
@@ -66,7 +55,7 @@
     </nav>
   </aside>
 
-  <!-- Main Content -->
+  <!-- Main -->
   <main class="dashboard">
     <h1>Manage Sales, Expenses, Bookings & Inquiries</h1>
 
@@ -77,59 +66,92 @@
       <button class="tab-btn" onclick="showView('bookings')">📅 Bookings</button>
       <button class="tab-btn" onclick="showView('inquiries')">✉️ Inquiries</button>
       <button class="tab-btn" onclick="showView('archived')">📂 Archived</button>
+      <button class="tab-btn" onclick="showView('receipts')">🧾 Receipts</button>
+      <button class="tab-btn" onclick="showView('declines')">❌ Declines</button>
     </div>
 
-    <!-- Sales -->
+    <!-- SALES -->
     <section id="sales" class="record-view active">
       <h2>Sales Records</h2>
       <button class="btn-add" onclick="openModal('addSaleModal')">+ Record Sale</button>
-      <table class="admin-table"><thead>
-        <tr><th>Sale_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Item_Type</th><th>Description</th><th>Total (₱)</th><th>Payment_Date</th><th>Actions</th></tr>
-      </thead><tbody id="salesTable">
-        <tr><td>1</td><td>3</td><td>101</td><td>Pig</td><td>Grower - 70kg</td><td>₱15,000</td><td>2025-09-01</td>
-          <td><button class="btn-edit" onclick="editRecord(this,'sale')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'salesTable','archivedSales')">Archive</button></td></tr>
-      </tbody></table>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Sale_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Item_Type</th><th>Description</th><th>Total (₱)</th><th>Payment_Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="salesTable">
+          <!-- sample row -->
+          <tr><td>1</td><td>3</td><td>101</td><td>Pig</td><td>Grower - 70kg</td><td>₱15,000</td><td>2025-09-01</td>
+            <td>
+              <button class="btn-edit" onclick="editRecord(this,'sale')">Edit</button>
+              <button class="btn-archive" onclick="confirmArchive(this,'salesTable','archivedSales')">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- Expenses -->
+    <!-- EXPENSES -->
     <section id="expenses" class="record-view">
       <h2>Expenses</h2>
       <button class="btn-add" onclick="openModal('addExpenseModal')">+ Add Expense</button>
-      <table class="admin-table"><thead>
-        <tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr>
-      </thead><tbody id="expensesTable">
-        <tr><td>1</td><td>20 sacks Grower Feed</td><td>₱12,000</td><td>Feed</td><td>2025-09-05</td>
-          <td><button class="btn-edit" onclick="editRecord(this,'expense')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'expensesTable','archivedExpenses')">Archive</button></td></tr>
-      </tbody></table>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="expensesTable">
+          <tr><td>1</td><td>20 sacks Grower Feed</td><td>₱12,000</td><td>Feed</td><td>2025-09-05</td>
+            <td>
+              <button class="btn-edit" onclick="editRecord(this,'expense')">Edit</button>
+              <button class="btn-archive" onclick="confirmArchive(this,'expensesTable','archivedExpenses')">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- Bookings -->
+    <!-- BOOKINGS -->
     <section id="bookings" class="record-view">
       <h2>Bookings</h2>
       <button class="btn-add" onclick="openModal('addBookingModal')">+ Add Booking</button>
-      <table class="admin-table"><thead>
-        <tr><th>Booking_ID</th><th>Client_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Approved_By</th><th>Actions</th></tr>
-      </thead><tbody id="bookingsTable">
-        <tr><td>10</td><td>102</td><td>Lechon</td><td>Roast-ready pig</td><td>Pending</td><td>2025-09-10</td><td>Admin-1</td>
-          <td><button class="btn-edit" onclick="editRecord(this,'booking')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'bookingsTable','archivedBookings')">Archive</button></td></tr>
-      </tbody></table>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Booking_ID</th><th>Client_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Approved_By</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="bookingsTable">
+          <tr><td>10</td><td>102</td><td>Lechon</td><td>Roast-ready pig</td><td>Pending</td><td>2025-09-10</td><td>-</td>
+            <td>
+              <button class="btn-review" onclick="reviewBooking(this)">Review</button>
+              <button class="btn-edit" onclick="editRecord(this,'booking')">Edit</button>
+              <button class="btn-archive" onclick="confirmArchive(this,'bookingsTable','archivedBookings')">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
-    <!-- Inquiries -->
+    <!-- INQUIRIES -->
     <section id="inquiries" class="record-view">
       <h2>Inquiries</h2>
-      <table class="admin-table"><thead>
-        <tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr>
-      </thead><tbody id="inquiriesTable">
-        <tr><td>5</td><td>103</td><td>Pig Pricing</td><td>How much is 80kg pig?</td><td>Open</td><td>2025-09-12</td><td>-</td><td>-</td>
-          <td><button class="btn-edit" onclick="respondInquiry(5)">Respond</button><button class="btn-archive" onclick="confirmArchive(this,'inquiriesTable','archivedInquiries')">Archive</button></td></tr>
-      </tbody></table>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="inquiriesTable">
+          <tr><td>5</td><td>103</td><td>Pig Pricing</td><td>How much is 80kg pig?</td><td>Open</td><td>2025-09-12</td><td>-</td><td>-</td>
+            <td>
+              <button class="btn-respond" onclick="openRespondInquiry(this)">Respond</button>
+              <button class="btn-archive" onclick="confirmArchive(this,'inquiriesTable','archivedInquiries')">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </section>
-    <!-- Archived -->
+
+    <!-- ARCHIVED -->
     <section id="archived" class="record-view">
       <h2>Archived Records</h2>
-      <div class="filter-box">
-        <label>Show:</label>
+      <div style="margin-bottom:14px;">
+        <label>Show: </label>
         <select id="archiveFilter" onchange="filterArchived()">
           <option value="all">All</option>
           <option value="sale">Sales</option>
@@ -139,42 +161,57 @@
         </select>
       </div>
 
-      <div class="archived-section" data-type="sale">
-        <h3>💵 Archived Sales</h3>
-        <table class="admin-table">
-          <thead><tr><th>Sale_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Item_Type</th><th>Description</th><th>Total (₱)</th><th>Payment_Date</th><th>Actions</th></tr></thead>
+      <div class="archived-section" data-type="sale" style="margin-bottom:18px;">
+        <h3>Archived Sales</h3>
+        <table class="admin-table"><thead><tr><th>Sale_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Item_Type</th><th>Description</th><th>Total (₱)</th><th>Payment_Date</th><th>Actions</th></tr></thead>
           <tbody id="archivedSales"></tbody>
         </table>
       </div>
 
-      <div class="archived-section" data-type="expense">
-        <h3>📉 Archived Expenses</h3>
-        <table class="admin-table">
-          <thead><tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr></thead>
+      <div class="archived-section" data-type="expense" style="margin-bottom:18px;">
+        <h3>Archived Expenses</h3>
+        <table class="admin-table"><thead><tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr></thead>
           <tbody id="archivedExpenses"></tbody>
         </table>
       </div>
 
-      <div class="archived-section" data-type="booking">
-        <h3>📅 Archived Bookings</h3>
-        <table class="admin-table">
-          <thead><tr><th>Booking_ID</th><th>Client_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Approved_By</th><th>Actions</th></tr></thead>
+      <div class="archived-section" data-type="booking" style="margin-bottom:18px;">
+        <h3>Archived Bookings</h3>
+        <table class="admin-table"><thead><tr><th>Booking_ID</th><th>Client_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Approved_By</th><th>Actions</th></tr></thead>
           <tbody id="archivedBookings"></tbody>
         </table>
       </div>
 
       <div class="archived-section" data-type="inquiry">
-        <h3>✉️ Archived Inquiries</h3>
-        <table class="admin-table">
-          <thead><tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr></thead>
+        <h3>Archived Inquiries</h3>
+        <table class="admin-table"><thead><tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr></thead>
           <tbody id="archivedInquiries"></tbody>
         </table>
       </div>
     </section>
+
+    <!-- RECEIPTS -->
+    <section id="receipts" class="record-view">
+      <h2>Receipts</h2>
+      <table class="admin-table">
+        <thead><tr><th>Booking_ID</th><th>Client_ID</th><th>Item</th><th>Total</th><th>Date</th><th>Approved_By</th></tr></thead>
+        <tbody id="receiptsTable"></tbody>
+      </table>
+    </section>
+
+    <!-- DECLINES -->
+    <section id="declines" class="record-view">
+      <h2>Declines</h2>
+      <table class="admin-table">
+        <thead><tr><th>Booking_ID</th><th>Client_ID</th><th>Item</th><th>Reason</th><th>Date</th><th>Declined_By</th></tr></thead>
+        <tbody id="declinesTable"></tbody>
+      </table>
+    </section>
   </main>
 
-  <!-- Modals -->
-  <!-- Add/Edit Sale -->
+  <!-- ----------------------------- Modals ----------------------------- -->
+
+  <!-- Add Sale -->
   <div id="addSaleModal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('addSaleModal')">&times;</span>
     <h2>Add Sale</h2>
@@ -183,12 +220,13 @@
       <div class="form-group"><label>Client_ID</label><input type="number" id="saleClient"></div>
       <div class="form-group"><label>Item_Type</label><input type="text" id="saleItem"></div>
       <div class="form-group"><label>Description</label><input type="text" id="saleDesc"></div>
-      <div class="form-group"><label>Total</label><input type="number" id="saleTotal"></div>
+      <div class="form-group"><label>Total</label><input type="number" id="saleTotal" step="0.01"></div>
       <div class="form-group"><label>Payment_Date</label><input type="date" id="saleDate"></div>
-      <button type="submit" class="btn-auth">Save</button>
+      <button class="btn-auth" type="submit">Save</button>
     </form>
   </div></div>
 
+  <!-- Edit Sale -->
   <div id="editSaleModal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('editSaleModal')">&times;</span>
     <h2>Edit Sale</h2>
@@ -197,38 +235,39 @@
       <div class="form-group"><label>Client_ID</label><input type="number" id="editSaleClient"></div>
       <div class="form-group"><label>Item_Type</label><input type="text" id="editSaleItem"></div>
       <div class="form-group"><label>Description</label><input type="text" id="editSaleDesc"></div>
-      <div class="form-group"><label>Total</label><input type="number" id="editSaleTotal"></div>
+      <div class="form-group"><label>Total</label><input type="number" id="editSaleTotal" step="0.01"></div>
       <div class="form-group"><label>Payment_Date</label><input type="date" id="editSaleDate"></div>
-      <button type="submit" class="btn-auth">Update</button>
+      <button class="btn-auth" type="submit">Update</button>
     </form>
   </div></div>
 
-  <!-- Add/Edit Expense -->
+  <!-- Add Expense -->
   <div id="addExpenseModal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('addExpenseModal')">&times;</span>
     <h2>Add Expense</h2>
     <form onsubmit="return addRecord(event,'expense')">
       <div class="form-group"><label>Description</label><input type="text" id="expenseDesc"></div>
-      <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount"></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount" step="0.01"></div>
       <div class="form-group"><label>Category</label><input type="text" id="expenseCategory"></div>
       <div class="form-group"><label>Date_Spent</label><input type="date" id="expenseDate"></div>
-      <button type="submit" class="btn-auth">Save</button>
+      <button class="btn-auth" type="submit">Save</button>
     </form>
   </div></div>
 
+  <!-- Edit Expense -->
   <div id="editExpenseModal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('editExpenseModal')">&times;</span>
     <h2>Edit Expense</h2>
     <form onsubmit="return updateRecord(event,'expense')">
       <div class="form-group"><label>Description</label><input type="text" id="editExpenseDesc"></div>
-      <div class="form-group"><label>Amount</label><input type="number" id="editExpenseAmount"></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="editExpenseAmount" step="0.01"></div>
       <div class="form-group"><label>Category</label><input type="text" id="editExpenseCategory"></div>
       <div class="form-group"><label>Date_Spent</label><input type="date" id="editExpenseDate"></div>
-      <button type="submit" class="btn-auth">Update</button>
+      <button class="btn-auth" type="submit">Update</button>
     </form>
   </div></div>
 
-  <!-- Add/Edit Booking -->
+  <!-- Add Booking -->
   <div id="addBookingModal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('addBookingModal')">&times;</span>
     <h2>Add Booking</h2>
@@ -238,10 +277,11 @@
       <div class="form-group"><label>Item_Details</label><input type="text" id="bookingDetails"></div>
       <div class="form-group"><label>Status</label><select id="bookingStatus"><option>Pending</option><option>Confirmed</option><option>Declined</option></select></div>
       <div class="form-group"><label>Booking_Date</label><input type="date" id="bookingDate"></div>
-      <button type="submit" class="btn-auth">Save</button>
+      <button class="btn-auth" type="submit">Save</button>
     </form>
   </div></div>
 
+  <!-- Edit Booking -->
   <div id="editBookingModal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('editBookingModal')">&times;</span>
     <h2>Edit Booking</h2>
@@ -251,188 +291,496 @@
       <div class="form-group"><label>Item_Details</label><input type="text" id="editBookingDetails"></div>
       <div class="form-group"><label>Status</label><select id="editBookingStatus"><option>Pending</option><option>Confirmed</option><option>Declined</option></select></div>
       <div class="form-group"><label>Booking_Date</label><input type="date" id="editBookingDate"></div>
-      <button type="submit" class="btn-auth">Update</button>
+      <button class="btn-auth" type="submit">Update</button>
     </form>
   </div></div>
 
-  <!-- Inquiry Respond -->
+  <!-- Review Booking (Approve/Decline) -->
+  <div id="reviewBookingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('reviewBookingModal')">&times;</span>
+    <h2>Review Booking</h2>
+    <form onsubmit="return submitBookingDecision(event)">
+      <input type="hidden" id="reviewBookingId" />
+      <div class="form-group"><label>Client</label><div id="reviewBookingClient" style="padding:6px 0;"></div></div>
+      <div class="form-group"><label>Details</label><div id="reviewBookingDetails" style="padding:6px 0;"></div></div>
+      <div class="form-group"><label>Decision</label>
+        <select id="bookingDecision" onchange="toggleDeclineReason()"><option value="approve">Approve</option><option value="decline">Decline</option></select>
+      </div>
+      <div class="form-group" id="declineReasonGroup" style="display:none;">
+        <label>Reason for Decline</label>
+        <textarea id="declineReason"></textarea>
+      </div>
+      <button class="btn-auth" type="submit">Submit Confirmation</button>
+    </form>
+  </div></div>
+
+  <!-- Respond Inquiry -->
   <div id="inquiryModal" class="modal"><div class="modal-content">
     <span class="close" onclick="closeModal('inquiryModal')">&times;</span>
     <h2>Respond to Inquiry</h2>
-    <form onsubmit="return respondInquiry(event)">
-      <input type="hidden" id="inquiryIdField">
+    <form onsubmit="return submitInquiryResponse(event)">
+      <input type="hidden" id="inquiryIdField" />
       <div class="form-group"><label>Response</label><textarea id="responseField"></textarea></div>
-      <button type="submit" class="btn-auth">Send Response</button>
+      <button class="btn-auth" type="submit">Send Response</button>
     </form>
   </div></div>
 
-  <!-- Confirmation Modal -->
+  <!-- Archive confirmation -->
   <div id="archiveModal" class="modal"><div class="modal-content">
     <h3>⚠️ Are you sure you want to archive this record?</h3>
-    <button onclick="archiveYes()">Yes, Archive</button>
-    <button onclick="archiveNo()">Cancel</button>
+    <div style="margin-top:14px;">
+      <button class="btn-auth" onclick="archiveYes()">Yes, Archive</button>
+      <button class="btn-auth" onclick="archiveNo()" style="background:#ccc;color:#111;margin-left:8px;">Cancel</button>
+    </div>
   </div></div>
 
-  <!-- Success/Error -->
+  <!-- Generic Success/Error -->
   <div id="successModal" class="modal"><div class="modal-content">
-    <h3>✅ Saved!</h3>
-    <button onclick="closeModal('successModal')">OK</button>
+    <h3 id="successText">✅ Success</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('successModal')">OK</button></div>
   </div></div>
+
   <div id="errorModal" class="modal"><div class="modal-content">
-    <h3>❌ Invalid Input!</h3>
-    <button onclick="closeModal('errorModal')">OK</button>
+    <h3 id="errorText">❌ Error</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('errorModal')">OK</button></div>
   </div></div>
 
-<script>
-  let editRow=null, archiveTargetRow=null, archiveTargetTable=null, archiveTargetType=null;
+  <!-- ----------------------------- Script ----------------------------- -->
+  <script>
+    /* ------------------------------
+       State & helpers
+       ------------------------------ */
+    let editRow = null;
+    let currentReviewRow = null;
+    let archiveTargetRow = null;
+    let archiveTargetOriginalTbody = null; // stores id like 'salesTable'
+    let idCounters = { sale: 1, expense: 1, booking: 10, inquiry: 5 }; // will be adjusted from initial rows
 
-  // Switch views
-  function showView(v){
-    document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
-    document.getElementById(v).classList.add("active");
-    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
-    document.querySelector(`.tab-btn[onclick="showView('${v}')"]`).classList.add("active");
-  }
-
-  // Open/Close modals
-  function openModal(id){ document.getElementById(id).style.display="block"; }
-  function closeModal(id){ document.getElementById(id).style.display="none"; }
-
-  // Add record
-  function addRecord(e,type){
-    e.preventDefault();
-    let table, rowData;
-    if(type==="sale"){
-      table=salesTable;
-      rowData=["NEW", saleBooking.value, saleClient.value, saleItem.value, saleDesc.value, saleTotal.value, saleDate.value];
-    } else if(type==="expense"){
-      table=expensesTable;
-      rowData=["NEW", expenseDesc.value, expenseAmount.value, expenseCategory.value, expenseDate.value];
-    } else if(type==="booking"){
-      table=bookingsTable;
-      rowData=["NEW", bookingClient.value, bookingType.value, bookingDetails.value, bookingStatus.value, bookingDate.value, "Admin-1"];
+    // utility: show view
+    function showView(id) {
+      document.querySelectorAll('.record-view').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      // find tab button with correct onclick
+      document.querySelectorAll('.tab-btn').forEach(b=>{
+        if(b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${id}'`)) b.classList.add('active');
+      });
     }
-    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
-    let row=table.insertRow();
-    row.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
-      `<td><button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
-      <button class='btn-archive' onclick="confirmArchive(this,'${table.id}','archived${capitalize(type)}s')">Archive</button></td>`;
-    closeModal(`add${capitalize(type)}Modal`);
-    openModal("successModal");
-    return true;
-  }
 
-  // Edit record
-  function editRecord(btn,type){
-    let row=btn.closest("tr"), cells=row.cells; editRow=row;
-    if(type==="sale"){
-      editSaleBooking.value=cells[1].innerText;
-      editSaleClient.value=cells[2].innerText;
-      editSaleItem.value=cells[3].innerText;
-      editSaleDesc.value=cells[4].innerText;
-      editSaleTotal.value=cells[5].innerText;
-      editSaleDate.value=cells[6].innerText;
-      openModal("editSaleModal");
-    } else if(type==="expense"){
-      editExpenseDesc.value=cells[1].innerText;
-      editExpenseAmount.value=cells[2].innerText;
-      editExpenseCategory.value=cells[3].innerText;
-      editExpenseDate.value=cells[4].innerText;
-      openModal("editExpenseModal");
-    } else if(type==="booking"){
-      editBookingClient.value=cells[1].innerText;
-      editBookingType.value=cells[2].innerText;
-      editBookingDetails.value=cells[3].innerText;
-      editBookingStatus.value=cells[4].innerText;
-      editBookingDate.value=cells[5].innerText;
-      openModal("editBookingModal");
+    function openModal(id) { document.getElementById(id).style.display = 'block'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    function showSuccess(text='Saved!') {
+      document.getElementById('successText').innerText = '✅ ' + text;
+      openModal('successModal');
     }
-  }
-
-  // Update record
-  function updateRecord(e,type){
-    e.preventDefault();
-    if(!editRow) return false;
-    let rowData;
-    if(type==="sale"){
-      rowData=[editRow.cells[0].innerText, editSaleBooking.value, editSaleClient.value, editSaleItem.value, editSaleDesc.value, editSaleTotal.value, editSaleDate.value];
-    } else if(type==="expense"){
-      rowData=[editRow.cells[0].innerText, editExpenseDesc.value, editExpenseAmount.value, editExpenseCategory.value, editExpenseDate.value];
-    } else if(type==="booking"){
-      rowData=[editRow.cells[0].innerText, editBookingClient.value, editBookingType.value, editBookingDetails.value, editBookingStatus.value, editBookingDate.value, editRow.cells[6].innerText];
+    function showError(text='Invalid input') {
+      document.getElementById('errorText').innerText = '❌ ' + text;
+      openModal('errorModal');
     }
-    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
-    editRow.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
-      `<td><button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
-      <button class='btn-archive' onclick="confirmArchive(this,'${editRow.parentNode.id}','archived${capitalize(type)}s')">Archive</button></td>`;
-    editRow=null;
-    closeModal(`edit${capitalize(type)}Modal`);
-    openModal("successModal");
-    return true;
-  }
 
-  // Archive
-  function confirmArchive(btn,tableId,archiveId){
-    archiveTargetRow=btn.closest("tr");
-    archiveTargetTable=tableId;
-    archiveTargetType=archiveId;
-    openModal("archiveModal");
-  }
-  function archiveYes(){
-    if(archiveTargetRow){
-      let clone=archiveTargetRow.cloneNode(true);
-      clone.querySelector(".btn-edit")?.remove();
-      let restoreBtn=document.createElement("button");
-      restoreBtn.className="btn-restore"; restoreBtn.innerText="Restore";
-      restoreBtn.onclick=function(){ restoreRecord(clone,archiveTargetTable); };
-      clone.querySelector("td:last-child").innerHTML=""; clone.querySelector("td:last-child").appendChild(restoreBtn);
-      document.getElementById(archiveTargetType).appendChild(clone);
-      archiveTargetRow.remove();
+    function formatCurrencyRaw(value) {
+      // value is numeric string or number
+      let num = Number(('' + value).replace(/[^0-9.-]+/g,'')) || 0;
+      return '₱' + num.toLocaleString();
     }
-    closeModal("archiveModal");
-  }
-  function archiveNo(){ closeModal("archiveModal"); }
+    /* ------------------------------
+       Initialization: inspect existing rows to set id counters
+       ------------------------------ */
+    function initCountersFromDOM(){
+      // sales
+      const salesRows = document.querySelectorAll('#salesTable tr');
+      let max = 0; salesRows.forEach(r=>{ const id = parseInt(r.cells[0]?.innerText||0); if(id>max) max=id; });
+      idCounters.sale = Math.max( (max||0) + 1, idCounters.sale );
 
-  // Restore
-  function restoreRecord(row,tableId){
-    let restoreClone=row.cloneNode(true);
-    restoreClone.querySelector(".btn-restore").remove();
-    let type=tableId.replace("Table","");
-    restoreClone.querySelector("td:last-child").innerHTML=
-      `<button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
-      <button class='btn-archive' onclick="confirmArchive(this,'${tableId}','archived${capitalize(type)}s')">Archive</button>`;
-    document.getElementById(tableId).appendChild(restoreClone);
-    row.remove();
-  }
+      // expenses
+      const eRows = document.querySelectorAll('#expensesTable tr');
+      max=0; eRows.forEach(r=>{ const id = parseInt(r.cells[0]?.innerText||0); if(id>max) max=id; });
+      idCounters.expense = Math.max( (max||0) + 1, idCounters.expense );
 
-  // Inquiries respond
-  function respondInquiry(e){
-    e.preventDefault();
-    let id=document.getElementById("inquiryIdField").value;
-    let row=[...document.querySelectorAll("#inquiriesTable tbody tr")].find(r=>r.cells[0].innerText==id);
-    if(row){
-      row.cells[6].innerText="Admin-01";
-      row.cells[7].innerText=new Date().toLocaleString();
-      row.cells[4].innerText="Closed";
+      // bookings
+      const bRows = document.querySelectorAll('#bookingsTable tr');
+      max=0; bRows.forEach(r=>{ const id = parseInt(r.cells[0]?.innerText||0); if(id>max) max=id; });
+      idCounters.booking = Math.max( (max||0) + 1, idCounters.booking );
+
+      // inquiries
+      const iRows = document.querySelectorAll('#inquiriesTable tr');
+      max=0; iRows.forEach(r=>{ const id = parseInt(r.cells[0]?.innerText||0); if(id>max) max=id; });
+      idCounters.inquiry = Math.max( (max||0) + 1, idCounters.inquiry );
     }
-    closeModal("inquiryModal");
-    openModal("successModal");
-    return true;
-  }
-  function respondInquiry(id){
-    document.getElementById("inquiryIdField").value=id;
-    openModal("inquiryModal");
-  }
 
-  // Filter archived
-  function filterArchived(){
-    let v=document.getElementById("archiveFilter").value;
-    document.querySelectorAll(".archived-section").forEach(sec=>{
-      sec.style.display=(v==="all" || sec.dataset.type===v)?"block":"none";
+    // run on load
+    window.addEventListener('load', ()=>{
+      initCountersFromDOM();
+      // close modals when clicking outside content
+      window.onclick = function(e){
+        document.querySelectorAll('.modal').forEach(m=>{
+          if(e.target === m) m.style.display='none';
+        });
+      };
     });
-  }
 
-  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
-</script>
+    /* ------------------------------
+       Add / Edit / Update Records
+       ------------------------------ */
+    function addRecord(e, type) {
+      e.preventDefault();
+      if(type === 'sale') {
+        const booking = document.getElementById('saleBooking').value.trim();
+        const client  = document.getElementById('saleClient').value.trim();
+        const item    = document.getElementById('saleItem').value.trim();
+        const desc    = document.getElementById('saleDesc').value.trim();
+        const total   = document.getElementById('saleTotal').value.trim();
+        const date    = document.getElementById('saleDate').value.trim();
+        if(!booking || !client || !item || !desc || !total || !date) { showError('Please fill all sale fields'); return false; }
+        if(isNaN(Number(booking)) || isNaN(Number(client)) || isNaN(Number(total))){ showError('Booking/Client/Total must be numbers'); return false; }
+        const tbody = document.getElementById('salesTable');
+        const tr = document.createElement('tr');
+        const id = idCounters.sale++;
+        tr.innerHTML = `<td>${id}</td><td>${booking}</td><td>${client}</td><td>${escapeHtml(item)}</td><td>${escapeHtml(desc)}</td><td>${formatCurrencyRaw(total)}</td><td>${date}</td>
+          <td>${actionsHtml('sale')}</td>`;
+        tbody.appendChild(tr);
+        closeModal('addSaleModal'); showSuccess('Sale Added');
+        e.target.reset?.();
+        return true;
+      }
+
+      if(type === 'expense'){
+        const desc = document.getElementById('expenseDesc').value.trim();
+        const amount = document.getElementById('expenseAmount').value.trim();
+        const cat = document.getElementById('expenseCategory').value.trim();
+        const date = document.getElementById('expenseDate').value.trim();
+        if(!desc || !amount || !cat || !date){ showError('Please fill all expense fields'); return false; }
+        if(isNaN(Number(amount))){ showError('Amount must be a number'); return false; }
+        const tbody = document.getElementById('expensesTable');
+        const tr = document.createElement('tr');
+        const id = idCounters.expense++;
+        tr.innerHTML = `<td>${id}</td><td>${escapeHtml(desc)}</td><td>${formatCurrencyRaw(amount)}</td><td>${escapeHtml(cat)}</td><td>${date}</td>
+          <td>${actionsHtml('expense')}</td>`;
+        tbody.appendChild(tr);
+        closeModal('addExpenseModal'); showSuccess('Expense Added'); e.target.reset?.();
+        return true;
+      }
+
+      if(type === 'booking'){
+        const client = document.getElementById('bookingClient').value.trim();
+        const typev = document.getElementById('bookingType').value.trim();
+        const details = document.getElementById('bookingDetails').value.trim();
+        const status = document.getElementById('bookingStatus').value.trim();
+        const date = document.getElementById('bookingDate').value.trim();
+        if(!client || !typev || !details || !status || !date){ showError('Please fill all booking fields'); return false; }
+        if(isNaN(Number(client))){ showError('Client_ID must be a number'); return false; }
+        const tbody = document.getElementById('bookingsTable');
+        const tr = document.createElement('tr');
+        const id = idCounters.booking++;
+        tr.innerHTML = `<td>${id}</td><td>${client}</td><td>${escapeHtml(typev)}</td><td>${escapeHtml(details)}</td><td>${escapeHtml(status)}</td><td>${date}</td><td>-</td>
+          <td>${actionsHtml('booking')}</td>`;
+        tbody.appendChild(tr);
+        closeModal('addBookingModal'); showSuccess('Booking Added'); e.target.reset?.();
+        return true;
+      }
+
+      return false;
+    }
+
+    function editRecord(btn, type) {
+      const row = btn.closest('tr');
+      editRow = row;
+      const cells = row.cells;
+      if(type === 'sale'){
+        document.getElementById('editSaleBooking').value = cells[1].innerText;
+        document.getElementById('editSaleClient').value = cells[2].innerText;
+        document.getElementById('editSaleItem').value = cells[3].innerText;
+        document.getElementById('editSaleDesc').value = cells[4].innerText;
+        document.getElementById('editSaleTotal').value = stripCurrency(cells[5].innerText);
+        document.getElementById('editSaleDate').value = cells[6].innerText;
+        openModal('editSaleModal');
+      } else if(type === 'expense'){
+        document.getElementById('editExpenseDesc').value = cells[1].innerText;
+        document.getElementById('editExpenseAmount').value = stripCurrency(cells[2].innerText);
+        document.getElementById('editExpenseCategory').value = cells[3].innerText;
+        document.getElementById('editExpenseDate').value = cells[4].innerText;
+        openModal('editExpenseModal');
+      } else if(type === 'booking'){
+        document.getElementById('editBookingClient').value = cells[1].innerText;
+        document.getElementById('editBookingType').value = cells[2].innerText;
+        document.getElementById('editBookingDetails').value = cells[3].innerText;
+        document.getElementById('editBookingStatus').value = cells[4].innerText;
+        document.getElementById('editBookingDate').value = cells[5].innerText;
+        openModal('editBookingModal');
+      }
+    }
+
+    function updateRecord(e, type){
+      e.preventDefault();
+      if(!editRow){ showError('No row selected'); return false; }
+      if(type === 'sale'){
+        const booking = document.getElementById('editSaleBooking').value.trim();
+        const client  = document.getElementById('editSaleClient').value.trim();
+        const item    = document.getElementById('editSaleItem').value.trim();
+        const desc    = document.getElementById('editSaleDesc').value.trim();
+        const total   = document.getElementById('editSaleTotal').value.trim();
+        const date    = document.getElementById('editSaleDate').value.trim();
+        if(!booking || !client || !item || !desc || !total || !date){ showError('Fill all sale fields'); return false; }
+        if(isNaN(Number(booking)) || isNaN(Number(client)) || isNaN(Number(total))){ showError('Booking/Client/Total must be numeric'); return false; }
+        editRow.cells[1].innerText = booking;
+        editRow.cells[2].innerText = client;
+        editRow.cells[3].innerText = item;
+        editRow.cells[4].innerText = desc;
+        editRow.cells[5].innerText = formatCurrencyRaw(total);
+        editRow.cells[6].innerText = date;
+        // keep actions as-is (archive/restored status preserved)
+        closeModal('editSaleModal'); editRow=null; showSuccess('Sale Updated');
+        return true;
+      }
+
+      if(type === 'expense'){
+        const desc = document.getElementById('editExpenseDesc').value.trim();
+        const amount = document.getElementById('editExpenseAmount').value.trim();
+        const cat = document.getElementById('editExpenseCategory').value.trim();
+        const date = document.getElementById('editExpenseDate').value.trim();
+        if(!desc||!amount||!cat||!date){ showError('Fill all expense fields'); return false; }
+        if(isNaN(Number(amount))){ showError('Amount must be numeric'); return false; }
+        editRow.cells[1].innerText = desc;
+        editRow.cells[2].innerText = formatCurrencyRaw(amount);
+        editRow.cells[3].innerText = cat;
+        editRow.cells[4].innerText = date;
+        closeModal('editExpenseModal'); editRow=null; showSuccess('Expense Updated');
+        return true;
+      }
+
+      if(type === 'booking'){
+        const client = document.getElementById('editBookingClient').value.trim();
+        const typev = document.getElementById('editBookingType').value.trim();
+        const details = document.getElementById('editBookingDetails').value.trim();
+        const status = document.getElementById('editBookingStatus').value.trim();
+        const date = document.getElementById('editBookingDate').value.trim();
+        if(!client||!typev||!details||!status||!date){ showError('Fill all booking fields'); return false; }
+        if(isNaN(Number(client))){ showError('Client_ID must be numeric'); return false; }
+        editRow.cells[1].innerText = client;
+        editRow.cells[2].innerText = typev;
+        editRow.cells[3].innerText = details;
+        editRow.cells[4].innerText = status;
+        editRow.cells[5].innerText = date;
+        closeModal('editBookingModal'); editRow=null; showSuccess('Booking Updated');
+        return true;
+      }
+      return false;
+    }
+
+    /* ------------------------------
+       Archive / Restore (fixing restore-to-wrong-tab issue)
+       - When archiving, set data-original attribute on the archived row with the original tbody id
+       - Restore uses data-original to append back to the correct tbody
+       ------------------------------ */
+    function confirmArchive(btn, originalTbodyId, archiveTbodyId) {
+      archiveTargetRow = btn.closest('tr');
+      archiveTargetOriginalTbody = originalTbodyId; // e.g., 'salesTable'
+      document._archiveTbody = archiveTbodyId; // temporary store target archive id
+      openModal('archiveModal');
+    }
+
+    function archiveYes(){
+      if(!archiveTargetRow) { archiveNo(); return; }
+      const archiveId = document._archiveTbody; // e.g., 'archivedSales'
+      const clone = archiveTargetRow.cloneNode(true);
+      // mark where it's from
+      clone.dataset.original = archiveTargetOriginalTbody;
+      // build actions for archived row: keep edit/respond/review and add restore
+      const type = mapTbodyToType(archiveTargetOriginalTbody); // sale/expense/booking/inquiry
+      const actionsCell = clone.querySelector('td:last-child');
+      actionsCell.innerHTML = actionsHtmlForArchived(type) + ` <button class="btn-restore" onclick="restoreRecord(this)">Restore</button>`;
+      document.getElementById(archiveId).appendChild(clone);
+      // remove original
+      archiveTargetRow.remove();
+      archiveTargetRow = null; archiveTargetOriginalTbody = null; delete document._archiveTbody;
+      closeModal('archiveModal');
+      showSuccess('Record archived');
+    }
+    function archiveNo(){ archiveTargetRow=null; archiveTargetOriginalTbody=null; delete document._archiveTbody; closeModal('archiveModal'); }
+
+    function restoreRecord(btn){
+      const row = btn.closest('tr');
+      const originalTbody = row.dataset.original;
+      if(!originalTbody){ showError('Original table unknown'); return; }
+      const tbody = document.getElementById(originalTbody);
+      if(!tbody){ showError('Original table not found'); return; }
+      // actions for restored row: normal actions
+      const type = mapTbodyToType(originalTbody);
+      row.querySelector('td:last-child').innerHTML = actionsHtml(type);
+      // remove marker
+      delete row.dataset.original;
+      tbody.appendChild(row);
+      showSuccess('Record restored');
+    }
+
+    function mapTbodyToType(tbodyId){
+      if(tbodyId.includes('sales')) return 'sale';
+      if(tbodyId.includes('expenses') && !tbodyId.includes('archived')) return 'expense';
+      if(tbodyId.includes('bookings')) return 'booking';
+      if(tbodyId.includes('inquiries')) return 'inquiry';
+      // fallback
+      if(tbodyId.includes('archivedSales')) return 'sale';
+      if(tbodyId.includes('archivedExpenses')) return 'expense';
+      if(tbodyId.includes('archivedBookings')) return 'booking';
+      if(tbodyId.includes('archivedInquiries')) return 'inquiry';
+      return 'sale';
+    }
+
+    function actionsHtml(type){
+      // when not archived
+      if(type==='sale') return `<button class="btn-edit" onclick="editRecord(this,'sale')">Edit</button> <button class="btn-archive" onclick="confirmArchive(this,'salesTable','archivedSales')">Archive</button>`;
+      if(type==='expense') return `<button class="btn-edit" onclick="editRecord(this,'expense')">Edit</button> <button class="btn-archive" onclick="confirmArchive(this,'expensesTable','archivedExpenses')">Archive</button>`;
+      if(type==='booking') return `<button class="btn-review" onclick="reviewBooking(this)">Review</button> <button class="btn-edit" onclick="editRecord(this,'booking')">Edit</button> <button class="btn-archive" onclick="confirmArchive(this,'bookingsTable','archivedBookings')">Archive</button>`;
+      if(type==='inquiry') return `<button class="btn-respond" onclick="openRespondInquiry(this)">Respond</button> <button class="btn-archive" onclick="confirmArchive(this,'inquiriesTable','archivedInquiries')">Archive</button>`;
+      return '';
+    }
+
+    function actionsHtmlForArchived(type){
+      // for archived row, keep edit/respond/review and show Restore separately
+      if(type==='sale') return `<button class="btn-edit" onclick="editRecord(this,'sale')">Edit</button>`;
+      if(type==='expense') return `<button class="btn-edit" onclick="editRecord(this,'expense')">Edit</button>`;
+      if(type==='booking') return `<button class="btn-review" onclick="reviewBooking(this)">Review</button> <button class="btn-edit" onclick="editRecord(this,'booking')">Edit</button>`;
+      if(type==='inquiry') return `<button class="btn-respond" onclick="openRespondInquiry(this)">Respond</button>`;
+      return '';
+    }
+
+    /* ------------------------------
+       Booking review -> approve/decline -> receipts & declines
+       ------------------------------ */
+    function reviewBooking(btn) {
+      const row = btn.closest('tr');
+      currentReviewRow = row;
+      const cells = row.cells;
+      document.getElementById('reviewBookingId').value = cells[0].innerText;
+      document.getElementById('reviewBookingClient').innerText = cells[1].innerText;
+      document.getElementById('reviewBookingDetails').innerText = cells[3].innerText;
+      document.getElementById('bookingDecision').value = 'approve';
+      document.getElementById('declineReasonGroup').style.display = 'none';
+      document.getElementById('declineReason').value = '';
+      openModal('reviewBookingModal');
+    }
+
+    function toggleDeclineReason(){
+      const d = document.getElementById('bookingDecision').value;
+      document.getElementById('declineReasonGroup').style.display = (d === 'decline') ? 'block' : 'none';
+    }
+
+    function submitBookingDecision(e){
+      e.preventDefault();
+      if(!currentReviewRow){ showError('No booking selected'); return false; }
+      const decision = document.getElementById('bookingDecision').value;
+      const reason = document.getElementById('declineReason').value.trim();
+      const id = document.getElementById('reviewBookingId').value;
+      const row = currentReviewRow;
+      if(decision === 'approve'){
+        row.cells[4].innerText = 'Confirmed';
+        row.cells[6].innerText = 'Admin-01';
+        // generate a receipt entry and store it in receipts table
+        addReceiptFromBooking(row);
+        showSuccess('Booking approved and receipt generated');
+      } else {
+        if(!reason){ showError('Please provide a reason for decline'); return false; }
+        row.cells[4].innerText = 'Declined';
+        row.cells[6].innerText = 'Admin-01';
+        addDeclineFromBooking(row, reason);
+        showSuccess('Booking declined and client notified');
+      }
+      currentReviewRow = null;
+      closeModal('reviewBookingModal');
+      return true;
+    }
+
+    function addReceiptFromBooking(row){
+      // booking row cells: 0=id,1=client,2=type,3=details,4=status,5=date,6=approved_by
+      const receiptsTbody = document.getElementById('receiptsTable');
+      const bookingId = row.cells[0].innerText;
+      const clientId = row.cells[1].innerText;
+      const item = row.cells[3].innerText;
+      const total = '₱' + '15,000'; // placeholder; in real system you'd compute real total
+      const date = new Date().toLocaleString();
+      const approvedBy = row.cells[6].innerText || 'Admin-01';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${bookingId}</td><td>${clientId}</td><td>${escapeHtml(item)}</td><td>${total}</td><td>${date}</td><td>${approvedBy}</td>`;
+      receiptsTbody.appendChild(tr);
+      // Optional: store reference on booking row
+      row.dataset.receiptStored = 'true';
+    }
+
+    function addDeclineFromBooking(row, reason){
+      const declinesTbody = document.getElementById('declinesTable');
+      const bookingId = row.cells[0].innerText;
+      const clientId = row.cells[1].innerText;
+      const item = row.cells[3].innerText;
+      const date = new Date().toLocaleString();
+      const declinedBy = row.cells[6].innerText || 'Admin-01';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${bookingId}</td><td>${clientId}</td><td>${escapeHtml(item)}</td><td>${escapeHtml(reason)}</td><td>${date}</td><td>${declinedBy}</td>`;
+      declinesTbody.appendChild(tr);
+      row.dataset.declined = 'true';
+    }
+
+    /* ------------------------------
+       Inquiry response (works for live + archived)
+       - openRespondInquiry(btnOrElement) can receive btn element
+       - submitInquiryResponse updates the row wherever it is (inquiriesTable or archivedInquiries)
+       ------------------------------ */
+    function openRespondInquiry(btnOrElem){
+      let row;
+      if(typeof btnOrElem === 'object' && btnOrElem.closest) row = btnOrElem.closest('tr');
+      else row = [...document.querySelectorAll('#inquiriesTable tr, #archivedInquiries tr')].find(r=>r.cells[0].innerText == btnOrElem);
+      if(!row){ showError('Inquiry not found'); return; }
+      const id = row.cells[0].innerText;
+      document.getElementById('inquiryIdField').value = id;
+      document.getElementById('responseField').value = '';
+      openModal('inquiryModal');
+    }
+
+    function submitInquiryResponse(e){
+      e.preventDefault();
+      const id = document.getElementById('inquiryIdField').value;
+      const response = document.getElementById('responseField').value.trim();
+      if(!response){ showError('Response cannot be empty'); return false; }
+      // Look up row in both live and archived
+      const allRows = [...document.querySelectorAll('#inquiriesTable tr'), ...document.querySelectorAll('#archivedInquiries tr')];
+      const row = allRows.find(r => r.cells && r.cells[0] && r.cells[0].innerText == id);
+      if(!row){ showError('Inquiry row not found'); return false; }
+      row.cells[6].innerText = 'Admin-01';
+      row.cells[7].innerText = new Date().toLocaleString();
+      row.cells[4].innerText = 'Closed';
+      closeModal('inquiryModal');
+      showSuccess('Inquiry responded and client notified');
+      return true;
+    }
+
+    /* ------------------------------
+       Archived filter (simple show/hide)
+       ------------------------------ */
+    function filterArchived(){
+      const v = document.getElementById('archiveFilter').value;
+      document.querySelectorAll('.archived-section').forEach(sec=>{
+        sec.style.display = (v === 'all' || sec.dataset.type === v) ? 'block' : 'none';
+      });
+    }
+
+    /* ------------------------------
+       Utility helpers
+       ------------------------------ */
+    function stripCurrency(s){
+      return (''+s).replace(/[^0-9.-]+/g,'') || '';
+    }
+    function escapeHtml(s){
+      return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    }
+
+    /* ------------------------------
+       Close helper for success/error generic modals
+       ------------------------------ */
+    // closeModal defined above
+
+    /* ------------------------------
+       End of script
+       ------------------------------ */
+  </script>
 </body>
 </html>
