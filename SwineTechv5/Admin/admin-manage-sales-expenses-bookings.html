@@ -3,18 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SwineTech | Transactions</title>
+  <title>SwineTech | Manage Sales, Expenses, Bookings & Inquiries</title>
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
+    /* Tabs */
     .tabs { margin: 20px 0; }
     .tab-btn {
       background: #f0f0f0; border: none; padding: 10px 20px;
       cursor: pointer; margin-right: 5px; border-radius: 5px;
     }
-    .tab-btn.active { background: #4CAF50; color: #fff; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
+    .tab-btn.active { background: #43A047; color: #fff; }
+    .record-view { display: none; }
+    .record-view.active { display: block; }
+
+    /* Modal */
     .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
       width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
     .modal-content {
@@ -23,232 +26,413 @@
     }
     .modal h2 { margin-bottom: 15px; }
     .close { float: right; font-size: 22px; cursor: pointer; }
+
+    /* Forms & Buttons */
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; margin-bottom: 5px; }
     .form-group input, .form-group select, .form-group textarea {
       width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
     }
-    .btn-auth { background: #4CAF50; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
-    .btn-auth:hover { background: #45a049; }
+    .btn-auth { background: #43A047; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+    .btn-auth:hover { background: #2e7d32; }
+    .btn-add, .btn-edit, .btn-archive, .btn-restore {
+      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
+    }
+    .btn-add { background: #29B6F6; color: #fff; }
+    .btn-edit { background: #FFA726; color: #fff; }
+    .btn-archive { background: #EF5350; color: #fff; }
+    .btn-restore { background: #29B6F6; color: #fff; }
+    .filter-box { margin: 10px 0; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .admin-table th { background: #f9f9f9; }
   </style>
 </head>
 <body>
-   <!-- Sidebar -->
-    <aside class="sidebar">
+  <!-- Sidebar -->
+  <aside class="sidebar">
     <div class="sidebar-logo">🐖 SwineTech</div>
     <nav>
       <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
       <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
-      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i>Mange Pig Records</a>
-      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i>Manage Feeding & Schedule</a>
-      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
-      <a href="admin-manage-sales-expenses-bookings.html"class="active"><i class="fa-solid fa-money-bill-trend-up"></i>Manage Sales, Expenses, & Bookings</a>
-      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html" class="active"><i class="fa-solid fa-money-bill-trend-up"></i> Sales & Expenses</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Client Feedback</a>
       <a href="inquiries.html"><i class="fa-solid fa-envelope"></i> Inquiries</a>
-      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i>Generate Reports</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
       <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </nav>
   </aside>
 
   <!-- Main Content -->
   <main class="dashboard">
-    <h1>Transactions Management</h1>
+    <h1>Manage Sales, Expenses, Bookings & Inquiries</h1>
 
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab-btn active" onclick="openTab(event, 'sales')">Sales</button>
-      <button class="tab-btn" onclick="openTab(event, 'expenses')">Expenses</button>
-      <button class="tab-btn" onclick="openTab(event, 'bookings')">Bookings</button>
-      <button class="tab-btn" onclick="openTab(event, 'inquiries')">Inquiries</button>
+      <button class="tab-btn active" onclick="showView('sales')">💵 Sales</button>
+      <button class="tab-btn" onclick="showView('expenses')">📉 Expenses</button>
+      <button class="tab-btn" onclick="showView('bookings')">📅 Bookings</button>
+      <button class="tab-btn" onclick="showView('inquiries')">✉️ Inquiries</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived</button>
     </div>
 
     <!-- Sales -->
-    <section id="sales" class="tab-content active">
-      <h2>Sales</h2>
-      <button class="btn-add" onclick="openModal('saleModal')">+ Record Sale</button>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Sale ID</th><th>Booking ID</th><th>Client ID</th><th>Item Type</th>
-            <th>Description</th><th>Total (₱)</th><th>Payment Date</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td><td>3</td><td>101</td><td>Pig</td><td>Grower - 70kg</td>
-            <td>₱15,000</td><td>2025-09-01</td>
-            <td>
-              <button class="btn-edit" onclick="openModal('saleModal')">Edit</button>
-              <button class="btn-archive">Archive</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <section id="sales" class="record-view active">
+      <h2>Sales Records</h2>
+      <button class="btn-add" onclick="openModal('addSaleModal')">+ Record Sale</button>
+      <table class="admin-table"><thead>
+        <tr><th>Sale_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Item_Type</th><th>Description</th><th>Total (₱)</th><th>Payment_Date</th><th>Actions</th></tr>
+      </thead><tbody id="salesTable">
+        <tr><td>1</td><td>3</td><td>101</td><td>Pig</td><td>Grower - 70kg</td><td>₱15,000</td><td>2025-09-01</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'sale')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'salesTable','archivedSales')">Archive</button></td></tr>
+      </tbody></table>
     </section>
 
     <!-- Expenses -->
-    <section id="expenses" class="tab-content">
+    <section id="expenses" class="record-view">
       <h2>Expenses</h2>
-      <button class="btn-add" onclick="openModal('expenseModal')">+ Add Expense</button>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Expense ID</th><th>Description</th><th>Amount</th><th>Category</th>
-            <th>Date Spent</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td><td>20 sacks Grower Feed</td><td>₱12,000</td><td>Feed</td>
-            <td>2025-09-05</td>
-            <td>
-              <button class="btn-edit" onclick="openModal('expenseModal')">Edit</button>
-              <button class="btn-archive">Archive</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <button class="btn-add" onclick="openModal('addExpenseModal')">+ Add Expense</button>
+      <table class="admin-table"><thead>
+        <tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr>
+      </thead><tbody id="expensesTable">
+        <tr><td>1</td><td>20 sacks Grower Feed</td><td>₱12,000</td><td>Feed</td><td>2025-09-05</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'expense')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'expensesTable','archivedExpenses')">Archive</button></td></tr>
+      </tbody></table>
     </section>
 
     <!-- Bookings -->
-    <section id="bookings" class="tab-content">
+    <section id="bookings" class="record-view">
       <h2>Bookings</h2>
-      <button class="btn-add" onclick="openModal('bookingModal')">+ Add Booking</button>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Booking ID</th><th>Client ID</th><th>Type</th><th>Item Details</th>
-            <th>Status</th><th>Booking Date</th><th>Approved By</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>10</td><td>102</td><td>Lechon</td><td>Roast-ready pig</td><td>Pending</td>
-            <td>2025-09-10</td><td>Admin-1</td>
-            <td>
-              <button class="btn-edit" onclick="openModal('bookingModal')">Edit</button>
-              <button class="btn-archive">Archive</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <button class="btn-add" onclick="openModal('addBookingModal')">+ Add Booking</button>
+      <table class="admin-table"><thead>
+        <tr><th>Booking_ID</th><th>Client_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Approved_By</th><th>Actions</th></tr>
+      </thead><tbody id="bookingsTable">
+        <tr><td>10</td><td>102</td><td>Lechon</td><td>Roast-ready pig</td><td>Pending</td><td>2025-09-10</td><td>Admin-1</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'booking')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'bookingsTable','archivedBookings')">Archive</button></td></tr>
+      </tbody></table>
     </section>
 
     <!-- Inquiries -->
-    <section id="inquiries" class="tab-content">
+    <section id="inquiries" class="record-view">
       <h2>Inquiries</h2>
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Inquiry ID</th><th>Client ID</th><th>Subject</th><th>Message</th>
-            <th>Status</th><th>Submitted At</th><th>Responded By</th><th>Responded At</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>5</td><td>103</td><td>Pig Pricing</td><td>How much is 80kg pig?</td>
-            <td>Open</td><td>2025-09-12</td><td>-</td><td>-</td>
-            <td><button class="btn-edit" onclick="openModal('inquiryModal')">Respond</button></td>
-          </tr>
-        </tbody>
-      </table>
+      <table class="admin-table"><thead>
+        <tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr>
+      </thead><tbody id="inquiriesTable">
+        <tr><td>5</td><td>103</td><td>Pig Pricing</td><td>How much is 80kg pig?</td><td>Open</td><td>2025-09-12</td><td>-</td><td>-</td>
+          <td><button class="btn-edit" onclick="respondInquiry(5)">Respond</button><button class="btn-archive" onclick="confirmArchive(this,'inquiriesTable','archivedInquiries')">Archive</button></td></tr>
+      </tbody></table>
+    </section>
+    <!-- Archived -->
+    <section id="archived" class="record-view">
+      <h2>Archived Records</h2>
+      <div class="filter-box">
+        <label>Show:</label>
+        <select id="archiveFilter" onchange="filterArchived()">
+          <option value="all">All</option>
+          <option value="sale">Sales</option>
+          <option value="expense">Expenses</option>
+          <option value="booking">Bookings</option>
+          <option value="inquiry">Inquiries</option>
+        </select>
+      </div>
+
+      <div class="archived-section" data-type="sale">
+        <h3>💵 Archived Sales</h3>
+        <table class="admin-table">
+          <thead><tr><th>Sale_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Item_Type</th><th>Description</th><th>Total (₱)</th><th>Payment_Date</th><th>Actions</th></tr></thead>
+          <tbody id="archivedSales"></tbody>
+        </table>
+      </div>
+
+      <div class="archived-section" data-type="expense">
+        <h3>📉 Archived Expenses</h3>
+        <table class="admin-table">
+          <thead><tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr></thead>
+          <tbody id="archivedExpenses"></tbody>
+        </table>
+      </div>
+
+      <div class="archived-section" data-type="booking">
+        <h3>📅 Archived Bookings</h3>
+        <table class="admin-table">
+          <thead><tr><th>Booking_ID</th><th>Client_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Approved_By</th><th>Actions</th></tr></thead>
+          <tbody id="archivedBookings"></tbody>
+        </table>
+      </div>
+
+      <div class="archived-section" data-type="inquiry">
+        <h3>✉️ Archived Inquiries</h3>
+        <table class="admin-table">
+          <thead><tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr></thead>
+          <tbody id="archivedInquiries"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
   <!-- Modals -->
-  <!-- Sales Modal -->
-  <div id="saleModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('saleModal')">&times;</span>
-      <h2>Add/Edit Sale</h2>
-      <form action="save_sale.php" method="POST">
-        <div class="form-group"><label for="booking_id">Booking ID</label><input type="number" name="booking_id"></div>
-        <div class="form-group"><label for="client_id">Client ID</label><input type="number" name="client_id" required></div>
-        <div class="form-group"><label for="item_type">Item Type</label><input type="text" name="item_type" required></div>
-        <div class="form-group"><label for="item_description">Item Description</label><input type="text" name="item_description" required></div>
-        <div class="form-group"><label for="total_amount">Total Amount</label><input type="number" name="total_amount" step="0.01" required></div>
-        <div class="form-group"><label for="payment_date">Payment Date</label><input type="date" name="payment_date" required></div>
-        <button type="submit" class="btn-auth">Save Sale</button>
-      </form>
-    </div>
-  </div>
+  <!-- Add/Edit Sale -->
+  <div id="addSaleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addSaleModal')">&times;</span>
+    <h2>Add Sale</h2>
+    <form onsubmit="return addRecord(event,'sale')">
+      <div class="form-group"><label>Booking_ID</label><input type="number" id="saleBooking"></div>
+      <div class="form-group"><label>Client_ID</label><input type="number" id="saleClient"></div>
+      <div class="form-group"><label>Item_Type</label><input type="text" id="saleItem"></div>
+      <div class="form-group"><label>Description</label><input type="text" id="saleDesc"></div>
+      <div class="form-group"><label>Total</label><input type="number" id="saleTotal"></div>
+      <div class="form-group"><label>Payment_Date</label><input type="date" id="saleDate"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
 
-  <!-- Expense Modal -->
-  <div id="expenseModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('expenseModal')">&times;</span>
-      <h2>Add/Edit Expense</h2>
-      <form action="save_expense.php" method="POST">
-        <div class="form-group"><label for="description">Description</label><input type="text" name="description" required></div>
-        <div class="form-group"><label for="amount">Amount</label><input type="number" name="amount" step="0.01" required></div>
-        <div class="form-group"><label for="category">Category</label><input type="text" name="category" required></div>
-        <div class="form-group"><label for="date_spent">Date Spent</label><input type="date" name="date_spent" required></div>
-        <button type="submit" class="btn-auth">Save Expense</button>
-      </form>
-    </div>
-  </div>
+  <div id="editSaleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editSaleModal')">&times;</span>
+    <h2>Edit Sale</h2>
+    <form onsubmit="return updateRecord(event,'sale')">
+      <div class="form-group"><label>Booking_ID</label><input type="number" id="editSaleBooking"></div>
+      <div class="form-group"><label>Client_ID</label><input type="number" id="editSaleClient"></div>
+      <div class="form-group"><label>Item_Type</label><input type="text" id="editSaleItem"></div>
+      <div class="form-group"><label>Description</label><input type="text" id="editSaleDesc"></div>
+      <div class="form-group"><label>Total</label><input type="number" id="editSaleTotal"></div>
+      <div class="form-group"><label>Payment_Date</label><input type="date" id="editSaleDate"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
 
-  <!-- Booking Modal -->
-  <div id="bookingModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('bookingModal')">&times;</span>
-      <h2>Add/Edit Booking</h2>
-      <form action="save_booking.php" method="POST">
-        <div class="form-group"><label for="client_id">Client ID</label><input type="number" name="client_id" required></div>
-        <div class="form-group"><label for="type">Type</label><input type="text" name="type" required></div>
-        <div class="form-group"><label for="item_details">Item Details</label><input type="text" name="item_details" required></div>
-        <div class="form-group"><label for="status">Status</label>
-          <select name="status">
-            <option value="Pending">Pending</option>
-            <option value="Confirmed">Confirmed</option>
-            <option value="Declined">Declined</option>
-          </select>
-        </div>
-        <div class="form-group"><label for="booking_date">Booking Date</label><input type="date" name="booking_date" required></div>
-        <button type="submit" class="btn-auth">Save Booking</button>
-      </form>
-    </div>
-  </div>
+  <!-- Add/Edit Expense -->
+  <div id="addExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addExpenseModal')">&times;</span>
+    <h2>Add Expense</h2>
+    <form onsubmit="return addRecord(event,'expense')">
+      <div class="form-group"><label>Description</label><input type="text" id="expenseDesc"></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount"></div>
+      <div class="form-group"><label>Category</label><input type="text" id="expenseCategory"></div>
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="expenseDate"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
 
-  <!-- Inquiry Modal -->
-  <div id="inquiryModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal('inquiryModal')">&times;</span>
-      <h2>Respond to Inquiry</h2>
-      <form action="respond_inquiry.php" method="POST">
-        <div class="form-group"><label for="inquiry_id">Inquiry ID</label><input type="number" name="inquiry_id" required></div>
-        <div class="form-group"><label for="subject">Subject</label><input type="text" name="subject" required></div>
-        <div class="form-group"><label for="message">Message</label><textarea name="message" required></textarea></div>
-        <div class="form-group"><label for="status">Status</label>
-          <select name="status">
-            <option value="Open">Open</option>
-            <option value="Closed">Closed</option>
-          </select>
-        </div>
-        <div class="form-group"><label for="response">Response</label><textarea name="response" required></textarea></div>
-        <button type="submit" class="btn-auth">Send Response</button>
-      </form>
-    </div>
-  </div>
+  <div id="editExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editExpenseModal')">&times;</span>
+    <h2>Edit Expense</h2>
+    <form onsubmit="return updateRecord(event,'expense')">
+      <div class="form-group"><label>Description</label><input type="text" id="editExpenseDesc"></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="editExpenseAmount"></div>
+      <div class="form-group"><label>Category</label><input type="text" id="editExpenseCategory"></div>
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="editExpenseDate"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
 
-  <script>
-    // Tabs
-    function openTab(evt, tabName) {
-      let contents = document.getElementsByClassName("tab-content");
-      for (let c of contents) c.classList.remove("active");
-      let tabs = document.getElementsByClassName("tab-btn");
-      for (let t of tabs) t.classList.remove("active");
-      document.getElementById(tabName).classList.add("active");
-      evt.currentTarget.classList.add("active");
+  <!-- Add/Edit Booking -->
+  <div id="addBookingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addBookingModal')">&times;</span>
+    <h2>Add Booking</h2>
+    <form onsubmit="return addRecord(event,'booking')">
+      <div class="form-group"><label>Client_ID</label><input type="number" id="bookingClient"></div>
+      <div class="form-group"><label>Type</label><input type="text" id="bookingType"></div>
+      <div class="form-group"><label>Item_Details</label><input type="text" id="bookingDetails"></div>
+      <div class="form-group"><label>Status</label><select id="bookingStatus"><option>Pending</option><option>Confirmed</option><option>Declined</option></select></div>
+      <div class="form-group"><label>Booking_Date</label><input type="date" id="bookingDate"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editBookingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editBookingModal')">&times;</span>
+    <h2>Edit Booking</h2>
+    <form onsubmit="return updateRecord(event,'booking')">
+      <div class="form-group"><label>Client_ID</label><input type="number" id="editBookingClient"></div>
+      <div class="form-group"><label>Type</label><input type="text" id="editBookingType"></div>
+      <div class="form-group"><label>Item_Details</label><input type="text" id="editBookingDetails"></div>
+      <div class="form-group"><label>Status</label><select id="editBookingStatus"><option>Pending</option><option>Confirmed</option><option>Declined</option></select></div>
+      <div class="form-group"><label>Booking_Date</label><input type="date" id="editBookingDate"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Inquiry Respond -->
+  <div id="inquiryModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('inquiryModal')">&times;</span>
+    <h2>Respond to Inquiry</h2>
+    <form onsubmit="return respondInquiry(event)">
+      <input type="hidden" id="inquiryIdField">
+      <div class="form-group"><label>Response</label><textarea id="responseField"></textarea></div>
+      <button type="submit" class="btn-auth">Send Response</button>
+    </form>
+  </div></div>
+
+  <!-- Confirmation Modal -->
+  <div id="archiveModal" class="modal"><div class="modal-content">
+    <h3>⚠️ Are you sure you want to archive this record?</h3>
+    <button onclick="archiveYes()">Yes, Archive</button>
+    <button onclick="archiveNo()">Cancel</button>
+  </div></div>
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3>✅ Saved!</h3>
+    <button onclick="closeModal('successModal')">OK</button>
+  </div></div>
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3>❌ Invalid Input!</h3>
+    <button onclick="closeModal('errorModal')">OK</button>
+  </div></div>
+
+<script>
+  let editRow=null, archiveTargetRow=null, archiveTargetTable=null, archiveTargetType=null;
+
+  // Switch views
+  function showView(v){
+    document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+    document.getElementById(v).classList.add("active");
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelector(`.tab-btn[onclick="showView('${v}')"]`).classList.add("active");
+  }
+
+  // Open/Close modals
+  function openModal(id){ document.getElementById(id).style.display="block"; }
+  function closeModal(id){ document.getElementById(id).style.display="none"; }
+
+  // Add record
+  function addRecord(e,type){
+    e.preventDefault();
+    let table, rowData;
+    if(type==="sale"){
+      table=salesTable;
+      rowData=["NEW", saleBooking.value, saleClient.value, saleItem.value, saleDesc.value, saleTotal.value, saleDate.value];
+    } else if(type==="expense"){
+      table=expensesTable;
+      rowData=["NEW", expenseDesc.value, expenseAmount.value, expenseCategory.value, expenseDate.value];
+    } else if(type==="booking"){
+      table=bookingsTable;
+      rowData=["NEW", bookingClient.value, bookingType.value, bookingDetails.value, bookingStatus.value, bookingDate.value, "Admin-1"];
     }
-    // Modals
-    function openModal(id) { document.getElementById(id).style.display = "block"; }
-    function closeModal(id) { document.getElementById(id).style.display = "none"; }
-    window.onclick = function(event) {
-      document.querySelectorAll(".modal").forEach(m => {
-        if (event.target == m) m.style.display = "none";
-      });
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+    let row=table.insertRow();
+    row.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+      `<td><button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+      <button class='btn-archive' onclick="confirmArchive(this,'${table.id}','archived${capitalize(type)}s')">Archive</button></td>`;
+    closeModal(`add${capitalize(type)}Modal`);
+    openModal("successModal");
+    return true;
+  }
+
+  // Edit record
+  function editRecord(btn,type){
+    let row=btn.closest("tr"), cells=row.cells; editRow=row;
+    if(type==="sale"){
+      editSaleBooking.value=cells[1].innerText;
+      editSaleClient.value=cells[2].innerText;
+      editSaleItem.value=cells[3].innerText;
+      editSaleDesc.value=cells[4].innerText;
+      editSaleTotal.value=cells[5].innerText;
+      editSaleDate.value=cells[6].innerText;
+      openModal("editSaleModal");
+    } else if(type==="expense"){
+      editExpenseDesc.value=cells[1].innerText;
+      editExpenseAmount.value=cells[2].innerText;
+      editExpenseCategory.value=cells[3].innerText;
+      editExpenseDate.value=cells[4].innerText;
+      openModal("editExpenseModal");
+    } else if(type==="booking"){
+      editBookingClient.value=cells[1].innerText;
+      editBookingType.value=cells[2].innerText;
+      editBookingDetails.value=cells[3].innerText;
+      editBookingStatus.value=cells[4].innerText;
+      editBookingDate.value=cells[5].innerText;
+      openModal("editBookingModal");
     }
-  </script>
+  }
+
+  // Update record
+  function updateRecord(e,type){
+    e.preventDefault();
+    if(!editRow) return false;
+    let rowData;
+    if(type==="sale"){
+      rowData=[editRow.cells[0].innerText, editSaleBooking.value, editSaleClient.value, editSaleItem.value, editSaleDesc.value, editSaleTotal.value, editSaleDate.value];
+    } else if(type==="expense"){
+      rowData=[editRow.cells[0].innerText, editExpenseDesc.value, editExpenseAmount.value, editExpenseCategory.value, editExpenseDate.value];
+    } else if(type==="booking"){
+      rowData=[editRow.cells[0].innerText, editBookingClient.value, editBookingType.value, editBookingDetails.value, editBookingStatus.value, editBookingDate.value, editRow.cells[6].innerText];
+    }
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+    editRow.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+      `<td><button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+      <button class='btn-archive' onclick="confirmArchive(this,'${editRow.parentNode.id}','archived${capitalize(type)}s')">Archive</button></td>`;
+    editRow=null;
+    closeModal(`edit${capitalize(type)}Modal`);
+    openModal("successModal");
+    return true;
+  }
+
+  // Archive
+  function confirmArchive(btn,tableId,archiveId){
+    archiveTargetRow=btn.closest("tr");
+    archiveTargetTable=tableId;
+    archiveTargetType=archiveId;
+    openModal("archiveModal");
+  }
+  function archiveYes(){
+    if(archiveTargetRow){
+      let clone=archiveTargetRow.cloneNode(true);
+      clone.querySelector(".btn-edit")?.remove();
+      let restoreBtn=document.createElement("button");
+      restoreBtn.className="btn-restore"; restoreBtn.innerText="Restore";
+      restoreBtn.onclick=function(){ restoreRecord(clone,archiveTargetTable); };
+      clone.querySelector("td:last-child").innerHTML=""; clone.querySelector("td:last-child").appendChild(restoreBtn);
+      document.getElementById(archiveTargetType).appendChild(clone);
+      archiveTargetRow.remove();
+    }
+    closeModal("archiveModal");
+  }
+  function archiveNo(){ closeModal("archiveModal"); }
+
+  // Restore
+  function restoreRecord(row,tableId){
+    let restoreClone=row.cloneNode(true);
+    restoreClone.querySelector(".btn-restore").remove();
+    let type=tableId.replace("Table","");
+    restoreClone.querySelector("td:last-child").innerHTML=
+      `<button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+      <button class='btn-archive' onclick="confirmArchive(this,'${tableId}','archived${capitalize(type)}s')">Archive</button>`;
+    document.getElementById(tableId).appendChild(restoreClone);
+    row.remove();
+  }
+
+  // Inquiries respond
+  function respondInquiry(e){
+    e.preventDefault();
+    let id=document.getElementById("inquiryIdField").value;
+    let row=[...document.querySelectorAll("#inquiriesTable tbody tr")].find(r=>r.cells[0].innerText==id);
+    if(row){
+      row.cells[6].innerText="Admin-01";
+      row.cells[7].innerText=new Date().toLocaleString();
+      row.cells[4].innerText="Closed";
+    }
+    closeModal("inquiryModal");
+    openModal("successModal");
+    return true;
+  }
+  function respondInquiry(id){
+    document.getElementById("inquiryIdField").value=id;
+    openModal("inquiryModal");
+  }
+
+  // Filter archived
+  function filterArchived(){
+    let v=document.getElementById("archiveFilter").value;
+    document.querySelectorAll(".archived-section").forEach(sec=>{
+      sec.style.display=(v==="all" || sec.dataset.type===v)?"block":"none";
+    });
+  }
+
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+</script>
 </body>
 </html>
