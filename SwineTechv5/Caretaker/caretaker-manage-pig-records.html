@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Pig Records</title>
+  <link rel="stylesheet" href="caretaker.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html"><i class="fa-solid fa-clipboard-list"></i> Dashboard</a>
+      <a href="caretaker-manage-pig-records.html" class="active"><i class="fa-solid fa-piggy-bank"></i>Manage Pig Records</a>
+      <a href="caretaker-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i>Manage Feeding and Schedules</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Pig Records</h1>
+
+    <!-- Toggle View -->
+<div class="toggle-view">
+  <button onclick="showView('litter')">🐖 View by Litter</button>
+  <button onclick="showView('individual')">🐷 View Individual Pigs</button>
+  <button onclick="showView('health')">❤️ View Health Records</button>
+  <button onclick="openBreedingModal()">💞 Record Breeding Details</button>
+</div>
+
+
+    <!-- Litter View -->
+    <section id="litter-view" class="record-view">
+      <h2>Litter Records</h2>
+      <button class="btn-add" onclick="openLitterModal()">+ Add New Litter</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Litter ID</th>
+            <th>Sow ID</th>
+            <th>Birth Date</th>
+            <th>Litter Size</th>
+            <th>Caretaker</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>12</td>
+            <td>Sow-A1</td>
+            <td>2025-01-05</td>
+            <td>8</td>
+            <td>Staff-01</td>
+            <td>
+              <button class="btn-edit" onclick="openLitterModal()">Edit</button>
+              <button class="btn-delete">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Individual Pig View -->
+    <section id="individual-view" class="record-view" style="display:none;">
+      <h2>Individual Pig Records</h2>
+      <button class="btn-add" onclick="openPigModal()">+ Add New Pig</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Pig ID</th>
+            <th>Litter ID</th>
+            <th>Sow Identifier</th>
+            <th>Birth Date</th>
+            <th>Status</th>
+            <th>Availability</th>
+            <th>Notes</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>101</td>
+            <td>12</td>
+            <td>Sow-A1</td>
+            <td>2025-01-05</td>
+            <td>Healthy</td>
+            <td>For Sale</td>
+            <td>Ready for breeding</td>
+            <td>
+              <button class="btn-edit" onclick="openPigModal()">Edit</button>
+
+              <button class="btn-delete">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Health Records View -->
+<section id="health-view" class="record-view" style="display:none;">
+  <h2>Pig Health Records</h2>
+  <button class="btn-add" onclick="openHealthModal()">+ Add Health Record</button>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Record ID</th>
+        <th>Pig ID</th>
+        <th>Symptoms</th>
+        <th>Diagnosis</th>
+        <th>Treatment</th>
+        <th>Mortality</th>
+        <th>Recorded At</th>
+        <th>Caretaker</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>HR-001</td>
+        <td>101</td>
+        <td>Cough</td>
+        <td>Flu</td>
+        <td>Antibiotics</td>
+        <td>No</td>
+        <td>2025-09-08</td>
+        <td>Staff-01</td>
+        <td>
+          <button class="btn-edit" onclick="openHealthModal()">Edit</button>
+          <button class="btn-delete">Archive</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+  </main>
+
+  <!-- Breeding Modal -->
+  <div id="breedingModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeBreedingModal()">&times;</span>
+      <h2>Record Breeding Details</h2>
+      <form action="save_breeding.php" method="POST">
+        <div class="form-group">
+          <label for="sow_id">Sow ID</label>
+          <input type="text" id="sow_id" name="sow_id" required>
+        </div>
+
+        <div class="form-group">
+          <label for="boar_id">Boar ID</label>
+          <input type="text" id="boar_id" name="boar_id" required>
+        </div>
+
+        <div class="form-group">
+          <label for="mating_date">Mating Date</label>
+          <input type="date" id="mating_date" name="mating_date" required>
+        </div>
+
+        <div class="form-group">
+          <label for="expected_farrow">Expected Farrowing Date</label>
+          <input type="date" id="expected_farrow" name="expected_farrow" required>
+        </div>
+
+        <button type="submit" class="btn-auth">Save Breeding Record</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Litter Modal -->
+<div id="litterModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeLitterModal()">&times;</span>
+    <h2>Add/Edit Litter</h2>
+    <form action="save_litter.php" method="POST">
+      <div class="form-group">
+        <label for="sow_id">Sow ID</label>
+        <input type="text" id="sow_id" name="sow_id" required>
+      </div>
+
+      <div class="form-group">
+        <label for="birth_date">Birth Date</label>
+        <input type="date" id="birth_date" name="birth_date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="litter_size">Litter Size</label>
+        <input type="number" id="litter_size" name="litter_size" min="1" required>
+      </div>
+
+      <div class="form-group">
+        <label for="caretaker_id">Caretaker ID</label>
+        <input type="text" id="caretaker_id" name="caretaker_id" required>
+      </div>
+
+      <button type="submit" class="btn-auth">Save Litter</button>
+    </form>
+  </div>
+</div>
+
+  <!-- Pig Modal -->
+<div id="pigModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closePigModal()">&times;</span>
+    <h2>Add/Edit Pig</h2>
+    <form action="save_pig.php" method="POST">
+      <div class="form-group">
+        <label for="litter_id">Litter ID</label>
+        <input type="number" id="litter_id" name="litter_id" required>
+      </div>
+
+      <div class="form-group">
+        <label for="sow_identifier">Sow Identifier</label>
+        <input type="text" id="sow_identifier" name="sow_identifier" required>
+      </div>
+
+      <div class="form-group">
+        <label for="birth_date">Birth Date</label>
+        <input type="date" id="birth_date" name="birth_date" required>
+      </div>
+
+      <div class="form-group">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="Healthy">Healthy</option>
+          <option value="Sick">Sick</option>
+          <option value="Sold">Sold</option>
+          <option value="Deceased">Deceased</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="availability">Availability</label>
+        <select id="availability" name="availability">
+          <option value="For Sale">For Sale</option>
+          <option value="For Breeding">For Breeding</option>
+          <option value="Not Available">Not Available</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="notes">Notes</label>
+        <textarea id="notes" name="notes"></textarea>
+      </div>
+
+      <button type="submit" class="btn-auth">Save Pig</button>
+    </form>
+  </div>
+</div>
+<!-- Health Record Modal -->
+<div id="healthModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeHealthModal()">&times;</span>
+    <h2>Add/Edit Health Record</h2>
+    <form action="save_health.php" method="POST">
+      <div class="form-group">
+        <label for="pig_id">Pig ID</label>
+        <input type="number" id="pig_id" name="pig_id" required>
+      </div>
+
+      <div class="form-group">
+        <label for="symptoms">Symptoms</label>
+        <input type="text" id="symptoms" name="symptoms" required>
+      </div>
+
+      <div class="form-group">
+        <label for="diagnosis">Diagnosis</label>
+        <input type="text" id="diagnosis" name="diagnosis" required>
+      </div>
+
+      <div class="form-group">
+        <label for="treatment">Treatment</label>
+        <input type="text" id="treatment" name="treatment">
+      </div>
+
+      <div class="form-group">
+        <label for="mortality">Mortality</label>
+        <select id="mortality" name="mortality">
+          <option value="No">No</option>
+          <option value="Yes">Yes</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="recorded_at">Date Recorded</label>
+        <input type="date" id="recorded_at" name="recorded_at" required>
+      </div>
+
+      <div class="form-group">
+        <label for="caretaker_id">Caretaker ID</label>
+        <input type="text" id="caretaker_id" name="caretaker_id" required>
+      </div>
+
+      <button type="submit" class="btn-auth">Save Record</button>
+    </form>
+  </div>
+</div>
+
+  <script>
+    function showView(view) {
+  document.getElementById("litter-view").style.display = 
+    view === 'litter' ? 'block' : 'none';
+  document.getElementById("individual-view").style.display = 
+    view === 'individual' ? 'block' : 'none';
+  document.getElementById("health-view").style.display = 
+    view === 'health' ? 'block' : 'none';
+}
+
+function openHealthModal() {
+  document.getElementById("healthModal").style.display = "block";
+}
+function closeHealthModal() {
+  document.getElementById("healthModal").style.display = "none";
+}
+
+function openLitterModal() {
+  document.getElementById("litterModal").style.display = "block";
+}
+function closeLitterModal() {
+  document.getElementById("litterModal").style.display = "none";
+}
+
+function openPigModal() {
+  document.getElementById("pigModal").style.display = "block";
+}
+function closePigModal() {
+  document.getElementById("pigModal").style.display = "none";
+}
+
+  </script>
+</body>
+</html>

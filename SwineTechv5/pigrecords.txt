@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Pig Records</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Tabs */
+    .tabs { margin: 20px 0; }
+    .tab-btn {
+      background: #f0f0f0; border: none; padding: 10px 20px;
+      cursor: pointer; margin-right: 5px; border-radius: 5px;
+    }
+    .tab-btn.active { background: #43A047; color: #fff; }
+    .record-view { display: none; }
+    .record-view.active { display: block; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content {
+      background: #fff; margin: 5% auto; padding: 20px; border-radius: 8px;
+      width: 500px; max-width: 90%;
+    }
+    .modal h2 { margin-bottom: 15px; }
+    .close { float: right; font-size: 22px; cursor: pointer; }
+
+    /* Forms */
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    .btn-auth { background: #43A047; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+    .btn-auth:hover { background: #2e7d32; }
+    .btn-add, .btn-edit, .btn-archive {
+      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
+    }
+    .btn-add { background: #29B6F6; color: #fff; }
+    .btn-edit { background: #FFA726; color: #fff; }
+    .btn-archive { background: #EF5350; color: #fff; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html" class="active"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Sales & Expenses</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Client Feedback</a>
+      <a href="inquiries.html"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Pig Records</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('litter')">🐖 View by Litter</button>
+      <button class="tab-btn" onclick="showView('individual')">🐷 Individual Pigs</button>
+      <button class="tab-btn" onclick="showView('health')">❤️ Health Records</button>
+    </div>
+
+    <!-- Litter View -->
+    <section id="litter" class="record-view active">
+      <h2>Litter Records</h2>
+      <button class="btn-add" onclick="openModal('litterModal')">+ Add New Litter</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Litter ID</th><th>Sow ID</th><th>Birth Date</th><th>Litter Size</th><th>Caretaker</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="litterTable">
+          <tr>
+            <td>12</td><td>Sow-A1</td><td>2025-01-05</td><td>8</td><td>Staff-01</td>
+            <td>
+              <button class="btn-edit" onclick="openModal('litterModal')">Edit</button>
+              <button class="btn-archive">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Individual Pigs -->
+    <section id="individual" class="record-view">
+      <h2>Individual Pig Records</h2>
+      <button class="btn-add" onclick="openModal('pigModal')">+ Add New Pig</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Pig ID</th><th>Litter ID</th><th>Sow Identifier</th><th>Birth Date</th><th>Status</th><th>Availability</th><th>Notes</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pigTable">
+          <tr>
+            <td>101</td><td>12</td><td>Sow-A1</td><td>2025-01-05</td><td>Healthy</td><td>For Sale</td><td>Ready for breeding</td>
+            <td>
+              <button class="btn-edit" onclick="openModal('pigModal')">Edit</button>
+              <button class="btn-archive">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Health Records -->
+    <section id="health" class="record-view">
+      <h2>Pig Health Records</h2>
+      <button class="btn-add" onclick="openModal('healthModal')">+ Add Health Record</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Record ID</th><th>Pig ID</th><th>Symptoms</th><th>Diagnosis</th><th>Treatment</th><th>Mortality</th><th>Recorded At</th><th>Caretaker</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="healthTable">
+          <tr>
+            <td>HR-001</td><td>101</td><td>Cough</td><td>Flu</td><td>Antibiotics</td><td>No</td><td>2025-09-08</td><td>Staff-01</td>
+            <td>
+              <button class="btn-edit" onclick="openModal('healthModal')">Edit</button>
+              <button class="btn-archive">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Litter Modal -->
+  <div id="litterModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('litterModal')">&times;</span>
+      <h2>Add/Edit Litter</h2>
+      <form onsubmit="return validateLitter(event)">
+        <div class="form-group"><label>Sow ID</label><input type="text" id="sowId" required></div>
+        <div class="form-group"><label>Birth Date</label><input type="date" id="birthDate" required></div>
+        <div class="form-group"><label>Litter Size</label><input type="number" id="litterSize" min="1" required></div>
+        <div class="form-group"><label>Caretaker ID</label><input type="text" id="caretakerId" required></div>
+        <button type="submit" class="btn-auth">Save Litter</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Pig Modal -->
+  <div id="pigModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('pigModal')">&times;</span>
+      <h2>Add/Edit Pig</h2>
+      <form onsubmit="return validatePig(event)">
+        <div class="form-group"><label>Litter ID</label><input type="number" id="pigLitterId" required></div>
+        <div class="form-group"><label>Sow Identifier</label><input type="text" id="sowIdentifier" required></div>
+        <div class="form-group"><label>Birth Date</label><input type="date" id="pigBirthDate" required></div>
+        <div class="form-group"><label>Status</label>
+          <select id="pigStatus">
+            <option value="Healthy">Healthy</option>
+            <option value="Sick">Sick</option>
+            <option value="Sold">Sold</option>
+            <option value="Deceased">Deceased</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Availability</label>
+          <select id="pigAvailability">
+            <option value="For Sale">For Sale</option>
+            <option value="For Breeding">For Breeding</option>
+            <option value="Not Available">Not Available</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea id="pigNotes"></textarea></div>
+        <button type="submit" class="btn-auth">Save Pig</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Health Modal -->
+  <div id="healthModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('healthModal')">&times;</span>
+      <h2>Add/Edit Health Record</h2>
+      <form onsubmit="return validateHealth(event)">
+        <div class="form-group"><label>Pig ID</label><input type="number" id="healthPigId" required></div>
+        <div class="form-group"><label>Symptoms</label><input type="text" id="symptoms" required></div>
+        <div class="form-group"><label>Diagnosis</label><input type="text" id="diagnosis" required></div>
+        <div class="form-group"><label>Treatment</label><input type="text" id="treatment"></div>
+        <div class="form-group"><label>Mortality</label>
+          <select id="mortality">
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Date Recorded</label><input type="date" id="recordedAt" required></div>
+        <div class="form-group"><label>Caretaker ID</label><input type="text" id="healthCaretaker" required></div>
+        <button type="submit" class="btn-auth">Save Record</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Success & Error Modals -->
+  <div id="successModal" class="modal">
+    <div class="modal-content">
+      <h3>✅ Record saved successfully!</h3>
+      <button onclick="closeModal('successModal')">OK</button>
+    </div>
+  </div>
+  <div id="errorModal" class="modal">
+    <div class="modal-content">
+      <h3>❌ Error: Please check your inputs</h3>
+      <button onclick="closeModal('errorModal')">OK</button>
+    </div>
+  </div>
+
+  <script>
+    function showView(view) {
+      document.querySelectorAll(".record-view").forEach(v => v.classList.remove("active"));
+      document.getElementById(view).classList.add("active");
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelector(`.tab-btn[onclick="showView('${view}')"]`).classList.add("active");
+    }
+
+    function openModal(id) { document.getElementById(id).style.display = "block"; }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+
+    // Validation Functions
+    function validateLitter(e){
+      e.preventDefault();
+      const size = document.getElementById("litterSize").value;
+      if(size <= 0){ openModal("errorModal"); return false; }
+      closeModal("litterModal"); openModal("successModal"); return true;
+    }
+    function validatePig(e){
+      e.preventDefault();
+      const date = document.getElementById("pigBirthDate").value;
+      if(!date){ openModal("errorModal"); return false; }
+      closeModal("pigModal"); openModal("successModal"); return true;
+    }
+    function validateHealth(e){
+      e.preventDefault();
+      const pigId = document.getElementById("healthPigId").value;
+      if(pigId <= 0){ openModal("errorModal"); return false; }
+      closeModal("healthModal"); openModal("successModal"); return true;
+    }
+  </script>
+</body>
+</html>

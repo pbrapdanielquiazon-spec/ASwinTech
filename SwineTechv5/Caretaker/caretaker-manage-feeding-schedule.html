@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Feeding Logs & Schedules</title>
+  <link rel="stylesheet" href="caretaker.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Simple tabs */
+    .tabs { display: flex; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+    .tab { padding: 10px 20px; cursor: pointer; }
+    .tab.active { border-bottom: 3px solid #ff4081; font-weight: bold; color: #ff4081; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html"><i class="fa-solid fa-clipboard-list"></i> Dashboard</a>
+      <a href="caretaker-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i>Manage Pig Records</a>
+      <a href="caretaker-manage-feeding-schedule.html" class="active"><i class="fa-solid fa-bowl-food"></i> Manage Feeding and Schedules</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Feeding Management</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('logs')">Feeding Logs</div>
+      <div class="tab" onclick="switchTab('schedules')">Feeding Schedules</div>
+    </div>
+
+    <!-- Feeding Logs -->
+    <section id="logs" class="tab-content active">
+      <button class="btn-add" onclick="openFeedingModal()">+ Log Feeding</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Log ID</th>
+            <th>Litter ID</th>
+            <th>Feed Type</th>
+            <th>Quantity (kg)</th>
+            <th>Feeding Time</th>
+            <th>Caretaker</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>12</td>
+            <td>Grower Feed</td>
+            <td>3.0</td>
+            <td>2025-09-10 08:00 AM</td>
+            <td>Staff-01</td>
+            <td>
+              <button class="btn-edit" onclick="openFeedingModal()">Edit</button>
+              <button class="btn-delete">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Feeding Schedules -->
+    <section id="schedules" class="tab-content">
+      <button class="btn-add" onclick="openScheduleModal()">+ Set Feeding Schedule</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Schedule ID</th>
+            <th>Litter ID</th>
+            <th>Feed Type</th>
+            <th>Quantity (kg)</th>
+            <th>Scheduled Time</th>
+            <th>Assigned Caretaker</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>101</td>
+            <td>12</td>
+            <td>Starter Feed</td>
+            <td>2.5</td>
+            <td>2025-09-12 06:00 AM</td>
+            <td>Staff-02</td>
+            <td>Pending</td>
+            <td>
+              <button class="btn-edit" onclick="openScheduleModal()">Edit</button>
+              <button class="btn-delete">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Feeding Log Modal -->
+  <div id="feedingModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeFeedingModal()">&times;</span>
+      <h2>Add/Edit Feeding Log</h2>
+      <form>
+        <div class="form-group">
+          <label for="litter_id">Litter ID</label>
+          <input type="number" id="litter_id" name="litter_id" required>
+        </div>
+        <div class="form-group">
+          <label for="feed_type">Feed Type</label>
+          <input type="text" id="feed_type" name="feed_type" required>
+        </div>
+        <div class="form-group">
+          <label for="quantity">Quantity (kg)</label>
+          <input type="number" id="quantity" name="quantity" step="0.1" required>
+        </div>
+        <div class="form-group">
+          <label for="feeding_time">Feeding Time</label>
+          <input type="datetime-local" id="feeding_time" name="feeding_time" required>
+        </div>
+        <button type="submit" class="btn-auth">Save Log</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Feeding Schedule Modal -->
+  <div id="scheduleModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeScheduleModal()">&times;</span>
+      <h2>Add/Edit Feeding Schedule</h2>
+      <form>
+        <div class="form-group">
+          <label for="schedule_litter_id">Litter ID</label>
+          <input type="number" id="schedule_litter_id" name="schedule_litter_id" required>
+        </div>
+        <div class="form-group">
+          <label for="schedule_feed_type">Feed Type</label>
+          <input type="text" id="schedule_feed_type" name="schedule_feed_type" required>
+        </div>
+        <div class="form-group">
+          <label for="schedule_quantity">Quantity (kg)</label>
+          <input type="number" id="schedule_quantity" name="schedule_quantity" step="0.1" required>
+        </div>
+        <div class="form-group">
+          <label for="schedule_time">Scheduled Time</label>
+          <input type="datetime-local" id="schedule_time" name="schedule_time" required>
+        </div>
+        <div class="form-group">
+          <label for="caretaker">Assign Caretaker</label>
+          <input type="text" id="caretaker" name="caretaker" required>
+        </div>
+        <button type="submit" class="btn-auth">Save Schedule</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Tab switcher
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('.tab:nth-child('+(tab === 'logs' ? 1 : 2)+')').classList.add('active');
+      document.getElementById(tab).classList.add('active');
+    }
+
+    // Feeding Log Modal
+    function openFeedingModal(){ document.getElementById("feedingModal").style.display="block"; }
+    function closeFeedingModal(){ document.getElementById("feedingModal").style.display="none"; }
+
+    // Feeding Schedule Modal
+    function openScheduleModal(){ document.getElementById("scheduleModal").style.display="block"; }
+    function closeScheduleModal(){ document.getElementById("scheduleModal").style.display="none"; }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      if (event.target.classList.contains('modal')) {
+        event.target.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

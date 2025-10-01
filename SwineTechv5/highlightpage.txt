@@ -1,0 +1,61 @@
+Got it 👍 you want the Profile button in your navbar to highlight when the user is on the profile.html page — just like your Login/Register buttons do on their respective pages.
+
+There are two ways to do this:
+
+🔹 1. Manual Way (simple, static HTML)
+
+On each page, you add class="active" to the link for that page.
+For example, in profile.html:
+
+<header class="navbar">
+  <div class="logo">🐖 SwineTech</div>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="profile.html" class="active">Profile</a>
+    <a href="logout.php" class="btn-logout">Logout</a>
+  </nav>
+</header>
+
+
+In dashboard.html:
+
+<a href="dashboard.html" class="active">Dashboard</a>
+<a href="profile.html">Profile</a>
+
+🔹 2. Automatic Way (JavaScript)
+
+If you don’t want to manually edit every page, you can use a script that checks the current URL and highlights the right link.
+
+Add this to a global JS file (e.g., navbar.js):
+// highlight current nav link
+document.addEventListener("DOMContentLoaded", function() {
+  const currentPage = window.location.pathname.split("/").pop(); // e.g., profile.html
+  const navLinks = document.querySelectorAll(".navbar nav a");
+
+  navLinks.forEach(link => {
+    if (link.getAttribute("href") === currentPage) {
+      link.classList.add("active");
+    }
+  });
+});
+
+Link it in your HTML (before </body>):
+<script src="js/navbar.js"></script>
+
+🔹 CSS (works for both methods)
+.navbar nav a.active {
+  color: #ff4081;
+  font-weight: bold;
+  border-bottom: 2px solid #ff4081;
+}
+
+
+✅ Result:
+
+On profile.html, Profile link highlights.
+
+On dashboard.html, Dashboard link highlights.
+
+Works automatically if you use the JS method.
+
+👉 Do you want me to make your Login/Register/Guest pages also use this auto-highlighting navbar system, so everything is consistent without you manually setting class="active"?

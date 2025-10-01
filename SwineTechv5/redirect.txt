@@ -1,0 +1,116 @@
+🔹 Flow: What happens after login?
+
+User submits login form
+
+Inputs: username + password.
+
+Backend verifies credentials
+
+Checks in the users table.
+
+If valid, fetches the role (admin, sales, procurement, caretaker, client).
+
+System sets session
+
+Stores user info (user_id, username, role).
+
+Redirects to correct dashboard
+
+admin → dashboard-admin.html
+
+sales → dashboard-sales.html
+
+procurement → dashboard-procurement.html
+
+caretaker → dashboard-caretaker.html
+
+client → dashboard-client.html
+
+Frontend reacts
+
+Sidebar/menu items are shown depending on role.
+
+Unauthorized pages are blocked.
+
+🔹 Example PHP (login + redirect)
+<?php
+session_start();
+include 'db.php'; // database connection
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    // Check user in DB
+    $query = "SELECT * FROM users WHERE username = '$username' LIMIT 1";
+    $result = mysqli_query($conn, $query);
+    $user = mysqli_fetch_assoc($result);
+
+    if ($user && password_verify($password, $user['password'])) {
+        // Store session
+        $_SESSION['user_id'] = $user['user_id'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['name'] = $user['name'];
+
+        // Redirect based on role
+        switch ($user['role']) {
+            case 'admin':
+                header("Location: dashboard-admin.html");
+                break;
+            case 'sales':
+                header("Location: dashboard-sales.html");
+                break;
+            case 'procurement':
+                header("Location: dashboard-procurement.html");
+                break;
+            case 'caretaker':
+                header("Location: dashboard-caretaker.html");
+                break;
+            case 'client':
+                header("Location: dashboard-client.html");
+                break;
+            default:
+                header("Location: login.html?error=role_not_found");
+                break;
+        }
+        exit();
+    } else {
+        header("Location: login.html?error=invalid");
+        exit();
+    }
+}
+?>
+
+🔹 Example JS (if you want frontend-only simulation)
+// Simulated login role (replace with backend data later)
+const role = "sales"; // change this to admin/procurement/caretaker/client
+
+if (role === "admin") {
+  window.location.href = "dashboard-admin.html";
+} else if (role === "sales") {
+  window.location.href = "dashboard-sales.html";
+} else if (role === "procurement") {
+  window.location.href = "dashboard-procurement.html";
+} else if (role === "caretaker") {
+  window.location.href = "dashboard-caretaker.html";
+} else if (role === "client") {
+  window.location.href = "dashboard-client.html";
+} else {
+  window.location.href = "login.html?error=role_not_found";
+}
+
+🔹 Example Table (Role → Path)
+Role	Redirect Page
+Admin	dashboard-admin.html
+Sales Staff	dashboard-sales.html
+Procurement	dashboard-procurement.html
+Caretaker	dashboard-caretaker.html
+Client	dashboard-client.html
+
+👉 With this setup:
+
+After login, the system checks role and routes to the correct dashboard.
+
+Each dashboard has its own sidebar and modules.
+
+Unauthorized users can’t access other dashboards (you’d enforce this in PHP by checking $_SESSION['role']).

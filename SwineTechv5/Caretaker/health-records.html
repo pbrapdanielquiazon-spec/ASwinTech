@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Caretaker Table</title>
+  <link rel="stylesheet" href="caretaker.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html">Dashboard</a>
+      <a href="pig-records-caretaker.html" class="active">Pig Records</a>
+      <a href="feeding-logs.html">Feeding Logs</a>
+      <a href="health-records.html">Health Records</a>
+      <a href="logout.php" class="btn-logout">Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+<main class="dashboard">
+  <h1>Health Records</h1>
+  <button class="btn-add">+ Add Health Log</button>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Record ID</th>
+        <th>Pig ID</th>
+        <th>Condition</th>
+        <th>Treatment</th>
+        <th>Status</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>101</td>
+        <td>Cough</td>
+        <td>Antibiotics</td>
+        <td>Ongoing</td>
+        <td>2025-09-08</td>
+        <td><button class="btn-edit">Edit</button></td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>
