@@ -109,16 +109,28 @@
     <!-- Archived -->
     <section id="archived" class="record-view">
       <h2>Archived Records</h2>
+      <div style="margin-bottom:14px;">
+        <label>Show: </label>
+        <select id="archiveFilter" onchange="filterArchived()">
+          <option value="all">All</option>
+          <option value="log">Feeding Logs</option>
+          <option value="schedule">Feeding Schedules</option>
+        </select>
+      </div>
 
-      <h3>🍽 Archived Feeding Logs</h3>
-      <table class="admin-table"><thead>
-        <tr><th>Log ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Feeding Time</th><th>Caretaker</th><th>Actions</th></tr>
-      </thead><tbody id="archivedLogs"></tbody></table>
+      <div class="archived-section" data-type="log" style="margin-bottom:18px;">
+        <h3>🍽 Archived Feeding Logs</h3>
+        <table class="admin-table"><thead>
+          <tr><th>Log ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Feeding Time</th><th>Caretaker</th><th>Actions</th></tr>
+        </thead><tbody id="archivedLogs"></tbody></table>
+      </div>
 
-      <h3>📅 Archived Feeding Schedules</h3>
-      <table class="admin-table"><thead>
-        <tr><th>Schedule ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Scheduled Time</th><th>Assigned Caretaker</th><th>Status</th><th>Actions</th></tr>
-      </thead><tbody id="archivedSchedules"></tbody></table>
+      <div class="archived-section" data-type="schedule">
+        <h3>📅 Archived Feeding Schedules</h3>
+        <table class="admin-table"><thead>
+          <tr><th>Schedule ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Scheduled Time</th><th>Assigned Caretaker</th><th>Status</th><th>Actions</th></tr>
+        </thead><tbody id="archivedSchedules"></tbody></table>
+      </div>
     </section>
   </main>
 
@@ -270,24 +282,29 @@
     return true;
   }
 
-  
   function confirmArchive(btn,tableId,archiveId){
-    archiveTargetRow=btn.closest("tr");
-    archiveTargetTable=tableId;
-    archiveTargetType=archiveId;
+    archiveTargetRow = btn.closest("tr");
+    archiveTargetTable = tableId;
+    archiveTargetType = archiveId;
     openModal("archiveModal");
   }
 
   function archiveYes(){
     if(archiveTargetRow){
-      let clone=archiveTargetRow.cloneNode(true);
+      let clone = archiveTargetRow.cloneNode(true);
       clone.querySelector(".btn-edit")?.remove();
-      let restoreBtn=document.createElement("button");
-      restoreBtn.className="btn-restore";
-      restoreBtn.innerText="Restore";
-      restoreBtn.onclick=function(){ restoreRecord(clone,archiveTargetTable); };
-      clone.querySelector("td:last-child").innerHTML="";
+
+      // store original table id
+      clone.dataset.originalTable = archiveTargetTable;
+
+      let restoreBtn = document.createElement("button");
+      restoreBtn.className = "btn-restore";
+      restoreBtn.innerText = "Restore";
+      restoreBtn.onclick = function(){ restoreRecord(clone); };
+
+      clone.querySelector("td:last-child").innerHTML = "";
       clone.querySelector("td:last-child").appendChild(restoreBtn);
+
       document.getElementById(archiveTargetType).appendChild(clone);
       archiveTargetRow.remove();
     }
@@ -296,13 +313,18 @@
 
   function archiveNo(){ closeModal("archiveModal"); }
 
-  function restoreRecord(row,tableId){
-    let restoreClone=row.cloneNode(true);
+  function restoreRecord(row){
+    let restoreClone = row.cloneNode(true);
     restoreClone.querySelector(".btn-restore").remove();
-    let type=tableId.replace("Table","");
-    restoreClone.querySelector("td:last-child").innerHTML=
-      `<button class="btn-edit" onclick="editRecord(this,'${type}')">Edit</button>
-       <button class="btn-archive" onclick="confirmArchive(this,'${tableId}','archived${capitalize(type)}s')">Archive</button>`;
+
+    // use stored table id
+    let tableId = row.dataset.originalTable;
+    let type = tableId.replace("Table","");
+
+    restoreClone.querySelector("td:last-child").innerHTML =
+      `<button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+       <button class='btn-archive' onclick="confirmArchive(this,'${tableId}','archived${capitalize(type)}')">Archive</button>`;
+
     document.getElementById(tableId).appendChild(restoreClone);
     row.remove();
   }
