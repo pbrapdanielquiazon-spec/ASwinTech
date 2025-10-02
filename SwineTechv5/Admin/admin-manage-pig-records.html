@@ -420,7 +420,6 @@
     return true;
   }
 
-  // Archive with confirmation
   function confirmArchive(btn,tableId,archiveId){
     archiveTargetRow = btn.closest("tr");
     archiveTargetTable = tableId;
@@ -430,39 +429,42 @@
 
   function archiveYes(){
     if(archiveTargetRow){
-      let clone=archiveTargetRow.cloneNode(true);
+      let clone = archiveTargetRow.cloneNode(true);
       clone.querySelector(".btn-edit")?.remove();
-      let restoreBtn=document.createElement("button");
-      restoreBtn.className="btn-restore";
-      restoreBtn.innerText="Restore";
-      restoreBtn.onclick=function(){ restoreRecord(clone,archiveTargetTable); };
-      clone.querySelector("td:last-child").innerHTML="";
+
+      // store original table id
+      clone.dataset.originalTable = archiveTargetTable;
+
+      let restoreBtn = document.createElement("button");
+      restoreBtn.className = "btn-restore";
+      restoreBtn.innerText = "Restore";
+      restoreBtn.onclick = function(){ restoreRecord(clone); };
+
+      clone.querySelector("td:last-child").innerHTML = "";
       clone.querySelector("td:last-child").appendChild(restoreBtn);
+
       document.getElementById(archiveTargetType).appendChild(clone);
       archiveTargetRow.remove();
     }
     closeModal("archiveModal");
   }
+
   function archiveNo(){ closeModal("archiveModal"); }
 
-  // Restore record
-  function restoreRecord(row,tableId){
-    let restoreClone=row.cloneNode(true);
+  function restoreRecord(row){
+    let restoreClone = row.cloneNode(true);
     restoreClone.querySelector(".btn-restore").remove();
-    let type=tableId.replace("Table","");
-    restoreClone.querySelector("td:last-child").innerHTML=
+
+    // use stored table id
+    let tableId = row.dataset.originalTable;
+    let type = tableId.replace("Table","");
+
+    restoreClone.querySelector("td:last-child").innerHTML =
       `<button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
        <button class='btn-archive' onclick="confirmArchive(this,'${tableId}','archived${capitalize(type)}')">Archive</button>`;
+
     document.getElementById(tableId).appendChild(restoreClone);
     row.remove();
-  }
-
-  // Filter archived view
-  function filterArchived(){
-    let v=document.getElementById("archiveFilter").value;
-    document.querySelectorAll(".archived-section").forEach(sec=>{
-      sec.style.display=(v==="all" || sec.dataset.type===v)?"block":"none";
-    });
   }
 
   function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
