@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | My Profile</title>
+  <link rel="stylesheet" href="client.css">
+  <link rel="stylesheet" href="admin.css"> <!-- shared styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html" class="active"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="available-pigs.html"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="lechon-services.html"><i class="fa-solid fa-drumstick-bite"></i> Lechon Services</a>
+      <a href="bookings-client.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="inquiries-client.html"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="feedback-client.html"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+      <a href="receipts.html"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>My Profile</h1>
+    <p class="sub-text">Manage your personal details, security, and profile picture.</p>
+
+    <div class="profile-container">
+      <form action="update_profile.php" method="POST" enctype="multipart/form-data" class="profile-form">
+
+        <!-- Profile Picture Section -->
+        <section class="profile-section">
+          <h2><i class="fa-solid fa-image"></i> Profile Picture</h2>
+          <div class="profile-picture">
+            <img src="images/default-profile.png" alt="Profile Picture" id="profilePreview">
+            <label for="profile_picture" class="btn-upload">
+              <i class="fa-solid fa-upload"></i> Upload New
+            </label>
+            <input type="file" id="profile_picture" name="profile_picture" accept="image/*" onchange="previewImage(event)">
+          </div>
+        </section>
+
+        <!-- Personal Information Section -->
+        <section class="profile-section">
+          <h2><i class="fa-solid fa-id-card"></i> Personal Information</h2>
+          <div class="form-group">
+            <label for="fullname">Full Name</label>
+            <input type="text" id="fullname" name="fullname" value="Juan Dela Cruz" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" value="juan@email.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" value="juan123" required>
+          </div>
+        </section>
+
+        <!-- Security Section -->
+        <section class="profile-section">
+          <h2><i class="fa-solid fa-lock"></i> Security</h2>
+          <div class="form-group">
+            <label for="password">New Password</label>
+            <input type="password" id="password" name="password" placeholder="Leave blank if unchanged">
+          </div>
+
+          <div class="form-group">
+            <label for="confirm_password">Confirm New Password</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="Leave blank if unchanged">
+          </div>
+        </section>
+
+        <!-- Save Button -->
+        <div class="form-actions">
+          <button type="submit" class="btn-auth"><i class="fa-solid fa-save"></i> Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    // Preview uploaded profile image
+    function previewImage(event) {
+      const reader = new FileReader();
+      reader.onload = function(){
+        document.getElementById('profilePreview').src = reader.result;
+      };
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  </script>
+</body>
+</html>

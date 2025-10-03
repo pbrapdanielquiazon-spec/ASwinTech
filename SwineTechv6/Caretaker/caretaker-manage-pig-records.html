@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Pig Records</title>
+  <link rel="stylesheet" href="caretaker.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Tabs */
+    .tabs { margin: 20px 0; }
+    .tab-btn {
+      background: #f0f0f0; border: none; padding: 10px 20px;
+      cursor: pointer; margin-right: 5px; border-radius: 5px;
+    }
+    .tab-btn.active { background: #43A047; color: #fff; }
+    .record-view { display: none; }
+    .record-view.active { display: block; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content {
+      background: #fff; margin: 5% auto; padding: 20px; border-radius: 8px;
+      width: 500px; max-width: 90%;
+    }
+    .modal h2 { margin-bottom: 15px; }
+    .close { float: right; font-size: 22px; cursor: pointer; }
+
+    /* Forms & Buttons */
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    .btn-auth { background: #43A047; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+    .btn-auth:hover { background: #2e7d32; }
+    .btn-add, .btn-edit, .btn-archive, .btn-restore {
+      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
+    }
+    .btn-add { background: #29B6F6; color: #fff; }
+    .btn-edit { background: #FFA726; color: #fff; }
+    .btn-archive { background: #EF5350; color: #fff; }
+    .btn-restore { background: #29B6F6; color: #fff; }
+    .filter-box { margin: 10px 0; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .admin-table th { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+    <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html"><i class="fa-solid fa-clipboard-list"></i> Dashboard</a>
+      <a href="caretaker-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="caretaker-manage-pig-records.html" class="active"><i class="fa-solid fa-piggy-bank"></i>Manage Pig Records</a>
+      <a href="caretaker-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i>Manage Feeding and Schedules</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Pig Records</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('litter')">🐖 Litter Records</button>
+      <button class="tab-btn" onclick="showView('individual')">🐷 Individual Pigs</button>
+      <button class="tab-btn" onclick="showView('health')">❤️ Health Records</button>
+      <button class="tab-btn" onclick="showView('breeding')">🧬 Breeding Records</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Records</button>
+    </div>
+
+    <!-- Litter -->
+    <section id="litter" class="record-view active">
+      <h2>Litter Records</h2>
+      <button class="btn-add" onclick="openModal('addLitterModal')">+ Add New Litter</button>
+      <table class="admin-table"><thead>
+        <tr><th>Litter_ID</th><th>Sow_ID</th><th>Birth_Date</th><th>Litter_Size</th><th>Caretaker_ID</th><th>Actions</th></tr>
+      </thead><tbody id="litterTable">
+        <tr>
+          <td>1</td><td>Sow-A1</td><td>2025-01-05</td><td>8</td><td>Staff-01</td>
+          <td><button class='btn-edit' onclick="editRecord(this,'litter')">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(this,'litterTable','archivedLitter')">Archive</button></td>
+        </tr>
+      </tbody></table>
+    </section>
+
+    <!-- Individual -->
+    <section id="individual" class="record-view">
+      <h2>Individual Pig Records</h2>
+      <button class="btn-add" onclick="openModal('addPigModal')">+ Add New Pig</button>
+      <table class="admin-table"><thead>
+        <tr><th>Pig_ID</th><th>Litter_ID</th><th>Sow_Identifier</th><th>Birth_Date</th><th>Status</th><th>Availability</th><th>Notes</th><th>Actions</th></tr>
+      </thead><tbody id="pigTable">
+        <tr><td>P-001</td><td>1</td><td>Sow-A1</td><td>2025-01-05</td><td>Healthy</td><td>For Sale</td><td>Strong piglet</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'pig')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'pigTable','archivedPig')">Archive</button></td></tr>
+      </tbody></table>
+    </section>
+
+    <!-- Health -->
+    <section id="health" class="record-view">
+      <h2>Pig Health Records</h2>
+      <button class="btn-add" onclick="openModal('addHealthModal')">+ Add Health Record</button>
+      <table class="admin-table"><thead>
+        <tr><th>Health_Record_ID</th><th>Pig_ID</th><th>Symptoms</th><th>Diagnosis</th><th>Treatment</th><th>Mortality</th><th>Recorded_at</th><th>Caretaker_ID</th><th>Actions</th></tr>
+      </thead><tbody id="healthTable">
+        <tr><td>HR-01</td><td>P-001</td><td>Coughing</td><td>Flu</td><td>Antibiotics</td><td>No</td><td>2025-02-01</td><td>Staff-02</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'health')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'healthTable','archivedHealth')">Archive</button></td></tr>
+      </tbody></table>
+    </section>
+
+    <!-- Breeding -->
+    <section id="breeding" class="record-view">
+      <h2>Breeding Records</h2>
+      <button class="btn-add" onclick="openModal('addBreedingModal')">+ Add Breeding Record</button>
+      <table class="admin-table"><thead>
+        <tr><th>ID</th><th>Sow</th><th>Boar</th><th>Date</th><th>Expected</th><th>Outcome</th><th>Actions</th></tr>
+      </thead><tbody id="breedingTable">
+        <tr><td>BR-01</td><td>Sow-A1</td><td>Boar-B1</td><td>2025-02-10</td><td>2025-06-10</td><td>Pending</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'breeding')">Edit</button><button class="btn-archive" onclick="confirmArchive(this,'breedingTable','archivedBreeding')">Archive</button></td></tr>
+      </tbody></table>
+    </section>
+
+    <!-- Archived -->
+    <section id="archived" class="record-view">
+      <h2>Archived Records</h2>
+      <div class="filter-box">
+        <label>Show:</label>
+        <select id="archiveFilter" onchange="filterArchived()">
+          <option value="all">All</option>
+          <option value="litter">Litter</option>
+          <option value="pig">Pig</option>
+          <option value="health">Health</option>
+          <option value="breeding">Breeding</option>
+        </select>
+      </div>
+
+      <div class="archived-section" data-type="litter">
+        <h3>🐖 Archived Litter</h3>
+        <table class="admin-table">
+          <thead><tr><th>Litter_ID</th><th>Sow_ID</th><th>Birth_Date</th><th>Litter_Size</th><th>Caretaker_ID</th><th>Actions</th></tr></thead>
+          <tbody id="archivedLitter"></tbody>
+        </table>
+      </div>
+
+      <div class="archived-section" data-type="pig">
+        <h3>🐷 Archived Pigs</h3>
+        <table class="admin-table">
+          <thead><tr><th>Pig_ID</th><th>Litter_ID</th><th>Sow_Identifier</th><th>Birth_Date</th><th>Status</th><th>Availability</th><th>Notes</th><th>Actions</th></tr></thead>
+          <tbody id="archivedPig"></tbody>
+        </table>
+      </div>
+
+      <div class="archived-section" data-type="health">
+        <h3>❤️ Archived Health</h3>
+        <table class="admin-table">
+          <thead><tr><th>Health_Record_ID</th><th>Pig_ID</th><th>Symptoms</th><th>Diagnosis</th><th>Treatment</th><th>Mortality</th><th>Recorded_at</th><th>Caretaker_ID</th><th>Actions</th></tr></thead>
+          <tbody id="archivedHealth"></tbody>
+        </table>
+      </div>
+
+      <div class="archived-section" data-type="breeding">
+        <h3>🧬 Archived Breeding</h3>
+        <table class="admin-table">
+          <thead><tr><th>ID</th><th>Sow</th><th>Boar</th><th>Date</th><th>Expected</th><th>Outcome</th><th>Actions</th></tr></thead>
+          <tbody id="archivedBreeding"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <!-- Add/Edit Litter -->
+  <div id="addLitterModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addLitterModal')">&times;</span>
+    <h2>Add Litter</h2>
+    <form onsubmit="return addRecord(event,'litter')">
+      <div class="form-group"><label>Sow_ID</label><input type="text" id="litterSow"></div>
+      <div class="form-group"><label>Birth_Date</label><input type="date" id="litterBirth"></div>
+      <div class="form-group"><label>Litter_Size</label><input type="number" id="litterSize"></div>
+      <div class="form-group"><label>Caretaker_ID</label><input type="text" id="litterCaretaker"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editLitterModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editLitterModal')">&times;</span>
+    <h2>Edit Litter</h2>
+    <form onsubmit="return updateRecord(event,'litter')">
+      <div class="form-group"><label>Sow_ID</label><input type="text" id="editLitterSow"></div>
+      <div class="form-group"><label>Birth_Date</label><input type="date" id="editLitterBirth"></div>
+      <div class="form-group"><label>Litter_Size</label><input type="number" id="editLitterSize"></div>
+      <div class="form-group"><label>Caretaker_ID</label><input type="text" id="editLitterCaretaker"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Add/Edit Pig -->
+  <div id="addPigModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addPigModal')">&times;</span>
+    <h2>Add Pig</h2>
+    <form onsubmit="return addRecord(event,'pig')">
+      <div class="form-group"><label>Litter_ID</label><input type="text" id="pigLitter"></div>
+      <div class="form-group"><label>Sow_Identifier</label><input type="text" id="pigSow"></div>
+      <div class="form-group"><label>Birth_Date</label><input type="date" id="pigBirth"></div>
+      <div class="form-group"><label>Status</label><select id="pigStatus"><option>Healthy</option><option>Sick</option><option>Sold</option><option>Deceased</option></select></div>
+      <div class="form-group"><label>Availability</label><select id="pigAvail"><option>For Sale</option><option>For Breeding</option><option>Not Available</option></select></div>
+      <div class="form-group"><label>Notes</label><textarea id="pigNotes"></textarea></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editPigModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editPigModal')">&times;</span>
+    <h2>Edit Pig</h2>
+    <form onsubmit="return updateRecord(event,'pig')">
+      <div class="form-group"><label>Litter_ID</label><input type="text" id="editPigLitter"></div>
+      <div class="form-group"><label>Sow_Identifier</label><input type="text" id="editPigSow"></div>
+      <div class="form-group"><label>Birth_Date</label><input type="date" id="editPigBirth"></div>
+      <div class="form-group"><label>Status</label><select id="editPigStatus"><option>Healthy</option><option>Sick</option><option>Sold</option><option>Deceased</option></select></div>
+      <div class="form-group"><label>Availability</label><select id="editPigAvail"><option>For Sale</option><option>For Breeding</option><option>Not Available</option></select></div>
+      <div class="form-group"><label>Notes</label><textarea id="editPigNotes"></textarea></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Add/Edit Health -->
+  <div id="addHealthModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addHealthModal')">&times;</span>
+    <h2>Add Health</h2>
+    <form onsubmit="return addRecord(event,'health')">
+      <div class="form-group"><label>Pig_ID</label><input type="text" id="healthPig"></div>
+      <div class="form-group"><label>Symptoms</label><input type="text" id="healthSymptoms"></div>
+      <div class="form-group"><label>Diagnosis</label><input type="text" id="healthDiagnosis"></div>
+      <div class="form-group"><label>Treatment</label><input type="text" id="healthTreatment"></div>
+      <div class="form-group"><label>Mortality</label><select id="healthMortality"><option>No</option><option>Yes</option></select></div>
+      <div class="form-group"><label>Recorded_at</label><input type="date" id="healthDate"></div>
+      <div class="form-group"><label>Caretaker_ID</label><input type="text" id="healthCaretaker"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editHealthModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editHealthModal')">&times;</span>
+    <h2>Edit Health</h2>
+    <form onsubmit="return updateRecord(event,'health')">
+      <div class="form-group"><label>Pig_ID</label><input type="text" id="editHealthPig"></div>
+      <div class="form-group"><label>Symptoms</label><input type="text" id="editHealthSymptoms"></div>
+      <div class="form-group"><label>Diagnosis</label><input type="text" id="editHealthDiagnosis"></div>
+      <div class="form-group"><label>Treatment</label><input type="text" id="editHealthTreatment"></div>
+      <div class="form-group"><label>Mortality</label><select id="editHealthMortality"><option>No</option><option>Yes</option></select></div>
+      <div class="form-group"><label>Date</label><input type="date" id="editHealthDate"></div>
+      <div class="form-group"><label>Caretaker_ID</label><input type="text" id="editHealthCaretaker"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Add/Edit Breeding -->
+  <div id="addBreedingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addBreedingModal')">&times;</span>
+    <h2>Add Breeding</h2>
+    <form onsubmit="return addRecord(event,'breeding')">
+      <div class="form-group"><label>Sow</label><input type="text" id="breedSow"></div>
+      <div class="form-group"><label>Boar</label><input type="text" id="breedBoar"></div>
+      <div class="form-group"><label>Date</label><input type="date" id="breedDate"></div>
+      <div class="form-group"><label>Expected</label><input type="date" id="breedExpected"></div>
+      <div class="form-group"><label>Outcome</label><input type="text" id="breedOutcome"></div>
+      <button type="submit" class="btn-auth">Save
+    </form>
+  </div></div>
+
+  <div id="editBreedingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editBreedingModal')">&times;</span>
+    <h2>Edit Breeding</h2>
+    <form onsubmit="return updateRecord(event,'breeding')">
+      <div class="form-group"><label>Sow</label><input type="text" id="editBreedSow"></div>
+      <div class="form-group"><label>Boar</label><input type="text" id="editBreedBoar"></div>
+      <div class="form-group"><label>Date</label><input type="date" id="editBreedDate"></div>
+      <div class="form-group"><label>Expected</label><input type="date" id="editBreedExpected"></div>
+      <div class="form-group"><label>Outcome</label><input type="text" id="editBreedOutcome"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Confirmation Modal for Archive -->
+  <div id="archiveModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Are you sure you want to archive this record?</h3>
+      <button onclick="archiveYes()">Yes, Archive</button>
+      <button onclick="archiveNo()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3>✅ Saved!</h3>
+    <button onclick="closeModal('successModal')">OK</button>
+  </div></div>
+
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3>❌ Invalid Input!</h3>
+    <button onclick="closeModal('errorModal')">OK</button>
+  </div></div>
+
+<script>
+  let editRow = null, archiveTargetRow = null, archiveTargetTable = null, archiveTargetType = null;
+
+  // Switch views
+  function showView(v){
+    document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+    document.getElementById(v).classList.add("active");
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelector(`.tab-btn[onclick="showView('${v}')"]`).classList.add("active");
+  }
+
+  // Open/Close modals
+  function openModal(id){ document.getElementById(id).style.display="block"; }
+  function closeModal(id){ document.getElementById(id).style.display="none"; }
+
+  // Add record
+  function addRecord(e,type){
+    e.preventDefault();
+    let table, rowData;
+    if(type==="litter"){
+      table=litterTable;
+      rowData=[ "NEW", litterSow.value, litterBirth.value, litterSize.value, litterCaretaker.value ];
+    } else if(type==="pig"){
+      table=pigTable;
+      rowData=[ "NEW", pigLitter.value, pigSow.value, pigBirth.value, pigStatus.value, pigAvail.value, pigNotes.value ];
+    } else if(type==="health"){
+      table=healthTable;
+      rowData=[ "HR-NEW", healthPig.value, healthSymptoms.value, healthDiagnosis.value, healthTreatment.value, healthMortality.value, healthDate.value, healthCaretaker.value ];
+    } else if(type==="breeding"){
+      table=breedingTable;
+      rowData=[ "BR-NEW", breedSow.value, breedBoar.value, breedDate.value, breedExpected.value, breedOutcome.value ];
+    }
+
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+
+    let row=table.insertRow();
+    row.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+      `<td><button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+      <button class='btn-archive' onclick="confirmArchive(this,'${table.id}','archived${capitalize(type)}')">Archive</button></td>`;
+
+    closeModal(`add${capitalize(type)}Modal`);
+    openModal("successModal");
+    return true;
+  }
+
+  // Edit record (open modal prefilled)
+  function editRecord(btn,type){
+    let row=btn.closest("tr"), cells=row.cells;
+    editRow=row;
+    if(type==="litter"){
+      editLitterSow.value=cells[1].innerText;
+      editLitterBirth.value=cells[2].innerText;
+      editLitterSize.value=cells[3].innerText;
+      editLitterCaretaker.value=cells[4].innerText;
+      openModal("editLitterModal");
+    } else if(type==="pig"){
+      editPigLitter.value=cells[1].innerText;
+      editPigSow.value=cells[2].innerText;
+      editPigBirth.value=cells[3].innerText;
+      editPigStatus.value=cells[4].innerText;
+      editPigAvail.value=cells[5].innerText;
+      editPigNotes.value=cells[6].innerText;
+      openModal("editPigModal");
+    } else if(type==="health"){
+      editHealthPig.value=cells[1].innerText;
+      editHealthSymptoms.value=cells[2].innerText;
+      editHealthDiagnosis.value=cells[3].innerText;
+      editHealthTreatment.value=cells[4].innerText;
+      editHealthMortality.value=cells[5].innerText;
+      editHealthDate.value=cells[6].innerText;
+      editHealthCaretaker.value=cells[7].innerText;
+      openModal("editHealthModal");
+    } else if(type==="breeding"){
+      editBreedSow.value=cells[1].innerText;
+      editBreedBoar.value=cells[2].innerText;
+      editBreedDate.value=cells[3].innerText;
+      editBreedExpected.value=cells[4].innerText;
+      editBreedOutcome.value=cells[5].innerText;
+      openModal("editBreedingModal");
+    }
+  }
+
+  // Update record
+  function updateRecord(e,type){
+    e.preventDefault();
+    if(!editRow) return false;
+    let rowData;
+    if(type==="litter"){
+      rowData=[ editRow.cells[0].innerText, editLitterSow.value, editLitterBirth.value, editLitterSize.value, editLitterCaretaker.value ];
+    } else if(type==="pig"){
+      rowData=[ editRow.cells[0].innerText, editPigLitter.value, editPigSow.value, editPigBirth.value, editPigStatus.value, editPigAvail.value, editPigNotes.value ];
+    } else if(type==="health"){
+      rowData=[ editRow.cells[0].innerText, editHealthPig.value, editHealthSymptoms.value, editHealthDiagnosis.value, editHealthTreatment.value, editHealthMortality.value, editHealthDate.value, editHealthCaretaker.value ];
+    } else if(type==="breeding"){
+      rowData=[ editRow.cells[0].innerText, editBreedSow.value, editBreedBoar.value, editBreedDate.value, editBreedExpected.value, editBreedOutcome.value ];
+    }
+
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+
+    editRow.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+      `<td><button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+      <button class='btn-archive' onclick="confirmArchive(this,'${editRow.parentNode.id}','archived${capitalize(type)}')">Archive</button></td>`;
+
+    editRow=null;
+    closeModal(`edit${capitalize(type)}Modal`);
+    openModal("successModal");
+    return true;
+  }
+
+  function confirmArchive(btn,tableId,archiveId){
+    archiveTargetRow = btn.closest("tr");
+    archiveTargetTable = tableId;
+    archiveTargetType = archiveId;
+    openModal("archiveModal");
+  }
+
+  function archiveYes(){
+    if(archiveTargetRow){
+      let clone = archiveTargetRow.cloneNode(true);
+      clone.querySelector(".btn-edit")?.remove();
+
+      // store original table id
+      clone.dataset.originalTable = archiveTargetTable;
+
+      let restoreBtn = document.createElement("button");
+      restoreBtn.className = "btn-restore";
+      restoreBtn.innerText = "Restore";
+      restoreBtn.onclick = function(){ restoreRecord(clone); };
+
+      clone.querySelector("td:last-child").innerHTML = "";
+      clone.querySelector("td:last-child").appendChild(restoreBtn);
+
+      document.getElementById(archiveTargetType).appendChild(clone);
+      archiveTargetRow.remove();
+    }
+    closeModal("archiveModal");
+  }
+
+  function archiveNo(){ closeModal("archiveModal"); }
+
+  function restoreRecord(row){
+    let restoreClone = row.cloneNode(true);
+    restoreClone.querySelector(".btn-restore").remove();
+
+    // use stored table id
+    let tableId = row.dataset.originalTable;
+    let type = tableId.replace("Table","");
+
+    restoreClone.querySelector("td:last-child").innerHTML =
+      `<button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+       <button class='btn-archive' onclick="confirmArchive(this,'${tableId}','archived${capitalize(type)}')">Archive</button>`;
+
+    document.getElementById(tableId).appendChild(restoreClone);
+    row.remove();
+  }
+
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Users</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Tabs */
+    .tabs { margin: 20px 0; }
+    .tab-btn {
+      background: #f0f0f0; border: none; padding: 10px 20px;
+      cursor: pointer; margin-right: 5px; border-radius: 5px;
+    }
+    .tab-btn.active { background: #43A047; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Tables */
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .admin-table th { background: #f9f9f9; }
+
+    /* Buttons */
+    .btn-add, .btn-edit, .btn-archive, .btn-restore {
+      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
+    }
+    .btn-add { background: #29B6F6; color: #fff; }
+    .btn-edit { background: #FFA726; color: #fff; }
+    .btn-archive { background: #EF5350; color: #fff; }
+    .btn-restore { background: #29B6F6; color: #fff; }
+  </style>
+</head>
+<body>
+ <!-- Sidebar -->
+ <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html" class="active"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Sales & Expenses</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Users</h1>
+   
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="openTab(event,'activeUsers')">👤 Active Users</button>
+      <button class="tab-btn" onclick="openTab(event,'archivedUsers')">📂 Archived Users</button>
+    </div>
+
+    <!-- Active Users -->
+    <section id="activeUsers" class="tab-content active">
+       <button class="btn-add" onclick="openAddModal()">+ Add New User</button>
+      <table class="admin-table" id="userTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Full Name</th><th>Username</th><th>Email</th>
+            <th>Role</th><th>Status</th><th>Profile Picture</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Juan Dela Cruz</td>
+            <td>juandelacruz</td>
+            <td>juan@email.com</td>
+            <td>Sales</td>
+            <td>Active</td>
+            <td><img src="download.jpg" alt="Profile" width="40"></td>
+            <td>
+              <button class="btn-edit" onclick="openEditModal(this)">Edit</button>
+              <button class="btn-archive" onclick="confirmArchive(this)">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Archived Users -->
+    <section id="archivedUsers" class="tab-content">
+      <h2>Archived Users</h2>
+      <table class="admin-table" id="archivedTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Full Name</th><th>Username</th><th>Email</th>
+            <th>Role</th><th>Status</th><th>Profile Picture</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Archived rows will be moved here -->
+        </tbody>
+      </table>
+    </section>
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">&times;</span>
+        <h2>Edit User</h2>
+        <form id="editForm">
+          <input type="hidden" id="editRowIndex">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="edit_fullname" required>
+          </div>
+          <div class="form-group">
+            <label>Username (locked)</label>
+            <input type="text" id="edit_username" readonly>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="edit_email" required>
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="edit_role">
+              <option value="admin">Admin</option>
+              <option value="sales">Sales Staff</option>
+              <option value="procurement">Procurement Staff</option>
+              <option value="caretaker">Caretaker</option>
+              <option value="client">Client</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="edit_status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-group">
+             <label>Profile Picture</label>
+            <input type="file" id="edit_picture" accept="image/*" onchange="previewImage(this,'editPreview')">
+             <img id="editPreview" src="" alt="Preview" width="80" style="margin-top:10px; display:none;">
+         </div>
+          <button type="submit" class="btn-auth">Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeAddModal()">&times;</span>
+        <h2>Add User</h2>
+        <form id="addForm">
+          <div class="form-group"><label>Full Name</label><input type="text" id="add_fullname" required></div>
+          <div class="form-group"><label>Username</label><input type="text" id="add_username" required></div>
+          <div class="form-group"><label>Password</label><input type="password" id="add_password" required></div>
+          <div class="form-group"><label>Email</label><input type="email" id="add_email" required></div>
+          <div class="form-group"><label>Role</label>
+            <select id="add_role">
+              <option value="admin">Admin</option>
+              <option value="sales">Sales Staff</option>
+              <option value="procurement">Procurement Staff</option>
+              <option value="caretaker">Caretaker</option>
+              <option value="client">Client</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Status</label>
+            <select id="add_status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-group">
+        <label>Profile Picture</label>
+        <input type="file" id="add_picture" accept="image/*" onchange="previewImage(this,'addPreview')">
+        <img id="addPreview" src="" alt="Preview" width="80" style="margin-top:10px; display:none;">
+        </div>
+          <button type="submit" class="btn-auth">Create User</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+      <div class="modal-content">
+        <h3>⚠️ Are you sure you want to save changes?</h3>
+        <button onclick="confirmYes()">Yes</button>
+        <button onclick="confirmNo()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Archive Confirmation Modal -->
+    <div id="archiveModal" class="modal">
+      <div class="modal-content">
+        <h3>⚠️ Are you sure you want to archive this user?</h3>
+        <button onclick="archiveYes()">Yes, Archive</button>
+        <button onclick="archiveNo()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successMessage" class="modal">
+      <div class="modal-content">
+        <h3 id="successText">✅ Success!</h3>
+        <button onclick="closeSuccess()">OK</button>
+      </div>
+    </div>
+  </main>
+
+<script>
+  let pendingAction = null;
+  let editTargetRow = null;
+  let archiveTargetRow = null;
+  let tempImageData = null;
+  // Tabs
+  function openTab(evt, tabName){
+    document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+    document.getElementById(tabName).classList.add("active");
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    evt.currentTarget.classList.add("active");
+  }
+
+  // Edit User
+  function openEditModal(btn){
+    let row = btn.closest("tr");
+    editTargetRow = row;
+    document.getElementById("edit_fullname").value = row.cells[1].innerText;
+    document.getElementById("edit_username").value = row.cells[2].innerText;
+    document.getElementById("edit_email").value = row.cells[3].innerText;
+    document.getElementById("edit_role").value = row.cells[4].innerText.toLowerCase();
+    document.getElementById("edit_status").value = row.cells[5].innerText.toLowerCase();
+    document.getElementById("edit_picture").value = "";
+    document.getElementById("editModal").style.display="block";
+  }
+  function closeEditModal(){ document.getElementById("editModal").style.display="none"; }
+
+  // Add User
+  function openAddModal(){ document.getElementById("addModal").style.display="block"; }
+  function closeAddModal(){ document.getElementById("addModal").style.display="none"; }
+
+  // Archive
+  function confirmArchive(btn){
+    archiveTargetRow = btn.closest("tr");
+    document.getElementById("archiveModal").style.display="block";
+  }
+  function archiveYes(){
+    if(archiveTargetRow){
+      let archivedTable = document.getElementById("archivedTable");
+      archivedTable.appendChild(archiveTargetRow);
+      archiveTargetRow.querySelector(".btn-archive").remove();
+      let restoreBtn = document.createElement("button");
+      restoreBtn.className = "btn-restore";
+      restoreBtn.innerText = "Restore";
+      restoreBtn.onclick = function(){ restoreUser(this); };
+      archiveTargetRow.querySelector("td:last-child").appendChild(restoreBtn);
+      showSuccess("✅ User archived successfully!");
+    }
+    document.getElementById("archiveModal").style.display="none";
+  }
+  function archiveNo(){ document.getElementById("archiveModal").style.display="none"; }
+
+  function restoreUser(btn){
+    let row = btn.closest("tr");
+    document.getElementById("userTable").appendChild(row);
+    btn.remove();
+    let archiveBtn = document.createElement("button");
+    archiveBtn.className = "btn-archive";
+    archiveBtn.innerText = "Archive";
+    archiveBtn.onclick = function(){ confirmArchive(this); };
+    row.querySelector("td:last-child").appendChild(archiveBtn);
+    showSuccess("✅ User restored successfully!");
+  }
+
+  // Submit handlers
+  document.getElementById("editForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    pendingAction = "edit";
+    document.getElementById("confirmModal").style.display="block";
+  });
+  document.getElementById("addForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    pendingAction = "add";
+    document.getElementById("confirmModal").style.display="block";
+  });
+
+  function confirmYes(){
+    document.getElementById("confirmModal").style.display="none";
+    if(pendingAction === "edit"){ applyEdit(); closeEditModal(); showSuccess("✅ User updated successfully!"); }
+    if(pendingAction === "add"){ applyAdd(); closeAddModal(); showSuccess("✅ User added successfully!"); }
+  }
+  function confirmNo(){ document.getElementById("confirmModal").style.display="none"; }
+
+  function showSuccess(msg){
+    document.getElementById("successText").innerText = msg;
+    document.getElementById("successMessage").style.display="block";
+  }
+  function closeSuccess(){ document.getElementById("successMessage").style.display="none"; }
+
+  // Preview selected profile picture
+function previewImage(input, previewId){
+  const file = input.files[0];
+  const preview = document.getElementById(previewId);
+  if(file){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      preview.src = e.target.result;
+      preview.style.display = "block";
+      tempImageData = e.target.result; // store base64 for saving
+    }
+    reader.readAsDataURL(file);
+  } else {
+    preview.src = "";
+    preview.style.display = "none";
+    tempImageData = null;
+  }
+}
+  function applyEdit(){
+    if(!editTargetRow) return;
+    editTargetRow.cells[1].innerText = document.getElementById("edit_fullname").value;
+    editTargetRow.cells[3].innerText = document.getElementById("edit_email").value;
+    editTargetRow.cells[4].innerText = document.getElementById("edit_role").value;
+    editTargetRow.cells[5].innerText = document.getElementById("edit_status").value;
+
+    if(tempImageData){
+    editTargetRow.cells[6].innerHTML = `<img src="${tempImageData}" width="40">`;
+  }
+  }
+
+  
+
+  function applyAdd(){
+    let table = document.getElementById("userTable");
+    let row = table.insertRow();
+    let id = table.rows.length;
+
+    let imgHTML = tempImageData
+    ? `<img src="${tempImageData}" width="40">`
+    : `<img src="download.jpg" width="40">`;
+
+    row.innerHTML = `
+    <td>${id}</td>
+    <td>${document.getElementById("add_fullname").value}</td>
+    <td>${document.getElementById("add_username").value}</td>
+    <td>${document.getElementById("add_email").value}</td>
+    <td>${document.getElementById("add_role").value}</td>
+    <td>${document.getElementById("add_status").value}</td>
+    <td>${imgHTML}</td>
+    <td>
+      <button class="btn-edit" onclick="openEditModal(this)">Edit</button>
+      <button class="btn-archive" onclick="confirmArchive(this)">Archive</button>
+    </td>
+  `;
+}
+
+
+</script>
+</body>
+</html>

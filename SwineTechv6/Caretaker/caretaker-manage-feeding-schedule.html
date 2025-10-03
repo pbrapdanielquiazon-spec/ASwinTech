@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Feeding & Schedules</title>
+  <link rel="stylesheet" href="caretaker.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Tabs */
+    .tabs { margin: 20px 0; }
+    .tab-btn {
+      background: #f0f0f0; border: none; padding: 10px 20px;
+      cursor: pointer; margin-right: 5px; border-radius: 5px;
+    }
+    .tab-btn.active { background: #43A047; color: #fff; }
+    .record-view { display: none; }
+    .record-view.active { display: block; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content {
+      background: #fff; margin: 5% auto; padding: 20px; border-radius: 8px;
+      width: 500px; max-width: 90%;
+    }
+    .modal h2 { margin-bottom: 15px; }
+    .close { float: right; font-size: 22px; cursor: pointer; }
+
+    /* Forms & Buttons */
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    .btn-auth { background: #43A047; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+    .btn-auth:hover { background: #2e7d32; }
+    .btn-add, .btn-edit, .btn-archive, .btn-restore {
+      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
+    }
+    .btn-add { background: #29B6F6; color: #fff; }
+    .btn-edit { background: #FFA726; color: #fff; }
+    .btn-archive { background: #EF5350; color: #fff; }
+    .btn-restore { background: #29B6F6; color: #fff; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .admin-table th { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+   <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html" class="active"><i class="fa-solid fa-clipboard-list"></i> Dashboard</a>
+      <a href="caretaker-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="caretaker-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i>Manage Pig Records</a>
+      <a href="caretaker-manage-feeding-schedule.html" class="active"><i class="fa-solid fa-bowl-food"></i>Manage Feeding and Schedules</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Feeding & Schedules</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('logs')">🍽 Feeding Logs</button>
+      <button class="tab-btn" onclick="showView('schedules')">📅 Feeding Schedules</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Records</button>
+    </div>
+
+    <!-- Feeding Logs -->
+    <section id="logs" class="record-view active">
+      <h2>Feeding Logs</h2>
+      <button class="btn-add" onclick="openModal('addLogModal')">+ Log Feeding</button>
+      <table class="admin-table"><thead>
+        <tr><th>Log ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity (kg)</th><th>Feeding Time</th><th>Caretaker</th><th>Actions</th></tr>
+      </thead><tbody id="logTable">
+        <tr>
+          <td>1</td><td>12</td><td>Grower Feed</td><td>3.0</td><td>2025-09-10 08:00 AM</td><td>Staff-01</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'log')">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(this,'logTable','archivedLogs')">Archive</button></td>
+        </tr>
+      </tbody></table>
+    </section>
+
+    <!-- Feeding Schedules -->
+    <section id="schedules" class="record-view">
+      <h2>Feeding Schedules</h2>
+      <button class="btn-add" onclick="openModal('addScheduleModal')">+ Set Feeding Schedule</button>
+      <table class="admin-table"><thead>
+        <tr><th>Schedule ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity (kg)</th><th>Scheduled Time</th><th>Assigned Caretaker</th><th>Status</th><th>Actions</th></tr>
+      </thead><tbody id="scheduleTable">
+        <tr>
+          <td>101</td><td>12</td><td>Starter Feed</td><td>2.5</td><td>2025-09-12 06:00 AM</td><td>Staff-02</td><td>Pending</td>
+          <td><button class="btn-edit" onclick="editRecord(this,'schedule')">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(this,'scheduleTable','archivedSchedules')">Archive</button></td>
+        </tr>
+      </tbody></table>
+    </section>
+
+    <!-- Archived -->
+    <section id="archived" class="record-view">
+      <h2>Archived Records</h2>
+      <div style="margin-bottom:14px;">
+        <label>Show: </label>
+        <select id="archiveFilter" onchange="filterArchived()">
+          <option value="all">All</option>
+          <option value="log">Feeding Logs</option>
+          <option value="schedule">Feeding Schedules</option>
+        </select>
+      </div>
+
+      <div class="archived-section" data-type="log" style="margin-bottom:18px;">
+        <h3>🍽 Archived Feeding Logs</h3>
+        <table class="admin-table"><thead>
+          <tr><th>Log ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Feeding Time</th><th>Caretaker</th><th>Actions</th></tr>
+        </thead><tbody id="archivedLogs"></tbody></table>
+      </div>
+
+      <div class="archived-section" data-type="schedule">
+        <h3>📅 Archived Feeding Schedules</h3>
+        <table class="admin-table"><thead>
+          <tr><th>Schedule ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Scheduled Time</th><th>Assigned Caretaker</th><th>Status</th><th>Actions</th></tr>
+        </thead><tbody id="archivedSchedules"></tbody></table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <!-- Add/Edit Feeding Log -->
+  <div id="addLogModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addLogModal')">&times;</span>
+    <h2>Add Feeding Log</h2>
+    <form onsubmit="return addRecord(event,'log')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="logLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="logFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="logQty"></div>
+      <div class="form-group"><label>Feeding Time</label><input type="datetime-local" id="logTime"></div>
+      <div class="form-group"><label>Caretaker</label><input type="text" id="logCaretaker"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editLogModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editLogModal')">&times;</span>
+    <h2>Edit Feeding Log</h2>
+    <form onsubmit="return updateRecord(event,'log')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="editLogLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="editLogFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="editLogQty"></div>
+      <div class="form-group"><label>Feeding Time</label><input type="datetime-local" id="editLogTime"></div>
+      <div class="form-group"><label>Caretaker</label><input type="text" id="editLogCaretaker"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Add/Edit Feeding Schedule -->
+  <div id="addScheduleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addScheduleModal')">&times;</span>
+    <h2>Add Feeding Schedule</h2>
+    <form onsubmit="return addRecord(event,'schedule')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="schLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="schFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="schQty"></div>
+      <div class="form-group"><label>Scheduled Time</label><input type="datetime-local" id="schTime"></div>
+      <div class="form-group"><label>Assigned Caretaker</label><input type="text" id="schCaretaker"></div>
+      <div class="form-group"><label>Status</label><select id="schStatus"><option>Pending</option><option>Completed</option></select></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editScheduleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editScheduleModal')">&times;</span>
+    <h2>Edit Feeding Schedule</h2>
+    <form onsubmit="return updateRecord(event,'schedule')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="editSchLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="editSchFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="editSchQty"></div>
+      <div class="form-group"><label>Scheduled Time</label><input type="datetime-local" id="editSchTime"></div>
+      <div class="form-group"><label>Assigned Caretaker</label><input type="text" id="editSchCaretaker"></div>
+      <div class="form-group"><label>Status</label><select id="editSchStatus"><option>Pending</option><option>Completed</option></select></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Archive Confirmation -->
+  <div id="archiveModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Are you sure you want to archive this record?</h3>
+      <button onclick="archiveYes()">Yes, Archive</button>
+      <button onclick="archiveNo()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3>✅ Saved!</h3>
+    <button onclick="closeModal('successModal')">OK</button>
+  </div></div>
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3>❌ Invalid Input!</h3>
+    <button onclick="closeModal('errorModal')">OK</button>
+  </div></div>
+
+<script>
+  let editRow=null, archiveTargetRow=null, archiveTargetTable=null, archiveTargetType=null;
+
+  function showView(v){
+    document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+    document.getElementById(v).classList.add("active");
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelector(`.tab-btn[onclick="showView('${v}')"]`).classList.add("active");
+  }
+  function openModal(id){ document.getElementById(id).style.display="block"; }
+  function closeModal(id){ document.getElementById(id).style.display="none"; }
+
+  function addRecord(e,type){
+    e.preventDefault();
+    let table,rowData;
+    if(type==="log"){
+      table=logTable;
+      rowData=["NEW", logLitter.value, logFeed.value, logQty.value, logTime.value, logCaretaker.value];
+    } else if(type==="schedule"){
+      table=scheduleTable;
+      rowData=["NEW", schLitter.value, schFeed.value, schQty.value, schTime.value, schCaretaker.value, schStatus.value];
+    }
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+    let row=table.insertRow();
+    row.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+    `<td><button class="btn-edit" onclick="editRecord(this,'${type}')">Edit</button>
+     <button class="btn-archive" onclick="confirmArchive(this,'${table.id}','archived${capitalize(type)}s')">Archive</button></td>`;
+    closeModal(`add${capitalize(type)}Modal`);
+    openModal("successModal");
+    return true;
+  }
+
+  function editRecord(btn,type){
+    let row=btn.closest("tr"),cells=row.cells;
+    editRow=row;
+    if(type==="log"){
+      editLogLitter.value=cells[1].innerText;
+      editLogFeed.value=cells[2].innerText;
+      editLogQty.value=cells[3].innerText;
+      editLogTime.value=cells[4].innerText;
+      editLogCaretaker.value=cells[5].innerText;
+      openModal("editLogModal");
+    } else if(type==="schedule"){
+      editSchLitter.value=cells[1].innerText;
+      editSchFeed.value=cells[2].innerText;
+      editSchQty.value=cells[3].innerText;
+      editSchTime.value=cells[4].innerText;
+      editSchCaretaker.value=cells[5].innerText;
+      editSchStatus.value=cells[6].innerText;
+      openModal("editScheduleModal");
+    }
+  }
+
+  function updateRecord(e,type){
+    e.preventDefault();
+    if(!editRow) return false;
+    let rowData;
+    if(type==="log"){
+      rowData=[editRow.cells[0].innerText, editLogLitter.value, editLogFeed.value, editLogQty.value, editLogTime.value, editLogCaretaker.value];
+    } else if(type==="schedule"){
+      rowData=[editRow.cells[0].innerText, editSchLitter.value, editSchFeed.value, editSchQty.value, editSchTime.value, editSchCaretaker.value, editSchStatus.value];
+    }
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+    editRow.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+    `<td><button class="btn-edit" onclick="editRecord(this,'${type}')">Edit</button>
+     <button class="btn-archive" onclick="confirmArchive(this,'${editRow.parentNode.id}','archived${capitalize(type)}s')">Archive</button></td>`;
+    editRow=null;
+    closeModal(`edit${capitalize(type)}Modal`);
+    openModal("successModal");
+    return true;
+  }
+
+  function confirmArchive(btn,tableId,archiveId){
+    archiveTargetRow = btn.closest("tr");
+    archiveTargetTable = tableId;
+    archiveTargetType = archiveId;
+    openModal("archiveModal");
+  }
+
+  function archiveYes(){
+    if(archiveTargetRow){
+      let clone = archiveTargetRow.cloneNode(true);
+      clone.querySelector(".btn-edit")?.remove();
+
+      // store original table id
+      clone.dataset.originalTable = archiveTargetTable;
+
+      let restoreBtn = document.createElement("button");
+      restoreBtn.className = "btn-restore";
+      restoreBtn.innerText = "Restore";
+      restoreBtn.onclick = function(){ restoreRecord(clone); };
+
+      clone.querySelector("td:last-child").innerHTML = "";
+      clone.querySelector("td:last-child").appendChild(restoreBtn);
+
+      document.getElementById(archiveTargetType).appendChild(clone);
+      archiveTargetRow.remove();
+    }
+    closeModal("archiveModal");
+  }
+
+  function archiveNo(){ closeModal("archiveModal"); }
+
+  function restoreRecord(row){
+    let restoreClone = row.cloneNode(true);
+    restoreClone.querySelector(".btn-restore").remove();
+
+    // use stored table id
+    let tableId = row.dataset.originalTable;
+    let type = tableId.replace("Table","");
+
+    restoreClone.querySelector("td:last-child").innerHTML =
+      `<button class='btn-edit' onclick="editRecord(this,'${type}')">Edit</button>
+       <button class='btn-archive' onclick="confirmArchive(this,'${tableId}','archived${capitalize(type)}')">Archive</button>`;
+
+    document.getElementById(tableId).appendChild(restoreClone);
+    row.remove();
+  }
+
+  function capitalize(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+</script>
+</body>
+</html>

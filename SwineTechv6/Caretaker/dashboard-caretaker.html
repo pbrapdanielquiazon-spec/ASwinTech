@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Caretaker Dashboard</title>
+  <link rel="stylesheet" href="caretaker.css">
+  <link rel="stylesheet" href="admin.css"> <!-- reuse shared styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html" class="active"><i class="fa-solid fa-clipboard-list"></i> Dashboard</a>
+      <a href="caretaker-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="caretaker-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i>Manage Pig Records</a>
+      <a href="caretaker-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i>Manage Feeding and Schedules</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Caretaker Dashboard</h1>
+    <div class="dashboard-cards">
+      <div class="card">
+        <h3>Today's Feedings</h3>
+        <p>12 tasks</p>
+      </div>
+      <div class="card">
+        <h3>Health Checks</h3>
+        <p>5 scheduled</p>
+      </div>
+      <div class="card">
+        <h3>Breeding Records</h3>
+        <p>2 active</p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

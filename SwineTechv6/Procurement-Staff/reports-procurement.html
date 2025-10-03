@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Procurement Table</title>
+  <link rel="stylesheet" href="procurement.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+ <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-procurement.html" ><i class="fa-solid fa-boxes-stacked"></i> Dashboard</a>
+      <a href="procurement-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="supplies-procurement.html"><i class="fa-solid fa-warehouse"></i>Manage Supplies</a>
+      <a href="expenses-procurement.html"><i class="fa-solid fa-money-bill-trend-up"></i>Manage Expenses</a>
+      <a href="reports-procurement.html" class="active"><i class="fa-solid fa-file-lines"></i>Generate Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+<main class="dashboard">
+  <h1>Procurement Reports</h1>
+  <form class="report-filter">
+    <label for="report-type">Report Type:</label>
+    <select id="report-type">
+      <option value="supplies">Supplies</option>
+      <option value="expenses">Expenses</option>
+    </select>
+
+    <label for="date-from">From:</label>
+    <input type="date" id="date-from">
+
+    <label for="date-to">To:</label>
+    <input type="date" id="date-to">
+
+    <button type="submit" class="btn-generate"><i class="fa-solid fa-filter"></i> Generate</button>
+  </form>
+
+  <div class="report-actions">
+    <button class="btn-export"><i class="fa-solid fa-file-excel"></i> Export</button>
+    <button class="btn-pdf"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+    <button class="btn-print"><i class="fa-solid fa-print"></i> Print</button>
+  </div>
+
+  <div class="report-results">
+    <h2><i class="fa-solid fa-boxes-stacked"></i> Report Output</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Details</th>
+          <th>Category</th>
+          <th>Quantity / Amount</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="5">No data yet. Select filters and click Generate.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+</body>
+</html>

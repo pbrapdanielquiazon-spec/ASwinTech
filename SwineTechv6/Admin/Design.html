@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* 🎨 Color Palette */
+    :root {
+      --color-primary: #2E3B4E;      /* Dark Slate */
+      --color-accent-green: #43A047; /* Fresh Green */
+      --color-accent-blue: #29B6F6;  /* Sky Blue */
+      --color-danger: #E53935;       /* Red */
+      --color-bg: #f5f6f8;           /* Light Neutral */
+      --color-light: #fff;
+      --color-dark: #333;
+    }
+
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+    }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-dark);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 230px;
+      height: 100vh;
+      background: var(--color-primary);
+      color: var(--color-light);
+      padding: 20px;
+    }
+
+    .sidebar-logo {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 30px;
+    }
+
+    .sidebar nav a {
+      display: block;
+      color: var(--color-light);
+      text-decoration: none;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      transition: 0.3s;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: var(--color-accent-green);
+      color: var(--color-light);
+    }
+
+    /* Dashboard Content */
+    .dashboard {
+      margin-left: 250px;
+      padding: 30px;
+    }
+
+    .dashboard h1 {
+      margin-bottom: 20px;
+      color: var(--color-primary);
+    }
+
+    /* Cards */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: var(--color-light);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .card i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      color: var(--color-accent-blue);
+    }
+
+    .card h2 {
+      margin-bottom: 8px;
+      color: var(--color-dark);
+    }
+
+    /* Table */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--color-light);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .admin-table th, .admin-table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+
+    .admin-table th {
+      background: #f0f0f0;
+      color: var(--color-dark);
+    }
+
+    .admin-table tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+
+    .btn-edit { background: var(--color-accent-blue); }
+    .btn-delete { background: var(--color-danger); margin-left: 5px; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html" class="active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Users</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Pig Records</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Supplies</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Dashboard -->
+  <main class="dashboard">
+    <h1>Admin Dashboard</h1>
+
+    <!-- Cards -->
+    <div class="cards">
+      <div class="card">
+        <i class="fa-solid fa-piggy-bank"></i>
+        <h2>120 Pigs</h2>
+        <p>Total in system</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-calendar-check"></i>
+        <h2>15 Bookings</h2>
+        <p>Pending approval</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-cash-register"></i>
+        <h2>₱250,000</h2>
+        <p>Sales this month</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-users"></i>
+        <h2>32 Users</h2>
+        <p>Registered accounts</p>
+      </div>
+    </div>
+
+    <!-- Sample Table -->
+    <h2>Recent Bookings</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Booking ID</th>
+          <th>Client</th>
+          <th>Item</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>B001</td>
+          <td>Juan Dela Cruz</td>
+          <td>Landrace Pig</td>
+          <td>Pending</td>
+          <td>
+            <button class="btn btn-edit">Approve</button>
+            <button class="btn btn-delete">Decline</button>
+          </td>
+        </tr>
+        <tr>
+          <td>B002</td>
+          <td>Maria Santos</td>
+          <td>Lechon Service</td>
+          <td>Approved</td>
+          <td>
+            <button class="btn btn-edit">View</button>
+            <button class="btn btn-delete">Cancel</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Client Inquiries</title>
+  <link rel="stylesheet" href="client.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      width: 450px;
+      max-width: 95%;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      animation: fadeIn 0.3s ease-in-out;
+    }
+    .modal-content h2 {
+      margin-bottom: 15px;
+      font-size: 20px;
+      text-align: center;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .form-group textarea {
+      resize: none;
+      height: 100px;
+    }
+    .modal .btn-auth {
+      width: 100%;
+      margin-top: 10px;
+    }
+    .close {
+      float: right;
+      font-size: 20px;
+      cursor: pointer;
+      color: #555;
+    }
+    .close:hover { color: red; }
+  </style>
+</head>
+<body>
+   <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html" class="active"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="available-pigs.html"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="lechon-services.html"><i class="fa-solid fa-drumstick-bite"></i> Lechon Services</a>
+      <a href="bookings-client.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="inquiries-client.html"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="feedback-client.html"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+      <a href="receipts.html"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>My Inquiries</h1>
+    <button class="btn-add" onclick="openModal('inquiryModal')">+ New Inquiry</button>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Inquiry ID</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Submitted At</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>Delivery Inquiry</td>
+          <td><span style="color: green; font-weight:bold;">Replied</span></td>
+          <td>2025-09-08</td>
+          <td>
+            <button class="btn-edit" onclick="openViewModal('Do you deliver lechon?', 'Yes, within Bohol.', '2025-09-08', 'Admin-01')">View</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- New Inquiry Modal -->
+  <div id="inquiryModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('inquiryModal')">&times;</span>
+      <h2>Submit Inquiry</h2>
+      <form action="save_inquiry.php" method="POST">
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <input type="text" id="subject" name="subject" placeholder="e.g. Delivery, Pricing" required>
+        </div>
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" placeholder="Type your inquiry here..." required></textarea>
+        </div>
+        <button type="submit" class="btn-auth">Submit Inquiry</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Inquiry Modal -->
+  <div id="viewInquiryModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('viewInquiryModal')">&times;</span>
+      <h2>Inquiry Details</h2>
+      <p><strong>Message:</strong> <span id="viewMessage"></span></p>
+      <p><strong>Reply:</strong> <span id="viewReply"></span></p>
+      <p><strong>Submitted At:</strong> <span id="viewDate"></span></p>
+      <p><strong>Responded By:</strong> <span id="viewResponder"></span></p>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).style.display = "flex";
+    }
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
+    }
+
+    function openViewModal(message, reply, date, responder) {
+      document.getElementById("viewMessage").innerText = message;
+      document.getElementById("viewReply").innerText = reply || "Pending...";
+      document.getElementById("viewDate").innerText = date;
+      document.getElementById("viewResponder").innerText = responder || "Not yet responded";
+      openModal("viewInquiryModal");
+    }
+
+    window.onclick = function(event) {
+      let modals = document.querySelectorAll(".modal");
+      modals.forEach(modal => {
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      });
+    }
+  </script>
+</body>
+</html>

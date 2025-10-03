@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Supplies</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .tabs { margin:20px 0; }
+    .tab-btn {
+      background:#f0f0f0; border:none; padding:10px 20px;
+      cursor:pointer; margin-right:5px; border-radius:5px;
+    }
+    .tab-btn.active { background:#43A047; color:#fff; }
+    .record-view { display:none; }
+    .record-view.active { display:block; }
+
+    .modal { display:none; position:fixed; z-index:1; left:0; top:0;
+      width:100%; height:100%; background:rgba(0,0,0,0.5); }
+    .modal-content {
+      background:#fff; margin:5% auto; padding:20px; border-radius:8px;
+      width:500px; max-width:90%;
+    }
+    .close { float:right; font-size:22px; cursor:pointer; }
+
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; margin-bottom:5px; }
+    .form-group input, .form-group select {
+      width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;
+    }
+    .btn-auth { background:#43A047; color:#fff; border:none; padding:10px; width:100%; border-radius:5px; cursor:pointer; }
+    .btn-auth:hover { background:#2e7d32; }
+    .btn-add, .btn-edit, .btn-archive, .btn-restore {
+      padding:6px 12px; margin:2px; border:none; border-radius:5px; cursor:pointer;
+    }
+    .btn-add { background:#29B6F6; color:#fff; }
+    .btn-edit { background:#FFA726; color:#fff; }
+    .btn-archive { background:#EF5350; color:#fff; }
+    .btn-restore { background:#29B6F6; color:#fff; }
+    .admin-table { width:100%; border-collapse:collapse; margin-top:10px; }
+    .admin-table th, .admin-table td { border:1px solid #ccc; padding:8px; text-align:center; }
+    .admin-table th { background:#f9f9f9; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Sales & Expenses</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Supplies</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('supplies')">📦 Supplies</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Supplies</button>
+    </div>
+
+    <!-- Supplies -->
+    <section id="supplies" class="record-view active">
+      <h2>Supplies Records</h2>
+      <button class="btn-add" onclick="openModal('addSupplyModal')">+ Add Supply</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Supply ID</th>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Updated At</th>
+            <th>Updated By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="supplyTable">
+          <tr>
+            <td>S-001</td>
+            <td>Grower Feed</td>
+            <td>Feed</td>
+            <td>50</td>
+            <td>Sacks</td>
+            <td>2025-09-18</td>
+            <td>Admin-01</td>
+            <td>
+              <button class="btn-edit" onclick="editRecord(this,'supply')">Edit</button>
+              <button class="btn-archive" onclick="confirmArchive(this,'supplyTable','archivedSupply')">Archive</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Archived Supplies -->
+    <section id="archived" class="record-view">
+      <h2>Archived Supplies</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Supply ID</th>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Updated At</th>
+            <th>Updated By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="archivedSupply"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add Supply Modal -->
+  <div id="addSupplyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('addSupplyModal')">&times;</span>
+      <h2>Add Supply</h2>
+      <form onsubmit="return addRecord(event,'supply')">
+        <div class="form-group"><label>Item Name</label><input type="text" id="supplyName"></div>
+        <div class="form-group"><label>Category</label>
+          <select id="supplyCategory">
+            <option>Feed</option><option>Vitamin</option><option>Vaccine</option><option>Tool</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="supplyQuantity"></div>
+        <div class="form-group"><label>Unit</label><input type="text" id="supplyUnit"></div>
+        <div class="form-group"><label>Updated By</label><input type="text" id="supplyUpdatedBy"></div>
+        <button type="submit" class="btn-auth">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Supply Modal -->
+  <div id="editSupplyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('editSupplyModal')">&times;</span>
+      <h2>Edit Supply</h2>
+      <form onsubmit="return updateRecord(event,'supply')">
+        <div class="form-group"><label>Item Name</label><input type="text" id="editSupplyName"></div>
+        <div class="form-group"><label>Category</label>
+          <select id="editSupplyCategory">
+            <option>Feed</option><option>Vitamin</option><option>Vaccine</option><option>Tool</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="editSupplyQuantity"></div>
+        <div class="form-group"><label>Unit</label><input type="text" id="editSupplyUnit"></div>
+        <div class="form-group"><label>Updated By</label><input type="text" id="editSupplyUpdatedBy"></div>
+        <button type="submit" class="btn-auth">Update</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Archive Confirmation -->
+  <div id="archiveModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Are you sure you want to archive this supply?</h3>
+      <button onclick="archiveYes()">Yes, Archive</button>
+      <button onclick="archiveNo()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content"><h3>✅ Saved!</h3><button onclick="closeModal('successModal')">OK</button></div></div>
+  <div id="errorModal" class="modal"><div class="modal-content"><h3>❌ Invalid Input!</h3><button onclick="closeModal('errorModal')">OK</button></div></div>
+
+<script>
+  let editRow=null, archiveTargetRow=null, archiveTargetTable=null, archiveTargetType=null;
+
+  function showView(v){
+    document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+    document.getElementById(v).classList.add("active");
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelector(`.tab-btn[onclick="showView('${v}')"]`).classList.add("active");
+  }
+
+  function openModal(id){ document.getElementById(id).style.display="block"; }
+  function closeModal(id){ document.getElementById(id).style.display="none"; }
+
+  function addRecord(e,type){
+    e.preventDefault();
+    let table=supplyTable;
+    let rowData=[ "S-NEW", supplyName.value, supplyCategory.value, supplyQuantity.value, supplyUnit.value, new Date().toISOString().split("T")[0], supplyUpdatedBy.value ];
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+    let row=table.insertRow();
+    row.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+      `<td><button class='btn-edit' onclick="editRecord(this,'supply')">Edit</button>
+      <button class='btn-archive' onclick="confirmArchive(this,'supplyTable','archivedSupply')">Archive</button></td>`;
+    closeModal("addSupplyModal"); openModal("successModal"); return true;
+  }
+
+  function editRecord(btn,type){
+    let row=btn.closest("tr"), cells=row.cells; editRow=row;
+    editSupplyName.value=cells[1].innerText;
+    editSupplyCategory.value=cells[2].innerText;
+    editSupplyQuantity.value=cells[3].innerText;
+    editSupplyUnit.value=cells[4].innerText;
+    editSupplyUpdatedBy.value=cells[6].innerText;
+    openModal("editSupplyModal");
+  }
+
+  function updateRecord(e,type){
+    e.preventDefault();
+    if(!editRow)return false;
+    let rowData=[ editRow.cells[0].innerText, editSupplyName.value, editSupplyCategory.value, editSupplyQuantity.value, editSupplyUnit.value, new Date().toISOString().split("T")[0], editSupplyUpdatedBy.value ];
+    if(rowData.some(x=>x==="")){ openModal("errorModal"); return false; }
+    editRow.innerHTML=rowData.map(c=>`<td>${c}</td>`).join("")+
+      `<td><button class='btn-edit' onclick="editRecord(this,'supply')">Edit</button>
+      <button class='btn-archive' onclick="confirmArchive(this,'supplyTable','archivedSupply')">Archive</button></td>`;
+    closeModal("editSupplyModal"); openModal("successModal"); return true;
+  }
+
+  function confirmArchive(btn,tableId,archiveId){
+    archiveTargetRow=btn.closest("tr"); archiveTargetTable=tableId; archiveTargetType=archiveId; openModal("archiveModal");
+  }
+
+  function archiveYes(){
+    if(archiveTargetRow){
+      let clone=archiveTargetRow.cloneNode(true);
+      clone.querySelector(".btn-edit")?.remove();
+      let restoreBtn=document.createElement("button");
+      restoreBtn.className="btn-restore"; restoreBtn.innerText="Restore";
+      restoreBtn.onclick=function(){ restoreRecord(clone,archiveTargetTable); };
+      clone.querySelector("td:last-child").innerHTML=""; clone.querySelector("td:last-child").appendChild(restoreBtn);
+      document.getElementById(archiveTargetType).appendChild(clone); archiveTargetRow.remove();
+    }
+    closeModal("archiveModal");
+  }
+
+  function archiveNo(){ closeModal("archiveModal"); }
+
+  function restoreRecord(row,tableId){
+    let restoreClone=row.cloneNode(true);
+    restoreClone.querySelector(".btn-restore").remove();
+    restoreClone.querySelector("td:last-child").innerHTML=
+      `<button class='btn-edit' onclick="editRecord(this,'supply')">Edit</button>
+       <button class='btn-archive' onclick="confirmArchive(this,'${tableId}','archivedSupply')">Archive</button>`;
+    document.getElementById(tableId).appendChild(restoreClone); row.remove();
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Admin Dashboard</title>
+  <link rel="stylesheet" href="admin.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   
+</head>
+<body>
+    
+  <!-- Sidebar -->
+    <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html" class="active"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i>Mange Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i>Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i>Manage Sales, Expenses, & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i>Generate Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+ <main  class="dashboard">
+   <h1>Admin Dashboard</h1>
+
+    <!-- Cards -->
+    <div class="cards">
+      <div class="card">
+        <i class="fa-solid fa-piggy-bank"></i>
+        <h2>120 Pigs</h2>
+        <p>Total in system</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-calendar-check"></i>
+        <h2>15 Bookings</h2>
+        <p>Pending approval</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-cash-register"></i>
+        <h2>₱250,000</h2>
+        <p>Sales this month</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-users"></i>
+        <h2>32 Users</h2>
+        <p>Registered accounts</p>
+      </div>
+    </div>
+
+    <!-- Sample Table -->
+    <h2>Recent Bookings</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Booking ID</th>
+          <th>Client</th>
+          <th>Item</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>B001</td>
+          <td>Juan Dela Cruz</td>
+          <td>Landrace Pig</td>
+          <td>Pending</td>
+          <td>
+            <button class="btn btn-edit">Approve</button>
+            <button class="btn btn-archive">Decline</button>
+          </td>
+        </tr>
+        <tr>
+          <td>B002</td>
+          <td>Maria Santos</td>
+          <td>Lechon Service</td>
+          <td>Approved</td>
+          <td>
+            <button class="btn btn-edit">View</button>
+            <button class="btn btn-archive">Cancel</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+   </main>
+</body>
+</html>

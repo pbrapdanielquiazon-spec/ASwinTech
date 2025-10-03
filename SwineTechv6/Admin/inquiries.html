@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Inquiries</title>
+  <link rel="stylesheet" href="admin.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+   <!-- Sidebar -->
+    <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i>Mange Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i>Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i>Manage Sales, Expenses, & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="inquiries.html" class="active"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i>Generate Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Client Inquiries</h1>
+
+    <!-- Inquiries Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Inquiry ID</th>
+          <th>Client</th>
+          <th>Question</th>
+          <th>Date</th>
+          <th>Response</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Sample Data -->
+        <tr>
+          <td>1</td>
+          <td>Maria Santos</td>
+          <td>Do you offer bulk discounts for 10 pigs?</td>
+          <td>2025-09-05</td>
+          <td>Pending</td>
+          <td>
+            <button class="btn-edit" onclick="openInquiryModal()">Reply</button>
+          </td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Jose Ramirez</td>
+          <td>What vaccines do your pigs receive?</td>
+          <td>2025-09-07</td>
+          <td>Answered</td>
+          <td>
+            <button class="btn-edit" onclick="openInquiryModal()">Reply</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal (Hidden by Default) -->
+  <div id="inquiryModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeInquiryModal()">&times;</span>
+      <h2>Reply to Inquiry</h2>
+      <form action="save_inquiry_reply.php" method="POST">
+        <div class="form-group">
+          <label for="inquiry_id">Inquiry ID</label>
+          <input type="text" id="inquiry_id" name="inquiry_id" value="1" readonly>
+        </div>
+
+        <div class="form-group">
+          <label for="reply">Your Response</label>
+          <textarea id="reply" name="reply" rows="4" required></textarea>
+        </div>
+
+        <button type="submit" class="btn-auth">Send Reply</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openInquiryModal() {
+      document.getElementById("inquiryModal").style.display = "block";
+    }
+    function closeInquiryModal() {
+      document.getElementById("inquiryModal").style.display = "none";
+    }
+    window.onclick = function(event) {
+      let modal = document.getElementById("inquiryModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

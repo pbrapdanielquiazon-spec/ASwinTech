@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Supplies</title>
+  <link rel="stylesheet" href="procurement.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+ <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-procurement.html"><i class="fa-solid fa-boxes-stacked"></i> Dashboard</a>
+      <a href="procurement-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="supplies-procurement.html" class="active"><i class="fa-solid fa-warehouse"></i>Manage Supplies</a>
+      <a href="expenses-procurement.html"><i class="fa-solid fa-money-bill-trend-up"></i>Manage Expenses</a>
+      <a href="reports-procurement.html"><i class="fa-solid fa-file-lines"></i>Generate Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Supplies</h1>
+    <p class="page-desc">Manage piggery supplies including feed, vitamins, vaccines, tools, and other essentials.</p>
+
+    <!-- Add Supply Button -->
+    <button class="btn-add" onclick="openSupplyModal()">+ Add New Supply</button>
+
+    <!-- Supplies Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Supply ID</th>
+          <th>Item Name</th>
+          <th>Category</th>
+          <th>Quantity</th>
+          <th>Unit</th>
+          <th>Updated At</th>
+          <th>Updated By</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Sample Row -->
+        <tr>
+          <td>1</td>
+          <td>Grower Feed</td>
+          <td>Feed</td>
+          <td>50</td>
+          <td>Sacks</td>
+          <td>2025-09-18 10:30 AM</td>
+          <td>Admin-01</td>
+          <td>
+            <button class="btn-edit" onclick="openSupplyModal()">Edit</button>
+            <button class="btn-delete">Archive</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Modal -->
+  <div id="supplyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeSupplyModal()">&times;</span>
+      <h2>Add/Edit Supply</h2>
+      <form action="save_supply.php" method="POST">
+        <div class="form-group">
+          <label for="item_name">Item Name</label>
+          <input type="text" id="item_name" name="item_name" required>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category</label>
+          <select id="category" name="category" required>
+            <option value="feed">Feed</option>
+            <option value="vitamin">Vitamin</option>
+            <option value="vaccine">Vaccine</option>
+            <option value="tool">Tool</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="quantity">Quantity</label>
+          <input type="number" id="quantity" name="quantity" min="0" required>
+        </div>
+
+        <div class="form-group">
+          <label for="unit">Unit</label>
+          <input type="text" id="unit" name="unit" placeholder="e.g., sacks, boxes" required>
+        </div>
+
+        <!-- Auto fields (hidden or set by backend) -->
+        <input type="hidden" id="updated_by" name="updated_by" value="1">
+        <input type="hidden" id="updated_at" name="updated_at" value="<?php echo date('Y-m-d H:i:s'); ?>">
+
+        <button type="submit" class="btn-auth">Save Supply</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openSupplyModal() {
+      document.getElementById("supplyModal").style.display = "block";
+    }
+    function closeSupplyModal() {
+      document.getElementById("supplyModal").style.display = "none";
+    }
+    window.onclick = function(event) {
+      let modal = document.getElementById("supplyModal");
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

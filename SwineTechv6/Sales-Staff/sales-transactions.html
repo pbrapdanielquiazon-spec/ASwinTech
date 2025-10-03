@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Sales Table</title>
+  <link rel="stylesheet" href="sales.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+    .tabs { margin: 20px 0; }
+    .tab-btn {
+      background: #f0f0f0; border: none; padding: 10px 20px;
+      cursor: pointer; margin-right: 5px; border-radius: 5px;
+    }
+    .tab-btn.active { background: #4CAF50; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content {
+      background: #fff; margin: 5% auto; padding: 20px; border-radius: 8px;
+      width: 500px; max-width: 90%;
+    }
+    .modal h2 { margin-bottom: 15px; }
+    .close { float: right; font-size: 22px; cursor: pointer; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    .btn-auth { background: #4CAF50; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+    .btn-auth:hover { background: #45a049; }
+  </style>
+</head>
+<body>
+   <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech(Sales Staff)</div>
+    <nav>
+      <a href="dashboard-sales.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="salesstaff-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="bookings-sales.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="sales-transactions.html" class="active"><i class="fa-solid fa-receipt"></i> Sales Transactions</a>
+      <a href="reports-sales.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+<!-- Main Content -->
+  <main class="dashboard">
+    <h1>Transactions Management</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="openTab(event, 'sales')">Sales</button>
+      <button class="tab-btn" onclick="openTab(event, 'expenses')">Expenses</button>
+      <button class="tab-btn" onclick="openTab(event, 'bookings')">Bookings</button>
+      <button class="tab-btn" onclick="openTab(event, 'inquiries')">Inquiries</button>
+    </div>
+
+    <!-- Sales -->
+    <section id="sales" class="tab-content active">
+      <h2>Sales</h2>
+      <button class="btn-add" onclick="openModal('saleModal')">+ Record Sale</button>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Sale ID</th><th>Booking ID</th><th>Client ID</th><th>Item Type</th>
+            <th>Description</th><th>Total (₱)</th><th>Payment Date</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td><td>3</td><td>101</td><td>Pig</td><td>Grower - 70kg</td>
+            <td>₱15,000</td><td>2025-09-01</td>
+            <td>
+              <button class="btn-edit" onclick="openModal('saleModal')">Edit</button>
+              <button class="btn-delete">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+</main>
+
+<!-- Modals -->
+  <!-- Sales Modal -->
+  <div id="saleModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('saleModal')">&times;</span>
+      <h2>Add/Edit Sale</h2>
+      <form action="save_sale.php" method="POST">
+        <div class="form-group"><label for="booking_id">Booking ID</label><input type="number" name="booking_id"></div>
+        <div class="form-group"><label for="client_id">Client ID</label><input type="number" name="client_id" required></div>
+        <div class="form-group"><label for="item_type">Item Type</label><input type="text" name="item_type" required></div>
+        <div class="form-group"><label for="item_description">Item Description</label><input type="text" name="item_description" required></div>
+        <div class="form-group"><label for="total_amount">Total Amount</label><input type="number" name="total_amount" step="0.01" required></div>
+        <div class="form-group"><label for="payment_date">Payment Date</label><input type="date" name="payment_date" required></div>
+        <button type="submit" class="btn-auth">Save Sale</button>
+      </form>
+    </div>
+  </div>
+
+
+
+   <script>
+    // Tabs
+    function openTab(evt, tabName) {
+      let contents = document.getElementsByClassName("tab-content");
+      for (let c of contents) c.classList.remove("active");
+      let tabs = document.getElementsByClassName("tab-btn");
+      for (let t of tabs) t.classList.remove("active");
+      document.getElementById(tabName).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
+    // Modals
+    function openModal(id) { document.getElementById(id).style.display = "block"; }
+    function closeModal(id) { document.getElementById(id).style.display = "none"; }
+    window.onclick = function(event) {
+      document.querySelectorAll(".modal").forEach(m => {
+        if (event.target == m) m.style.display = "none";
+      });
+    }
+  </script>
+</body>
+</html>
