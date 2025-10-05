@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Client Dashboard</title>
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="client.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .btn-primary { background: #43A047; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-primary:hover { background: #2E7D32; }
+    .btn-secondary { background: #29B6F6; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-secondary:hover { background: #0288D1; }
+    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10; }
+    .modal-content { background:#fff; padding:20px; border-radius:8px; margin:5% auto; width:500px; max-width:90%; position:relative; }
+    .close { float:right; font-size:22px; cursor:pointer; color:#444; }
+    .close:hover { color:red; }
+    .pig-list { display:flex; flex-wrap:wrap; gap:20px; }
+    .pig-card { border:1px solid #ddd; padding:15px; border-radius:8px; text-align:center; width:220px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+    .pig-card img { border-radius:8px; width:100%; height:140px; object-fit:cover; }
+    .admin-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .admin-table th, .admin-table td { border:1px solid #ddd; padding:8px; text-align:center; }
+    .admin-table th { background:#f2f2f2; }
+    .success-msg { color:green; font-weight:bold; }
+  </style>
+</head>
+<body>
+
+ <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs" onclick="showSection('pigs')"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#bookings" onclick="showSection('bookings')" class="active"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#inquiry" onclick="showSection('inquiry')"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs#receipts" onclick="showSection('receipts')"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="logout.php" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+  <main class="dashboard">
+    <h1>SwineTech Client Dashboard</h1>
+    <p>Welcome! Manage your pig bookings, inquiries, and receipts here.</p>
+
+    <!-- 🐖 Available Pigs -->
+    <section id="pigs" class="section active">
+      <h2>Available Pigs</h2>
+      <div class="pig-list" id="pigList">
+        <!-- Pigs loaded dynamically -->
+      </div>
+      <div style="margin-top:20px;">
+        <button class="btn-secondary" onclick="openModal('inquiryModal')"><i class="fa-solid fa-envelope"></i> Inquiry</button>
+      </div>
+    </section>
+    <!-- 🗓 My Bookings -->
+    <section id="bookings" class="section">
+      <h2>My Bookings</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Booking ID</th>
+            <th>Client ID</th>
+            <th>Type</th>
+            <th>Item Details</th>
+            <th>Status</th>
+            <th>Booking Date</th>
+            <th>Approved By</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTable">
+          <tr><td colspan="7">No bookings yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 💬 My Inquiries -->
+    <section id="inquiry" class="section">
+      <h2>My Inquiries</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Inquiry ID</th>
+            <th>Client ID</th>
+            <th>Subject</th>
+            <th>Message</th>
+            <th>Status</th>
+            <th>Submitted At</th>
+            <th>Responded By</th>
+            <th>Responded At</th>
+          </tr>
+        </thead>
+        <tbody id="inquiryTable">
+          <tr><td colspan="8">No inquiries yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 🧾 Receipts -->
+    <section id="receipts" class="section">
+      <h2>My Receipts</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Receipt ID</th>
+            <th>Booking ID</th>
+            <th>Receipt Data</th>
+            <th>Generated At</th>
+          </tr>
+        </thead>
+        <tbody id="receiptTable">
+          <tr><td colspan="4">No receipts yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- BOOKING MODAL -->
+  <div id="bookingModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-labelledby="bookingTitle">
+      <span class="close" onclick="closeModal('bookingModal')">&times;</span>
+      <h2 id="bookingTitle">Book Order</h2>
+      <form id="bookingForm" onsubmit="return submitBooking(event)">
+        <div class="form-group">
+          <label for="bookType">Type</label>
+          <select id="bookType" required>
+            <option value="Pig Sale">Pig Sale</option>
+            <option value="Service">Service</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="bookItem">Item Details</label>
+          <input id="bookItem" type="text" required readonly />
+        </div>
+        <div class="form-group">
+          <label for="bookQty">Quantity</label>
+          <input id="bookQty" type="number" min="1" value="1" required />
+        </div>
+        <div class="form-group">
+          <label for="bookDate">Booking Date</label>
+          <input id="bookDate" type="date" required />
+        </div>
+        <div class="form-group">
+          <label for="bookNotes">Notes (optional)</label>
+          <textarea id="bookNotes" rows="3"></textarea>
+        </div>
+        <button class="btn-primary" type="submit">Submit Booking</button>
+        <p id="bookMsg" style="margin-top:10px"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- INQUIRY MODAL (global/general) -->
+  <div id="inquiryModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-labelledby="inquiryTitle">
+      <span class="close" onclick="closeModal('inquiryModal')">&times;</span>
+      <h2 id="inquiryTitle">Send Inquiry</h2>
+      <form id="inquiryForm" onsubmit="return submitInquiry(event)">
+        <div class="form-group">
+          <label for="inqSubject">Subject</label>
+          <input id="inqSubject" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="inqMessage">Message</label>
+          <textarea id="inqMessage" rows="4" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="inqEmail">Your Email</label>
+          <input id="inqEmail" type="email" required />
+        </div>
+        <button class="btn-primary" type="submit">Submit Inquiry</button>
+        <p id="inqMsg" style="margin-top:10px"></p>
+      </form>
+    </div>
+  </div>
+  <script>
+  /***********************
+   * Client demo constants
+   ***********************/
+  const DEMO_CLIENT_ID = 1; // simulated client id for demo
+  let bookings = [];       // booking records
+  let inquiries = [];      // inquiry records
+  let receipts = [];       // reservation_receipts
+  let bookingCounter = 1;
+  let inquiryCounter = 1;
+  let receiptCounter = 1;
+
+  /***********************
+   * Utility UI helpers
+   ***********************/
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    const el = document.getElementById(id);
+    if(el) el.classList.add('active');
+    // highlight sidebar links (simple)
+    document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
+    const links = [...document.querySelectorAll('.sidebar nav a')];
+    const match = links.find(a => (a.getAttribute('onclick')||'').includes(`'${id}'`));
+    if(match) match.classList.add('active');
+  }
+
+  function openModal(id, contextValue) {
+    const modal = document.getElementById(id);
+    if(!modal) return;
+    // prefill some context when opening booking modal
+    if(id === 'bookingModal' && contextValue) {
+      document.getElementById('bookItem').value = contextValue;
+    }
+    modal.style.display = 'block';
+  }
+  function closeModal(id) {
+    const modal = document.getElementById(id);
+    if(modal) modal.style.display = 'none';
+  }
+
+  // Close modal clicking outside
+  window.addEventListener('click', (e)=>{
+    document.querySelectorAll('.modal').forEach(m=>{
+      if(e.target === m) m.style.display='none';
+    });
+  });
+
+  /***********************
+   * Load initial pigs (demo) into PART 1 pig-list
+   ***********************/
+  const demoPigs = [
+    { pig_id: 'P-001', litter_id: 'L-01', sow_identifier: 'Sow-A1', birth_date: '2025-01-05', status: 'Available', notes: 'Landrace - strong' },
+    { pig_id: 'P-002', litter_id: 'L-02', sow_identifier: 'Sow-B2', birth_date: '2025-03-12', status: 'Available', notes: 'Duroc - robust' },
+    { pig_id: 'P-003', litter_id: 'L-03', sow_identifier: 'Sow-C3', birth_date: '2025-05-02', status: 'Growing', notes: 'Large White' }
+  ];
+
+  function renderPigs() {
+    const container = document.getElementById('pigList');
+    if(!container) return;
+    container.innerHTML = '';
+    demoPigs.forEach(p=>{
+      const div = document.createElement('div');
+      div.className = 'pig-card';
+      div.innerHTML = `
+        <img src="img/pig-placeholder.jpg" alt="${escapeHtml(p.sow_identifier)}">
+        <h4>${escapeHtml(p.sow_identifier)}</h4>
+        <p><strong>ID:</strong> ${escapeHtml(p.pig_id)}</p>
+        <p><strong>Birth:</strong> ${escapeHtml(p.birth_date)}</p>
+        <p><strong>Status:</strong> ${escapeHtml(p.status)}</p>
+        <p>${escapeHtml(p.notes)}</p>
+        <div style="margin-top:8px">
+          <button class="btn-primary" onclick="openModal('bookingModal','${escapeJs(p.pig_id + ' - ' + p.notes)}')">Book Order</button>
+        </div>`;
+      container.appendChild(div);
+    });
+  }
+
+  /***********************
+   * Booking logic
+   ***********************/
+  function submitBooking(e) {
+    e.preventDefault();
+    const type = document.getElementById('bookType').value.trim();
+    const item = document.getElementById('bookItem').value.trim();
+    const qty = Number(document.getElementById('bookQty').value);
+    const date = document.getElementById('bookDate').value;
+    const notes = document.getElementById('bookNotes').value.trim();
+
+    // validations
+    if(!type || !item || !qty || !date) {
+      setBookingMessage('Please fill required fields', true);
+      return false;
+    }
+    const today = new Date(); const sel = new Date(date + 'T00:00:00');
+    if(sel < new Date(today.toDateString())) { // selected date earlier than today
+      setBookingMessage('Booking date cannot be in the past', true);
+      return false;
+    }
+    if(qty < 1) { setBookingMessage('Quantity must be at least 1', true); return false; }
+
+    const booking = {
+      booking_id: bookingCounter++,
+      client_id: DEMO_CLIENT_ID,
+      type,
+      item_details: `${item} (qty:${qty}) ${notes ? '- ' + notes : ''}`,
+      status: 'Pending',
+      booking_date: date,
+      approved_by: '-'
+    };
+    bookings.push(booking);
+    setBookingMessage('Booking submitted. Waiting for admin.', false);
+    updateBookingTable();
+    // reset form
+    document.getElementById('bookingForm').reset();
+    // close after short delay & simulate admin action
+    setTimeout(()=>{ closeModal('bookingModal'); simulateAdminDecision('booking', booking.booking_id); }, 900);
+    return true;
+  }
+
+  function setBookingMessage(msg, isError){
+    const p = document.getElementById('bookMsg');
+    p.textContent = msg;
+    p.className = isError ? 'error' : 'success-msg';
+    if(!isError) setTimeout(()=>{ p.textContent = ''; }, 3000);
+  }
+
+  function updateBookingTable(){
+    const tbody = document.getElementById('bookingTable');
+    tbody.innerHTML = '';
+    if(bookings.length === 0){
+      tbody.innerHTML = "<tr><td colspan='7'>No bookings yet.</td></tr>";
+      return;
+    }
+    bookings.forEach(b=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${b.booking_id}</td>
+        <td>${b.client_id}</td>
+        <td>${escapeHtml(b.type)}</td>
+        <td>${escapeHtml(b.item_details)}</td>
+        <td>${escapeHtml(b.status)}</td>
+        <td>${escapeHtml(b.booking_date)}</td>
+        <td>${escapeHtml(b.approved_by)}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  /***********************
+   * Inquiry logic
+   ***********************/
+  function submitInquiry(e){
+    e.preventDefault();
+    const subject = document.getElementById('inqSubject').value.trim();
+    const message = document.getElementById('inqMessage').value.trim();
+    const email = document.getElementById('inqEmail').value.trim();
+
+    if(!subject || !message || !email) {
+      setInquiryMessage('Please complete all fields', true); return false;
+    }
+    // basic email validation
+    if(!/^\S+@\S+\.\S+$/.test(email)){ setInquiryMessage('Please provide a valid email', true); return false; }
+
+    const inquiry = {
+      inquiry_id: inquiryCounter++,
+      client_id: DEMO_CLIENT_ID,
+      subject,
+      message,
+      status: 'Pending',
+      submitted_at: new Date().toLocaleString(),
+      responded_by: '-',
+      responded_at: '-'
+    };
+    inquiries.push(inquiry);
+    setInquiryMessage('Inquiry submitted. Waiting for response.', false);
+    updateInquiryTable();
+    document.getElementById('inquiryForm').reset();
+    setTimeout(()=>{ closeModal('inquiryModal'); simulateAdminDecision('inquiry', inquiry.inquiry_id); }, 900);
+    return true;
+  }
+
+  function setInquiryMessage(msg, isError){
+    const p = document.getElementById('inqMsg');
+    p.textContent = msg;
+    p.className = isError ? 'error' : 'success-msg';
+    if(!isError) setTimeout(()=>{ p.textContent = ''; }, 3000);
+  }
+
+  function updateInquiryTable(){
+    const tbody = document.getElementById('inquiryTable');
+    tbody.innerHTML = '';
+    if(inquiries.length === 0){
+      tbody.innerHTML = "<tr><td colspan='8'>No inquiries yet.</td></tr>";
+      return;
+    }
+    inquiries.forEach(i=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i.inquiry_id}</td>
+        <td>${i.client_id}</td>
+        <td>${escapeHtml(i.subject)}</td>
+        <td>${escapeHtml(i.message)}</td>
+        <td>${escapeHtml(i.status)}</td>
+        <td>${escapeHtml(i.submitted_at)}</td>
+        <td>${escapeHtml(i.responded_by)}</td>
+        <td>${escapeHtml(i.responded_at)}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  /***********************
+   * Receipts logic
+   ***********************/
+  function updateReceiptTable(){
+    const tbody = document.getElementById('receiptTable');
+    tbody.innerHTML = '';
+    if(receipts.length === 0){
+      tbody.innerHTML = "<tr><td colspan='4'>No receipts yet.</td></tr>";
+      return;
+    }
+    receipts.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.receipt_id}</td><td>${r.booking_id}</td><td>${escapeHtml(r.receipt_data)}</td><td>${r.generated_at}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function generateReceiptForBooking(booking){
+    const r = {
+      receipt_id: receiptCounter++,
+      booking_id: booking.booking_id,
+      receipt_data: `Receipt for booking ${booking.booking_id} - ${booking.item_details}`,
+      generated_at: new Date().toLocaleString()
+    };
+    receipts.push(r);
+    updateReceiptTable();
+  }
+
+  /***********************
+   * Simulated admin decision: approve / decline
+   ***********************/
+  function simulateAdminDecision(kind, id){
+    // small random delay then approve/decline
+    setTimeout(()=>{
+      const approve = Math.random() > 0.3; // 70% approve chance
+      if(kind === 'booking'){
+        const b = bookings.find(x=>x.booking_id === id);
+        if(!b) return;
+        if(approve){
+          b.status = 'Confirmed';
+          b.approved_by = 'Admin-01';
+          generateReceiptForBooking(b);
+          alert(`✅ Booking #${b.booking_id} confirmed. Receipt generated.`);
+        } else {
+          b.status = 'Declined';
+          b.approved_by = 'Admin-01';
+          alert(`❌ Booking #${b.booking_id} declined.`);
+        }
+        updateBookingTable();
+      } else if(kind === 'inquiry'){
+        const q = inquiries.find(x=>x.inquiry_id === id);
+        if(!q) return;
+        if(approve){
+          q.status = 'Responded';
+          q.responded_by = 'Admin-01';
+          q.responded_at = new Date().toLocaleString();
+          alert(`✅ Inquiry #${q.inquiry_id} responded to.`);
+        } else {
+          q.status = 'Declined';
+          q.responded_by = 'Admin-01';
+          q.responded_at = new Date().toLocaleString();
+          alert(`❌ Inquiry #${q.inquiry_id} declined.`);
+        }
+        updateInquiryTable();
+      }
+    }, 2000 + Math.random()*2000);
+  }
+
+  /***********************
+   * Small safe escaping helpers
+   ***********************/
+  function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  // Used when embedding value into inline onclick string to avoid breaking quotes
+  function escapeJs(s){ return (''+s).replaceAll("'", "\\'").replaceAll('"','\\"'); }
+
+  /***********************
+   * Initialize page
+   ***********************/
+  document.addEventListener('DOMContentLoaded', ()=>{
+    renderPigs();
+    updateBookingTable();
+    updateInquiryTable();
+    updateReceiptTable();
+  });
+
+  </script>
+</body>
+</html>
