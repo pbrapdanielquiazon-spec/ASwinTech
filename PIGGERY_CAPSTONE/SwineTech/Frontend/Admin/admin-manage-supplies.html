@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Manage Supplies</title>
+  <link rel="stylesheet" href="/Admin/admin.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .tabs{margin:20px 0;}
+    .tab-btn{background:#f0f0f0;border:none;padding:10px 20px;cursor:pointer;margin-right:5px;border-radius:5px}
+    .tab-btn.active{background:#43A047;color:#fff}
+    .record-view{display:none}
+    .record-view.active{display:block}
+    .modal{display:none;position:fixed;z-index:10;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.5)}
+    .modal-content{background:#fff;margin:5% auto;padding:20px;border-radius:8px;width:520px;max-width:92%}
+    .close{float:right;font-size:22px;cursor:pointer}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;margin-bottom:5px}
+    .form-group input,.form-group select{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px}
+    .btn-auth{background:#43A047;color:#fff;border:none;padding:10px;width:100%;border-radius:5px;cursor:pointer}
+    .btn-auth:hover{background:#2e7d32}
+    .btn-add,.btn-edit,.btn-archive,.btn-restore,.btn-qty{padding:6px 12px;margin:2px;border:none;border-radius:5px;cursor:pointer}
+    .btn-add{background:#29B6F6;color:#fff}
+    .btn-edit{background:#FFA726;color:#fff}
+    .btn-archive{background:#EF5350;color:#fff}
+    .btn-restore{background:#29B6F6;color:#fff}
+    .btn-qty{background:#6C9A2E;color:#fff}
+    .admin-table{width:100%;border-collapse:collapse;margin-top:10px}
+    .admin-table th,.admin-table td{border:1px solid #ccc;padding:8px;text-align:center}
+    .admin-table th{background:#f9f9f9}
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Supplies</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('supplies')">📦 Supplies</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Supplies</button>
+    </div>
+
+    <!-- Supplies -->
+    <section id="supplies" class="record-view active">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <h2 style="margin-right:auto;">Supplies Records</h2>
+        <button class="btn-add" onclick="openModal('addSupplyModal')">+ Add Supply</button>
+        <button class="btn-add" onclick="reloadSupplies()">⟳ Refresh</button>
+        <input id="searchName" placeholder="Search by item name" style="padding:6px;border:1px solid #ccc;border-radius:4px" />
+        <select id="sortCategory" title="Sort by category" style="padding:6px;border:1px solid #ccc;border-radius:4px">
+          <option value="">Sort: Category (A→Z)</option>
+          <option value="asc">Category ↑</option>
+          <option value="desc">Category ↓</option>
+        </select>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Updated At</th>
+            <th>Updated By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="supplyTable"></tbody>
+      </table>
+    </section>
+
+    <!-- Archived Supplies (front-end only) -->
+    <section id="archived" class="record-view">
+      <h2>Archived Supplies</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Quantity</th>
+            <th>Unit</th>
+            <th>Updated At</th>
+            <th>Updated By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="archivedSupply"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add Supply Modal -->
+  <div id="addSupplyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('addSupplyModal')">&times;</span>
+      <h2>Add Supply</h2>
+      <form id="addSupplyForm">
+        <div class="form-group"><label>Item Name</label><input type="text" id="supplyName" required></div>
+        <div class="form-group"><label>Category</label>
+          <select id="supplyCategory" required>
+            <option>Feed</option><option>Vitamin</option><option>Vaccine</option><option>Tool</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="supplyQuantity" required></div>
+        <div class="form-group"><label>Unit</label><input type="text" id="supplyUnit" required></div>
+        <!-- Updated By removed (auto) -->
+        <button type="submit" class="btn-auth">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Supply Modal -->
+  <div id="editSupplyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('editSupplyModal')">&times;</span>
+      <h2>Edit Supply</h2>
+      <form id="editSupplyForm">
+        <input type="hidden" id="editSupplyId" />
+        <div class="form-group"><label>Item Name</label><input type="text" id="editSupplyName" required></div>
+        <div class="form-group"><label>Category</label>
+          <select id="editSupplyCategory" required>
+            <option>Feed</option><option>Vitamin</option><option>Vaccine</option><option>Tool</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="editSupplyQuantity" required></div>
+        <div class="form-group"><label>Unit</label><input type="text" id="editSupplyUnit" required></div>
+        <!-- Updated By removed (auto) -->
+        <button type="submit" class="btn-auth">Update</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Adjust Quantity Modal -->
+  <div id="qtyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('qtyModal')">&times;</span>
+      <h2>Adjust Quantity</h2>
+      <form id="qtyForm">
+        <input type="hidden" id="qtySupplyId" />
+        <div class="form-group">
+          <label>Quantity change (e.g., +10 or -5)</label>
+          <input type="number" id="qtyDelta" step="1" required />
+        </div>
+        <button type="submit" class="btn-auth">Apply</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Archive Confirmation -->
+  <div id="archiveModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Are you sure you want to archive this supply?</h3>
+      <button id="archiveYesBtn">Yes, Archive</button>
+      <button onclick="closeModal('archiveModal')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content"><h3 id="successMsg">✅ Saved!</h3><button onclick="closeModal('successModal')">OK</button></div></div>
+  <div id="errorModal" class="modal"><div class="modal-content"><h3 id="errorMsg">❌ Error</h3><button onclick="closeModal('errorModal')">OK</button></div></div>
+
+  <!-- Use your shared API wrapper -->
+  <script type="module">
+    import { authApi, suppliesApi, getToken, clearToken } from "/_shared/api.js";
+
+    // ---- UI helpers ----
+    const $ = (id) => document.getElementById(id);
+    function showView(v){
+      document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+      $(v).classList.add("active"); 
+      document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+      document.querySelector(`.tab-btn[onclick="showView('${v}')"]`)?.classList.add("active");
+    }
+    function openModal(id){ $(id).style.display="block"; }
+    function closeModal(id){ $(id).style.display="none"; }
+    function success(msg="Saved!"){ $("successMsg").innerText = "✅ " + msg; openModal("successModal"); }
+    function fail(msg="Something went wrong"){ $("errorMsg").innerText = "❌ " + msg; openModal("errorModal"); }
+    // ===== Supplies helpers aligned to backend =====
+  const CATEGORY_ENUM = new Set(["feed","vitamin","vaccine","tool","other"]);
+
+  function fmtLocal(iso){
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  // gracefully accept id or supply_id, item_name or name
+  function normalizeSupply(s, me){
+    const id = Number(s.supply_id ?? s.id ?? 0);
+    return {
+      id,
+      item_name: s.item_name ?? s.name ?? "",
+      category:  (s.category ?? "").toString(),
+      quantity:  Number(s.quantity ?? 0),
+      unit:      s.unit ?? "",
+      updated_at: s.updated_at ?? s.created_at ?? "",
+      updated_by: s.updated_by ?? null,
+      // derive display fields
+      updated_by_name: (s.updated_by != null && me && Number(s.updated_by) === Number(me.user_id))
+        ? (me.name ?? me.full_name ?? me.username ?? me.email ?? `#${s.updated_by}`)
+        : (s.updated_by != null ? `#${s.updated_by}` : "-"),
+    };
+  }
+
+  // central error reader: your backend uses {error:{message}}
+  function asMessage(err){
+    if (!err) return "Unknown error";
+    if (typeof err === "string") return err;
+    if (err.error && err.error.message) return err.error.message;
+    if (err.detail && typeof err.detail === "string") return err.detail;
+    try { return JSON.parse(err.message)?.error?.message || err.message; } catch { return err.message || "Error"; }
+  }
+
+  let suppliesAll = []; // cache of normalized supplies
+
+
+
+    // ---- state ----
+    let me = null; // current user (for updated_by)
+    let archiveTarget = null; // DOM tr
+
+    // ---- render ----
+    function trForSupply(s){
+      const n = normalizeSupply(s, me);
+      const tr = document.createElement("tr");
+      tr.dataset.id = n.id;
+      tr.innerHTML = `
+        <td>${n.id}</td>
+        <td>${escapeHtml(n.item_name)}</td>
+        <td>${escapeHtml(n.category)}</td>
+        <td>${Number(n.quantity)}</td>
+        <td>${escapeHtml(n.unit)}</td>
+        <td>${fmtLocal(n.updated_at)}</td>
+        <td>${escapeHtml(n.updated_by_name)}</td>
+        <td>
+          <button class="btn-qty"    data-id="${n.id}">Adjust Qty</button>
+          <button class="btn-edit"   data-id="${n.id}">Edit</button>
+          <button class="btn-archive" data-id="${n.id}">Archive</button>
+        </td>`;
+
+      // hook buttons
+      tr.querySelector(".btn-edit").onclick = () => openEditModalFromRow(tr);
+      tr.querySelector(".btn-archive").onclick = () => { archiveTarget = tr; openModal("archiveModal"); };
+      tr.querySelector(".btn-qty").onclick = () => openQtyModal(tr);
+      return tr;
+    }
+
+
+    function escapeHtml(s){ return (""+s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+async function reloadSupplies(){
+  try{
+    const raw = await suppliesApi.list();               // GET /supplies → array
+    suppliesAll = Array.isArray(raw) ? raw : (raw?.items ?? raw?.data ?? []); // be safe
+    renderSupplies();                                   // initial render with current filters
+  }catch(e){
+    fail(asMessage(e) || "Failed to load supplies");
+  }
+}
+
+function renderSupplies(){
+  let rows = suppliesAll.slice();
+
+  // search by item name
+  const q = ($("searchName")?.value || "").trim().toLowerCase();
+  if (q) rows = rows.filter(s => (s.item_name ?? s.name ?? "").toLowerCase().includes(q));
+
+  // sort by category if requested
+  const sort = $("sortCategory")?.value || "";
+  if (sort === "asc" || sort === "desc") {
+    const dir = sort === "asc" ? 1 : -1;
+    rows.sort((a,b)=>{
+      const ca = (a.category ?? "").toLowerCase();
+      const cb = (b.category ?? "").toLowerCase();
+      if (ca < cb) return -1 * dir;
+      if (ca > cb) return  1 * dir;
+      return 0;
+    });
+  }
+
+  const tbody = $("supplyTable");
+  tbody.innerHTML = "";
+  rows.forEach(s => tbody.appendChild(trForSupply(s)));
+}
+
+// hook live search/sort
+$("searchName")?.addEventListener("input", renderSupplies);
+$("sortCategory")?.addEventListener("change", renderSupplies);
+
+
+    // ---- add ----
+    $("addSupplyForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const body = {
+        item_name: $("supplyName").value.trim(),
+        category: $("supplyCategory").value.trim(),
+        quantity: Number($("supplyQuantity").value),
+        unit: $("supplyUnit").value.trim(),
+      };
+      // VALIDATE to backend expectations
+      body.category = body.category.toLowerCase();
+      const qty = Number.parseInt($("supplyQuantity").value, 10);
+      if (!Number.isInteger(qty) || qty < 0) return fail("Quantity must be an integer ≥ 0");
+      body.quantity = qty;
+      if (!CATEGORY_ENUM.has(body.category)) return fail("Category must be one of: feed, vitamin, vaccine, tool, other");
+      if(!body.item_name || !body.unit) return fail("Please fill all fields correctly");
+
+      try{
+        const created = await suppliesApi.create(body);   // POST /supplies
+        $("addSupplyForm").reset();
+        closeModal("addSupplyModal");
+        success("Supply added");
+        await reloadSupplies();
+      }catch(e){
+        fail(asMessage(e) || "Create failed");
+      }
+    });
+
+
+    // ---- edit ----
+    function openEditModalFromRow(tr){
+      const cells = tr.cells;
+      $("editSupplyId").value       = tr.dataset.id;
+      $("editSupplyName").value     = cells[1].innerText;
+      $("editSupplyCategory").value = cells[2].innerText.toLowerCase();
+      $("editSupplyQuantity").value = cells[3].innerText;
+      $("editSupplyUnit").value     = cells[4].innerText;
+      openModal("editSupplyModal");
+    }
+
+
+    $("editSupplyForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const id = $("editSupplyId").value;
+      const body = {
+        item_name: $("editSupplyName").value.trim(),
+        category: $("editSupplyCategory").value.trim().toLowerCase(),
+        quantity: Number.parseInt($("editSupplyQuantity").value,10),
+        unit: $("editSupplyUnit").value.trim(),
+      };
+      if(!id) return fail("Missing id");
+      if (!Number.isInteger(body.quantity) || body.quantity < 0) return fail("Quantity must be an integer ≥ 0");
+      if (!CATEGORY_ENUM.has(body.category)) return fail("Category must be one of: feed, vitamin, vaccine, tool, other");
+      if(!body.item_name || !body.unit) return fail("Please fill all fields correctly");
+
+      try{
+        await suppliesApi.update(id, body);               // PUT /supplies/{id}, status only
+        closeModal("editSupplyModal");
+        success("Supply updated");
+        await reloadSupplies();
+      }catch(e){
+        fail(asMessage(e) || "Update failed");
+      }
+    });
+
+    // ---- adjust quantity ----
+    function openQtyModal(tr){
+      $("qtySupplyId").value = tr.dataset.id;
+      $("qtyDelta").value = "";
+      openModal("qtyModal");
+    }
+    $("qtyForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const id = $("qtySupplyId").value;
+      const delta = Number.parseInt($("qtyDelta").value, 10);
+      if(!id || !Number.isInteger(delta) || delta === 0){ return fail("Enter a non-zero integer"); }
+
+      try{
+        const updated = await suppliesApi.adjustQty(id, delta);  // PATCH /supplies/{id}/adjust-qty
+        closeModal("qtyModal");
+        success("Quantity adjusted");
+        await reloadSupplies();
+      }catch(e){
+        const msg = asMessage(e);
+        // If backend blocked negative inventory, surface that clearly
+        if (/negative|insufficient|below/i.test(msg)) return fail("Adjustment rejected: would result in negative inventory");
+        fail(msg || "Adjust failed");
+      }
+    });
+
+
+    // ---- archive (front-end only move) ----
+    $("archiveYesBtn").onclick = ()=>{
+      if(!archiveTarget) return closeModal("archiveModal");
+      const clone = archiveTarget.cloneNode(true);
+      // replace actions with Restore
+      const actions = clone.querySelector("td:last-child");
+      actions.innerHTML = `<button class="btn-restore">Restore</button>`;
+      actions.querySelector(".btn-restore").onclick = ()=>{
+        const back = clone.cloneNode(true);
+        const id = clone.dataset.id;
+        const last = back.querySelector("td:last-child");
+        last.innerHTML = `
+          <button class="btn-qty" data-id="${id}">Adjust Qty</button>
+          <button class="btn-edit" data-id="${id}">Edit</button>
+          <button class="btn-archive" data-id="${id}">Archive</button>`;
+        // rebind
+        back.querySelector(".btn-edit").onclick = () => openEditModalFromRow(back);
+        back.querySelector(".btn-archive").onclick = () => { archiveTarget = back; openModal("archiveModal"); };
+        back.querySelector(".btn-qty").onclick = () => openQtyModal(back);
+        $("supplyTable").appendChild(back);
+        clone.remove();
+      };
+      $("archivedSupply").appendChild(clone);
+      archiveTarget.remove();
+      archiveTarget = null;
+      closeModal("archiveModal");
+      success("Archived (local only)");
+    };
+
+    // ---- bootstrap ----
+    async function init(){
+      // check auth
+      if(!getToken()){ return (window.location.href = "/Zhomepage/login.html"); }
+      try{
+        me = await authApi.me(); // {user_id,...}
+      }catch(e){
+        clearToken();
+        return (window.location.href = "/Zhomepage/login.html");
+      }
+      await reloadSupplies();
+    }
+
+    window.addEventListener("click",(e)=>{
+      document.querySelectorAll(".modal").forEach(m => {
+        if(e.target === m) m.style.display = "none";
+      });
+    });
+    
+    // Make functions callable from inline onclick="" in the HTML
+    Object.assign(window, {
+      showView,         // tabs
+      openModal,        // used by "+ Add Supply"
+      closeModal,       // used by "Cancel" etc.
+      reloadSupplies    // Refresh button
+    });
+
+
+    init();
+
+    // --- Logout: clear token and redirect to login
+  document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearToken();                      // from /_shared/api.js
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  </script>
+</body>
+</html>

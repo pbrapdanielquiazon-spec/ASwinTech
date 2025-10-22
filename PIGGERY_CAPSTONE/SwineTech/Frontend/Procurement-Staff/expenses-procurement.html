@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>SwineTech | Manage Expenses</title>
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    main.dashboard{flex:1;padding:24px;box-sizing:border-box;overflow:auto}
+    .tabs{display:flex;gap:12px;margin:8px 0 18px}
+    .tab-btn{background:#f2f5f7;border:none;border-radius:8px;padding:8px 14px;cursor:pointer}
+    .tab-btn.active{background:#43A047;color:#fff}
+    .record-view{display:none}
+    .record-view.active{display:block}
+    .admin-table{width:100%;border-collapse:collapse;margin-top:12px}
+    .admin-table th,.admin-table td{border:1px solid #e5e7eb;padding:10px;text-align:center}
+    .admin-table th{background:#f7f7f7}
+    .btn-add,.btn-edit,.btn-archive,.btn-restore{border:none;border-radius:6px;padding:6px 10px;cursor:pointer}
+    .btn-add{background:#29B6F6;color:#fff}
+    .btn-edit{background:#FFA726;color:#fff}
+    .btn-archive{background:#EF5350;color:#fff}
+    .btn-restore{background:#29B6F6;color:#fff}
+    .modal{display:none;position:fixed;z-index:10;inset:0;background:rgba(0,0,0,.5)}
+    .modal-content{background:#fff;margin:5% auto;padding:20px;border-radius:8px;width:520px;max-width:94%}
+    .close{float:right;font-size:22px;cursor:pointer}
+    .form-group{margin-bottom:12px;text-align:left}
+    .form-group label{display:block;margin-bottom:6px}
+    .form-group input,.form-group select{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
+    .btn-auth{background:#43A047;color:#fff;border:none;padding:10px 12px;border-radius:6px;cursor:pointer}
+    .btn-auth:hover{filter:brightness(.95)}
+  </style>
+</head>
+<body>
+  <!-- Sidebar (optional keep same nav) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-procurement.html"><i class="fa-solid fa-boxes-stacked"></i> Dashboard</a>
+      <a href="procurement-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="supplies-procurement.html"><i class="fa-solid fa-warehouse"></i> Manage Supplies</a>
+      <a href="expenses-procurement.html" class="active"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Expenses</a>
+      <a href="reports-procurement.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <main class="dashboard">
+    <h1 style="text-align:center; letter-spacing:.06em;">MANAGE EXPENSES</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('live')">
+        <i class="fa-solid fa-receipt"></i> <span>Expenses</span>
+      </button>
+      <button class="tab-btn" onclick="showView('arch')">
+        <i class="fa-solid fa-folder-open"></i> <span>Archived Expenses</span>
+      </button>
+      <button class="btn-add" style="margin-left:auto" onclick="openModal('addExpenseModal')">+ Add Expense</button>
+    </div>
+
+    <!-- LIVE -->
+    <section id="live" class="record-view active">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Expense_ID</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Date_Spent</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="expensesTable"></tbody>
+      </table>
+    </section>
+
+    <!-- ARCHIVED -->
+    <section id="arch" class="record-view">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Expense_ID</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Date_Spent</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="archivedExpenses"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add Expense -->
+  <div id="addExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addExpenseModal')">&times;</span>
+    <h2>Add Expense</h2>
+    <form id="expenseForm">
+      <div class="form-group"><label>Description</label><input type="text" id="expenseDesc" required></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount" step="0.01" required></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="expenseCategory" required>
+          <option value="" disabled selected>-- Select category --</option>
+          <option value="tools">Tools</option>
+          <option value="vaccines">Vaccines</option>
+          <option value="medicine">Medicine</option>
+          <option value="feed">Feed</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="expenseDate" required></div>
+      <button class="btn-auth" type="submit">Save</button>
+    </form>
+  </div></div>
+
+  <!-- Edit Expense -->
+  <div id="editExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editExpenseModal')">&times;</span>
+    <h2>Edit Expense</h2>
+    <form id="editExpenseForm">
+      <div class="form-group"><label>Description</label><input type="text" id="editExpenseDesc" required></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="editExpenseAmount" step="0.01" required></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="editExpenseCategory" required>
+          <option value="" disabled>-- Select category --</option>
+          <option value="tools">Tools</option>
+          <option value="vaccines">Vaccines</option>
+          <option value="medicine">Medicine</option>
+          <option value="feed">Feed</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="editExpenseDate" required></div>
+      <button class="btn-auth" type="submit">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Archive / Success / Error -->
+  <div id="archiveModal" class="modal"><div class="modal-content">
+    <h3>⚠️ Archive this expense?</h3>
+    <div style="margin-top:14px;">
+      <button class="btn-auth" onclick="archiveYes()">Yes, Archive</button>
+      <button class="btn-auth" onclick="archiveNo()" style="background:#ccc;color:#111;margin-left:8px;">Cancel</button>
+    </div>
+  </div></div>
+
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3 id="successText">✅ Success</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('successModal')">OK</button></div>
+  </div></div>
+
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3 id="errorText">❌ Error</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('errorModal')">OK</button></div>
+  </div></div>
+
+  <script type="module">
+    import { expensesApi, authApi, clearToken } from "/_shared/api.js";
+
+    /* ---------- Auth gate ---------- */
+    async function gate(){
+      try{ await authApi.me(); }
+      catch{ window.location.href="/Zhomepage/login.html"; throw new Error("unauth"); }
+    }
+    await gate();
+    document.getElementById("logout")?.addEventListener("click",(e)=>{
+      e.preventDefault(); clearToken?.(); window.location.href="/Zhomepage/login.html";
+    });
+
+    /* ---------- Small helpers ---------- */
+    const $ = (id)=>document.getElementById(id);
+    const money = v => "₱" + Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    const tr = html => { const el=document.createElement("tr"); el.innerHTML=html; return el; };
+    function openModal(id){ $(id).style.display="block"; }
+    function closeModal(id){ $(id).style.display="none"; }
+    function showSuccess(t="Saved!"){ $("successText").innerText="✅ "+t; openModal("successModal"); }
+    function showError(t="Something went wrong"){ $("errorText").innerText="❌ "+t; openModal("errorModal"); }
+
+    /* ---------- Tabs ---------- */
+    window.showView = function(id){
+      document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+      document.querySelector(`.tab-btn[onclick="showView('${id}')"]`)?.classList.add("active");
+    };
+
+    /* ---------- Tables ---------- */
+    const liveT = $("expensesTable");
+    const archT = $("archivedExpenses");
+
+    function expenseRow(r){
+      const row = tr(`
+        <td>${r.id ?? r.expense_id ?? ""}</td>
+        <td>${escapeHtml(r.description ?? "")}</td>
+        <td>${money(r.amount ?? 0)}</td>
+        <td>${escapeHtml(r.category ?? "")}</td>
+        <td>${(r.date_spent ?? "").toString().slice(0,10)}</td>
+        <td>
+          <button class="btn-edit" data-id="${r.id ?? r.expense_id}" onclick="editRow(event)">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(event)">Archive</button>
+        </td>
+      `);
+      return row;
+    }
+
+    function archivedRow(o){
+      const row = tr(`
+        <td>${o.id}</td>
+        <td>${escapeHtml(o.description||"")}</td>
+        <td>${money(o.amount)}</td>
+        <td>${escapeHtml(o.category||"")}</td>
+        <td>${o.date_spent||""}</td>
+        <td><button class="btn-restore" onclick="restoreRow(event)">Restore</button></td>
+      `);
+      return row;
+    }
+
+    /* ---------- Load ---------- */
+    async function loadExpenses(){
+      liveT.innerHTML="";
+      const rows = await expensesApi.list();
+      (rows||[]).forEach(r=>liveT.appendChild(expenseRow(r)));
+      // render any archived from localStorage
+      renderArchivedFromStorage();
+    }
+
+    /* ---------- Create ---------- */
+    $("expenseForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const body = {
+        description: $("expenseDesc").value.trim(),
+        amount: Number($("expenseAmount").value||0),
+        category: $("expenseCategory").value,
+        date_spent: $("expenseDate").value,
+      };
+      if(!body.description||!body.amount||!body.date_spent) return showError("Fill all fields.");
+      const created = await expensesApi.create(body);
+      liveT.prepend(expenseRow(created));
+      closeModal("addExpenseModal"); e.target.reset(); showSuccess("Expense added");
+    });
+
+    /* ---------- Edit ---------- */
+    window.editRow = (ev)=>{
+      const row = ev.target.closest("tr");
+      row.classList.add("editing");
+      $("editExpenseDesc").value   = row.cells[1].innerText;
+      $("editExpenseAmount").value = row.cells[2].innerText.replace(/[₱,]/g,"");
+      $("editExpenseCategory").value = row.cells[3].innerText;
+      $("editExpenseDate").value   = row.cells[4].innerText;
+      openModal("editExpenseModal");
+    };
+    $("editExpenseForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const row = document.querySelector("#expensesTable tr.editing") || document.querySelector("#archivedExpenses tr.editing");
+      if(!row) return closeModal("editExpenseModal");
+      const id = row.cells[0].innerText;
+      const body = {
+        description: $("editExpenseDesc").value.trim(),
+        amount: Number($("editExpenseAmount").value||0),
+        category: $("editExpenseCategory").value,
+        date_spent: $("editExpenseDate").value,
+      };
+      const updated = await expensesApi.update(id, body);
+      const fresh = expenseRow(updated);
+      row.replaceWith(fresh);
+      closeModal("editExpenseModal"); showSuccess("Expense updated");
+    });
+
+    /* ---------- Archive / Restore (client-side UI) ---------- */
+    const ARCH_KEY = "arch_expenses";
+    const getArch = ()=>{ try{return JSON.parse(localStorage.getItem(ARCH_KEY)||"[]")}catch{return[]} };
+    const setArch = (arr)=>localStorage.setItem(ARCH_KEY, JSON.stringify(arr));
+
+    let _archiveCtx=null;
+    window.confirmArchive = (ev)=>{
+      _archiveCtx = ev.target.closest("tr");
+      openModal("archiveModal");
+    };
+    window.archiveNo = ()=>{ _archiveCtx=null; closeModal("archiveModal"); };
+    window.archiveYes = ()=>{
+      if(!_archiveCtx) return closeModal("archiveModal");
+      const o = {
+        id: _archiveCtx.cells[0].innerText,
+        description: _archiveCtx.cells[1].innerText,
+        amount: Number(_archiveCtx.cells[2].innerText.replace(/[₱,]/g,"")||0),
+        category: _archiveCtx.cells[3].innerText,
+        date_spent: _archiveCtx.cells[4].innerText
+      };
+      const arr = getArch(); arr.unshift(o); setArch(arr);
+      archT.prepend(archivedRow(o));
+      _archiveCtx.remove();
+      closeModal("archiveModal"); _archiveCtx=null; showSuccess("Archived");
+    };
+
+    function renderArchivedFromStorage(){
+      archT.innerHTML="";
+      getArch().forEach(o=>archT.appendChild(archivedRow(o)));
+    }
+
+    window.restoreRow = (ev)=>{
+      const row = ev.target.closest("tr");
+      const id  = row.cells[0].innerText;
+      const left = getArch().filter(x => String(x.id)!==String(id));
+      setArch(left);
+      // put it back to live table (UI only)
+      const obj = {
+        id,
+        description: row.cells[1].innerText,
+        amount: Number(row.cells[2].innerText.replace(/[₱,]/g,"")||0),
+        category: row.cells[3].innerText,
+        date_spent: row.cells[4].innerText
+      };
+      liveT.prepend(expenseRow(obj));
+      row.remove();
+      showSuccess("Restored");
+    };
+
+    /* ---------- Utils ---------- */
+    function escapeHtml(s){ return (""+s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+    /* ---------- Init ---------- */
+    await loadExpenses();
+
+    // close modals on backdrop / esc
+    window.addEventListener("click",(e)=>{ document.querySelectorAll(".modal").forEach(m=>{ if(e.target===m) m.style.display="none"; }); });
+    window.addEventListener("keydown",(e)=>{ if(e.key==="Escape") document.querySelectorAll(".modal").forEach(m=>m.style.display="none"); });
+
+    // expose for inline handlers
+    Object.assign(window,{ openModal, closeModal, confirmArchive, archiveYes, archiveNo, editRow, showView });
+  </script>
+</body>
+</html>

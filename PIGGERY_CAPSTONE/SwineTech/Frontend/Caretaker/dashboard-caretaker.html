@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Caretaker Dashboard</title>
+  <link rel="stylesheet" href="/Caretaker/caretaker.css" />
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .card {
+      background: var(--color-light, #fff);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.08);
+    }
+    .card h3 { margin-bottom: 8px; color: var(--color-primary,#2E3B4E); }
+    .card p { font-size: 1.35rem; margin: 0; }
+    .muted { color: #888; font-size: .9rem; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html" class="active"><i class="fa-solid fa-clipboard-list"></i> User Dashboard</a>
+      <a href="caretaker-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="caretaker-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="caretaker-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedules</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Caretaker Dashboard</h1>
+
+    <div class="dashboard-cards">
+      <div class="card" id="card-feedings">
+        <h3>Today's Feedings</h3>
+        <p id="feedings-count">—</p>
+        <div class="muted" id="feedings-note">Counting litters from /api/litters</div>
+      </div>
+
+      <div class="card" id="card-breeding">
+        <h3>Sows to tend</h3>
+        <p id="breeding-count">—</p>
+        <div class="muted">Total Sows in the system</div>
+      </div>
+    </div>
+  </main>
+
+<script type="module">
+  /* ===== Config / Auth ===== */
+  const API_BASE = "http://localhost:8000/api";                     // app endpoints base
+  const TOKEN_KEY = "token";                   // your stored token key
+  const token = localStorage.getItem(TOKEN_KEY);
+
+  function authHeaders() {
+    const h = { "Accept": "application/json" };
+    if (token) h["Authorization"] = `Bearer ${token}`;
+    return h;
+  }
+
+  /* ===== DOM ===== */
+  const feedingsEl = document.getElementById("feedings-count");
+  const feedingsNoteEl = document.getElementById("feedings-note");
+  const breedingEl = document.getElementById("breeding-count");
+
+  /* ===== Skeleton helpers ===== */
+  function setSkeleton(el, on = true) {
+    if (!el) return;
+    if (on) {
+      el.dataset.prevText = el.textContent;
+      el.textContent = "···";
+      el.style.opacity = "0.6";
+    } else {
+      el.style.opacity = "";
+      if (el.dataset.prevText) delete el.dataset.prevText;
+    }
+  }
+
+  /* ===== API calls ===== */
+  async function fetchJSON(path) {
+    const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(await res.text().catch(()=>"HTTP " + res.status));
+    return res.json();
+  }
+
+  /* ===== Today’s Feedings count (all litters) =====
+     Backend: GET /api/litters  -> array
+  */
+  async function loadLittersCount() {
+    try {
+      setSkeleton(feedingsEl, true);
+      const rows = await fetchJSON("/litters");  // resolves to /api/litters
+      const count = Array.isArray(rows) ? rows.length : 0;
+      feedingsEl.textContent = count || "—";
+      feedingsNoteEl.textContent = "Total litters in system";
+    } catch (e) {
+      console.warn("Litters fetch failed:", e);
+      feedingsEl.textContent = "—";
+      feedingsNoteEl.textContent = "Failed to load litters";
+    } finally {
+      setSkeleton(feedingsEl, false);
+    }
+  }
+
+  /* ===== Breeding Records count (total sows) =====
+     Backend: GET /api/sows  -> array
+  */
+  async function loadSowsCount() {
+    try {
+      setSkeleton(breedingEl, true);
+      const rows = await fetchJSON("/api/sows");     // resolves to /api/sows
+      const count = Array.isArray(rows) ? rows.length : 0;
+      breedingEl.textContent = count || "—";
+    } catch (e) {
+      console.warn("Sows fetch failed:", e);
+      breedingEl.textContent = "—";
+    } finally {
+      setSkeleton(breedingEl, false);
+    }
+  }
+
+  /* ===== Init & Refresh ===== */
+  async function boot() {
+    if (!token) {
+      // optional redirect if not logged in
+      // window.location.href = "/Zhomepage/login.html";
+    }
+    await Promise.all([loadLittersCount(), loadSowsCount()]);
+    setInterval(() => {
+      loadLittersCount();
+      loadSowsCount();
+    }, 60000); // 60s
+  }
+
+  // Logout clears token
+  document.getElementById("logout")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("access_token");
+    } catch {}
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  boot();
+</script>
+
+</body>
+</html>

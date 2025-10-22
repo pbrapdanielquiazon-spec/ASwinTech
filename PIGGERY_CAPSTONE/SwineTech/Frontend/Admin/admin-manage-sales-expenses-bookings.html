@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>SwineTech | Manage Sales, Expenses, Bookings & Inquiries</title>
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    main.dashboard { flex:1; padding:24px; box-sizing:border-box; overflow:auto; }
+    .tabs { margin:20px 0; }
+    .tab-btn { background:#f0f0f0; border:none; padding:10px 14px; cursor:pointer; margin-right:6px; border-radius:6px; }
+    .tab-btn.active { background:#43A047; color:#fff; }
+    .admin-table { width:100%; border-collapse:collapse; margin-top:12px; }
+    .admin-table th, .admin-table td { border:1px solid #ddd; padding:8px; text-align:center; font-size:14px; }
+    .admin-table th { background:#f7f7f7; }
+    .btn-add, .btn-edit, .btn-archive, .btn-restore, .btn-review, .btn-respond {
+      padding:6px 10px; margin:2px; border:none; border-radius:6px; cursor:pointer; font-size:13px;
+    }
+    .btn-add { background:#29B6F6; color:#fff; }
+    .btn-edit { background:#FFA726; color:#fff; }
+    .btn-archive { background:#EF5350; color:#fff; }
+    .btn-restore { background:#29B6F6; color:#fff; }
+    .btn-review { background:#8E44AD; color:#fff; }
+    .btn-respond { background:#6C9A2E; color:#fff; }
+    .modal { display:none; position:fixed; z-index:10; inset:0; background:rgba(0,0,0,.5); }
+    .modal-content { background:#fff; margin:5% auto; padding:20px; border-radius:8px; width:540px; max-width:94%; }
+    .modal h2 { margin-bottom:15px; }
+    .close { float:right; font-size:22px; cursor:pointer; }
+    .form-group { margin-bottom:12px; text-align:left; }
+    .form-group label { display:block; margin-bottom:6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;
+    }
+    .btn-auth { background:#43A047; color:#fff; border:none; padding:10px 12px; border-radius:6px; cursor:pointer; }
+    .btn-auth:hover { filter:brightness(.95); }
+    @media (max-width:900px){ aside.sidebar{ display:none; } }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html" class="active"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Manage Sales, Expenses, Bookings & Inquiries</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('sales')">💵 Sales</button>
+      <button class="tab-btn" onclick="showView('expenses')">📉 Expenses</button>
+      <button class="tab-btn" onclick="showView('bookings')">📅 Bookings</button>
+      <button class="tab-btn" onclick="showView('inquiries')">✉️ Inquiries</button>
+      <button class="tab-btn" onclick="showView('receipts')">🧾 Receipts</button>
+      <button class="tab-btn" onclick="showView('declines')">❌ Declines</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived</button>
+    </div>
+
+    <!-- SALES -->
+    <section id="sales" class="record-view active">
+      <h2>Sales Records</h2>
+      <button class="btn-add" onclick="openModal('addSaleModal')">+ Record Sale</button>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Sale_ID</th><th>Booking_ID</th><th>Item_Type</th><th>Description</th><th>Total (₱)</th><th>Payment_Date</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="salesTable"></tbody>
+      </table>
+    </section>
+
+    <!-- EXPENSES -->
+    <section id="expenses" class="record-view">
+      <h2>Expenses</h2>
+      <button class="btn-add" onclick="openModal('addExpenseModal')">+ Add Expense</button>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="expensesTable"></tbody>
+      </table>
+    </section>
+
+    <!-- BOOKINGS -->
+    <section id="bookings" class="record-view">
+      <h2>Bookings</h2>
+      <div style="margin:8px 0;">
+        <label for="bookingFilter" style="margin-right:8px;">Filter:</label>
+        <select id="bookingFilter">
+          <option value="pending" selected>Pending</option>
+          <option value="approved">Approved</option>
+        </select>
+      </div>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Booking_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Pigs_IDs</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="bookingsTable"></tbody>
+      </table>
+    </section>
+
+    <!-- INQUIRIES -->
+    <section id="inquiries" class="record-view">
+      <h2>Inquiries</h2>
+      <table class="admin-table">
+        <thead>
+          <tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="inquiriesTable"></tbody>
+      </table>
+    </section>
+
+    <!-- RECEIPTS -->
+    <section id="receipts" class="record-view">
+      <h2>Receipts</h2>
+      <table class="admin-table">
+        <thead><tr><th>Receipt_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Total</th><th>Date</th><th>Approved_By</th></tr></thead>
+        <tbody id="receiptsTable"></tbody>
+      </table>
+    </section>
+
+
+    <!-- DECLINES -->
+    <section id="declines" class="record-view">
+      <h2>Declines</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Booking_ID</th>
+            <th>Type</th>
+            <th>Item_Details</th>
+            <th>Status</th>
+            <th>Booking_Date</th>
+            <th>Pigs_IDs</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="declinesTable"></tbody>
+      </table>
+    </section>
+
+
+    <!-- ARCHIVED -->
+    <section id="archived" class="record-view">
+      <h2>Archived</h2>
+      <div class="archived-section" data-type="sale" style="margin-bottom:18px;">
+        <h3>Archived Sales</h3>
+        <table class="admin-table"><thead><tr><th>Sale_ID</th><th>Booking_ID</th><th>Client_ID</th><th>Item_Type</th><th>Description</th><th>Total</th><th>Payment_Date</th><th>Actions</th></tr></thead>
+          <tbody id="archivedSales"></tbody>
+        </table>
+      </div>
+      <div class="archived-section" data-type="expense" style="margin-bottom:18px;">
+        <h3>Archived Expenses</h3>
+        <table class="admin-table"><thead><tr><th>Expense_ID</th><th>Description</th><th>Amount</th><th>Category</th><th>Date_Spent</th><th>Actions</th></tr></thead>
+          <tbody id="archivedExpenses"></tbody>
+        </table>
+      </div>
+      <div class="archived-section" data-type="booking" style="margin-bottom:18px;">
+        <h3>Archived Bookings</h3>
+        <table class="admin-table"><thead><tr><th>Booking_ID</th><th>Client_ID</th><th>Type</th><th>Item_Details</th><th>Status</th><th>Booking_Date</th><th>Approved_By</th><th>Pigs_IDs</th><th>Actions</th></tr></thead>
+          <tbody id="archivedBookings"></tbody>
+        </table>
+      </div>
+      <div class="archived-section" data-type="inquiry">
+        <h3>Archived Inquiries</h3>
+        <table class="admin-table"><thead><tr><th>Inquiry_ID</th><th>Client_ID</th><th>Subject</th><th>Message</th><th>Status</th><th>Submitted_At</th><th>Responded_By</th><th>Responded_At</th><th>Actions</th></tr></thead>
+          <tbody id="archivedInquiries"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- ----------------------------- Modals ----------------------------- -->
+zzz
+  <!-- Add Sale -->
+  <div id="addSaleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addSaleModal')">&times;</span>
+    <h2>Add Sale</h2>
+    <form id="saleForm">
+      <div class="form-group">
+        <label>Booking_ID</label>
+        <input type="number" id="saleBooking" placeholder="Enter booking id" required />
+      </div>
+      <div class="form-group">
+        <label>Client_ID (auto)</label>
+        <input type="number" id="saleClient" readonly placeholder="Auto from booking" />
+      </div>
+      <div class="form-group">
+        <label>Item_Type (optional)</label>
+        <input type="text" id="saleItem" placeholder="Pig / Service / Other" />
+      </div>
+      <div class="form-group">
+        <label>Description (optional)</label>
+        <input type="text" id="saleDesc" placeholder="e.g., Grower 70kg" />
+      </div>
+      <div class="form-group">
+        <label>Total (optional)</label>
+        <input type="number" id="saleTotal" step="0.01" placeholder="If omitted, backend may compute" />
+      </div>
+      <div class="form-group">
+        <label>Payment_Date (optional)</label>
+        <input type="date" id="saleDate" />
+      </div>
+      <button class="btn-auth" type="submit">Save</button>
+    </form>
+  </div></div>
+
+  <!-- Edit Sale -->
+  <div id="editSaleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editSaleModal')">&times;</span>
+    <h2>Edit Sale</h2>
+    <form id="editSaleForm">
+      <div class="form-group"><label>Booking_ID</label><input type="number" id="editSaleBooking" required></div>
+      <div class="form-group"><label>Client_ID</label><input type="number" id="editSaleClient" required></div>
+      <div class="form-group"><label>Item_Type</label><input type="text" id="editSaleItem"></div>
+      <div class="form-group"><label>Description</label><input type="text" id="editSaleDesc"></div>
+      <div class="form-group"><label>Total</label><input type="number" id="editSaleTotal" step="0.01"></div>
+      <div class="form-group"><label>Payment_Date</label><input type="date" id="editSaleDate"></div>
+      <button class="btn-auth" type="submit">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Add Expense -->
+  <div id="addExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addExpenseModal')">&times;</span>
+    <h2>Add Expense</h2>
+    <form id="expenseForm">
+      <div class="form-group"><label>Description</label><input type="text" id="expenseDesc" required></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount" step="0.01" required></div>
+      <div class="form-group">
+      <label>Category</label>
+      <select id="expenseCategory" required>
+        <option value="" disabled selected>-- Select category --</option>
+        <option value="tools">Tools</option>
+        <option value="vaccines">Vaccines</option>
+        <option value="medicine">Medicine</option>
+        <option value="feed">Feed</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="expenseDate" required></div>
+      <button class="btn-auth" type="submit">Save</button>
+    </form>
+  </div></div>
+
+  <!-- Edit Expense -->
+  <div id="editExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editExpenseModal')">&times;</span>
+    <h2>Edit Expense</h2>
+    <form id="editExpenseForm">
+      <div class="form-group"><label>Description</label><input type="text" id="editExpenseDesc" required></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="editExpenseAmount" step="0.01" required></div>
+      <div class="form-group">
+      <label>Category</label>
+      <select id="editExpenseCategory" required>
+        <option value="" disabled>-- Select category --</option>
+        <option value="tools">Tools</option>
+        <option value="vaccines">Vaccines</option>
+        <option value="medicine">Medicine</option>
+        <option value="feed">Feed</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="editExpenseDate" required></div>
+      <button class="btn-auth" type="submit">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Review Booking -->
+  <div id="reviewBookingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('reviewBookingModal')">&times;</span>
+    <h2>Review Booking</h2>
+    <form id="reviewForm">
+      <input type="hidden" id="reviewBookingId" />
+      <div class="form-group"><label>Client</label><div id="reviewBookingClient" style="padding:6px 0;"></div></div>
+      <div class="form-group"><label>Details</label><div id="reviewBookingDetails" style="padding:6px 0;"></div></div>
+      <div class="form-group">
+        <label>Decision</label>
+        <select id="bookingDecision"><option value="approved">Approve</option><option value="declined">Decline</option></select>
+      </div>
+      <div class="form-group" id="declineReasonGroup" style="display:none;">
+        <label>Reason for Decline</label>
+        <textarea id="declineReason" placeholder="Optional note to client"></textarea>
+      </div>
+      <button class="btn-auth" type="submit">Submit Confirmation</button>
+    </form>
+  </div></div>
+
+  <!-- Respond Inquiry -->
+  <div id="inquiryModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('inquiryModal')">&times;</span>
+    <h2>Respond to Inquiry</h2>
+    <form id="inquiryForm">
+      <input type="hidden" id="inquiryIdField" />
+      <div class="form-group"><label>Response</label><textarea id="responseField" required></textarea></div>
+      <button class="btn-auth" type="submit">Send Response</button>
+    </form>
+  </div></div>
+
+  <!-- Archive confirmation -->
+  <div id="archiveModal" class="modal"><div class="modal-content">
+    <h3>⚠️ Are you sure you want to archive this record?</h3>
+    <div style="margin-top:14px;">
+      <button class="btn-auth" onclick="archiveYes()">Yes, Archive</button>
+      <button class="btn-auth" onclick="archiveNo()" style="background:#ccc;color:#111;margin-left:8px;">Cancel</button>
+    </div>
+  </div></div>
+
+  <!-- Generic Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3 id="successText">✅ Success</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('successModal')">OK</button></div>
+  </div></div>
+
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3 id="errorText">❌ Error</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('errorModal')">OK</button></div>
+  </div></div>
+
+  <!-- ----------------------------- Script ----------------------------- -->
+  <script type="module">
+    import { bookingsApi, salesApi, expensesApi, inquiriesApi, receiptsApi, authApi, clearToken  } from "../_shared/api.js";
+
+
+    // ---------- Auth gate ----------
+   async function gate() {
+      try {
+        await authApi.me();                     // verifies token; throws if not signed in
+      } catch {
+        window.location.href = "/Zhomepage/login.html";
+        return;                                 // stop further execution if not logged in
+      }
+    }
+    await gate();
+
+    document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      clearToken?.();                           // from your api.js
+      window.location.href = "/Zhomepage/login.html";
+    });
+
+    // ---------- DOM helpers ----------
+    const $ = (id) => document.getElementById(id);
+    
+    function showView(id) {
+      document.querySelectorAll('.record-view').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.getAttribute('onclick')?.includes(`'${id}'`)) b.classList.add('active');
+      });
+
+      if (id === 'bookings')  loadBookings();
+      if (id === 'declines')  loadDeclines();   // ← outside the forEach
+    }
+
+    function openModal(id)  { const el = document.getElementById(id); if (el) el.style.display = "block"; }
+    function closeModal(id) { const el = document.getElementById(id); if (el) el.style.display = "none"; }
+    function showSuccess(text='Saved!'){ $('successText').innerText = '✅ ' + text; openModal('successModal'); }
+    function showError(text='Something went wrong'){ $('errorText').innerText = '❌ ' + text; openModal('errorModal'); }
+    function money(v){ const n = Number(v||0); return '₱' + n.toLocaleString(); }
+
+    // ---------- Tables ----------
+    const salesT     = $('salesTable');
+    const expensesT  = $('expensesTable');
+    const bookingsT  = $('bookingsTable');
+    const inquiriesT = $('inquiriesTable');
+    const receiptsT = document.getElementById("receiptsTable");
+    const declinesT  = $('declinesTable');
+    document.getElementById("bookingFilter")?.addEventListener("change", (e) => {
+    loadBookings(e.target.value);
+});
+    // ---- Declines (local persistence) ----
+
+
+
+    // ---------- Renderers ----------
+    const tr = (html) => { const el = document.createElement('tr'); el.innerHTML = html; return el; };
+
+    function salesRow(r){
+      // backend fields: id, booking_id, item_type, item_description, total_amount, payment_date(YYYY-MM-DD)
+      const row = tr(`
+        <td>${r.id ?? r.sale_id ?? ''}</td>
+        <td>${r.booking_id ?? ''}</td>
+        <td>${escapeHtml(r.item_type ?? '')}</td>
+        <td>${escapeHtml(r.item_description ?? '')}</td>
+        <td>${money(r.total_amount ?? 0)}</td>
+        <td>${(r.payment_date ?? '').toString().slice(0,10)}</td>
+        <td>
+          <button class="btn-edit" data-id="${r.id ?? r.sale_id}" onclick="editRecord(event,'sale')">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(event,'salesTable','archivedSales')">Archive</button>
+        </td>
+      `);
+      return row;
+    }
+
+    function expenseRow(r){
+      // backend fields: id, description, amount, category, date_spent(YYYY-MM-DD)
+      const row = tr(`
+        <td>${r.id ?? r.expense_id ?? ''}</td>
+        <td>${escapeHtml(r.description ?? '')}</td>
+        <td>${money(r.amount ?? 0)}</td>
+        <td>${escapeHtml(r.category ?? '')}</td>
+        <td>${(r.date_spent ?? '').toString().slice(0,10)}</td>
+        <td>
+          <button class="btn-edit" data-id="${r.id ?? r.expense_id}" onclick="editRecord(event,'expense')">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(event,'expensesTable','archivedExpenses')">Archive</button>
+        </td>
+      `);
+      return row;
+    }
+
+    function bookingRow(r){
+      // show minimal fields you listed
+      const pigs = Array.isArray(r.pigs_ids) ? r.pigs_ids.join(',') : (r.pigs_ids ?? '');
+      const row = tr(`
+        <td>${r.id ?? r.booking_id ?? ''}</td>
+        <td>${escapeHtml(r.type ?? r.booking_type ?? '')}</td>
+        <td>${escapeHtml(r.item_details ?? r.notes ?? '')}</td>
+        <td>${escapeHtml(r.status ?? '')}</td>
+        <td>${(r.booking_date ?? '').toString().slice(0,10)}</td>
+        <td>${pigs}</td>
+        <td>
+          <button class="btn-review" onclick="reviewBooking(event)">Review</button>
+          <button class="btn-edit" onclick="editRecord(event,'booking')">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(event,'bookingsTable','archivedBookings')">Archive</button>
+        </td>
+      `);
+      return row;
+    }
+
+    function inquiryRow(r){
+      // backend InquiryOut has alias: id -> inquiry_id, but we’ll prefer r.inquiry_id || r.id
+      const id = r.inquiry_id ?? r.id ?? '';
+      const row = tr(`
+        <td>${id}</td>
+        <td>${r.client_id ?? ''}</td>
+        <td>${escapeHtml(r.subject ?? '')}</td>
+        <td>${escapeHtml(r.message ?? '')}</td>
+        <td>${escapeHtml(r.status ?? '')}</td>
+        <td>${(r.submitted_at ?? '').toString().slice(0,19).replace('T',' ')}</td>
+        <td>${r.responded_by ?? '-'}</td>
+        <td>${r.responded_at ? r.responded_at.toString().slice(0,19).replace('T',' ') : '-'}</td>
+        <td>
+          <button class="btn-respond" onclick="openRespondInquiry(event)">Respond</button>
+          <button class="btn-archive" onclick="confirmArchive(event,'inquiriesTable','archivedInquiries')">Archive</button>
+        </td>
+      `);
+      return row;
+    }
+
+
+    // Receipts/Declines display rows (client-only tables here)
+    function receiptRow(rc) {
+      // receipt_data is arbitrary JSON; pull what we can in a defensive way
+      const data = rc.receipt_data || {};
+      const total = Number(data.total ?? rc.total ?? 0);
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${rc.receipt_id ?? rc.id ?? ""}</td>
+        <td>${rc.booking_id ?? data.booking_id ?? ""}</td>
+        <td>${rc.client_id ?? data.client_id ?? ""}</td>
+        <td>₱${total.toLocaleString()}</td>
+        <td>${(rc.generated_at ?? rc.created_at ?? "").toString().slice(0,19).replace("T"," ")}</td>
+        <td>${data.approved_by ?? rc.approved_by ?? "-"}</td>
+      `;
+      return tr;
+    }
+    const declineRow = (d) => tr(`
+      <td>${d.booking_id ?? ''}</td>
+      <td>${d.client_id ?? ''}</td>
+      <td>${escapeHtml(d.item ?? '')}</td>
+      <td>${escapeHtml(d.reason ?? '')}</td>
+      <td>${(d.date ?? new Date()).toString().slice(0,19)}</td>
+      <td>${d.declined_by ?? '-'}</td>
+    `);
+
+    // ---------- Loaders ----------
+    async function loadSales(filters = {}) {
+      salesT.innerHTML = "";
+      try {
+        const rows = await salesApi.list(filters);
+        (rows || []).forEach(r => salesT.appendChild(salesRow(r)));
+      } catch(e){ showError("Load sales: " + e.message); }
+    }
+
+    async function loadExpenses(filters = {}) {
+      expensesT.innerHTML = "";
+      try {
+        const rows = await expensesApi.list(filters);
+        (rows || []).forEach(r => expensesT.appendChild(expenseRow(r)));
+      } catch(e){ showError("Load expenses: " + e.message); }
+    }
+
+    async function loadBookings(
+      status = (document.getElementById("bookingFilter")?.value || "pending")
+    ){
+      bookingsT.innerHTML = "";
+      try {
+        const rows = await bookingsApi.list(status);
+        (rows || []).forEach(r => bookingsT.appendChild(bookingRow(r)));
+      } catch (e) {
+        showError("Load bookings: " + (e.message || e));
+      }
+    }
+
+    let declinesNonce = 0;
+
+    async function loadDeclines() {
+      if (!declinesT) return;
+      const nonce = ++declinesNonce;       // mark this invocation as the newest
+
+      // Optional: show skeleton/empty state
+      declinesT.innerHTML = "";
+
+      try {
+        const rows = await bookingsApi.list("declined");
+        if (nonce !== declinesNonce) return;  // a newer call started—abort rendering
+
+        const list = Array.isArray(rows) ? rows : [];
+        if (!list.length) {
+          declinesT.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#777;">No declined bookings</td></tr>`;
+          return;
+        }
+
+        declinesT.innerHTML = "";  // ensure clean slate for this (latest) render
+        list.forEach(b => declinesT.appendChild(bookingRow(b))); // reuse your row renderer
+      } catch (e) {
+        if (nonce !== declinesNonce) return;
+        declinesT.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#b00;">Failed to load declined bookings.</td></tr>`;
+        console.warn("loadDeclines failed:", e);
+      }
+    }
+
+
+
+    async function loadInquiries() {
+      inquiriesT.innerHTML = "";
+      try {
+        const rows = await inquiriesApi.list();
+        (rows || []).forEach(r => inquiriesT.appendChild(inquiryRow(r)));
+      } catch(e){ showError("Load inquiries: " + e.message); }
+    }
+
+    async function loadReceipts(){
+      if (!receiptsT) return;
+      receiptsT.innerHTML = "";
+      try{
+        const rows = await receiptsApi.list();          // <-- no more 'jreq'
+        (rows || []).forEach(r => receiptsT.appendChild(receiptRow(r)));
+      }catch(e){
+        // Your existing showError should open the modal
+        showError(`Load receipts: ${e.message || e}`);
+      }
+    }
+
+    async function loadAll(){
+      await Promise.all([
+        loadSales(),
+        loadExpenses(),
+        loadBookings(/* default: pending per backend */),
+        loadInquiries(),
+        loadReceipts(),
+      ]);
+    }
+
+
+    // ---------- Sales: Booking->Client auto-fill ----------
+    $('saleBooking').addEventListener('blur', async () => {
+      const bid = Number($('saleBooking').value || 0);
+      if(!bid) return;
+      try{
+        const b = await bookingsApi.get(bid);
+        if (b?.client_id) $('saleClient').value = b.client_id;
+      }catch(e){ /* ignore */ }
+    });
+
+    // ---------- Create handlers ----------
+    $('saleForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      try{
+        const payload = {
+          booking_id: Number($('saleBooking').value || 0) || undefined,
+          // client_id is inferred by backend from booking; we won’t send it here
+          item_type: $('saleItem').value.trim() || undefined,
+          item_description: $('saleDesc').value.trim() || undefined,
+          total_amount: $('saleTotal').value ? Number($('saleTotal').value) : undefined,
+          payment_date: $('saleDate').value || undefined, // YYYY-MM-DD
+        };
+        if(!payload.booking_id) return showError("Booking_ID is required");
+        const created = await salesApi.create(payload);
+        salesT.prepend(salesRow(created));
+        closeModal('addSaleModal'); e.target.reset(); showSuccess("Sale recorded");
+      }catch(err){ showError(err.message); }
+    });
+
+
+    $('expenseForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      try{
+        const payload = {
+          description: $('expenseDesc').value.trim(),
+          amount: Number($('expenseAmount').value || 0),
+          category: $('expenseCategory').value.trim() || undefined,
+          date_spent: $('expenseDate').value, // YYYY-MM-DD
+        };
+        if(!payload.description || !payload.amount || !payload.date_spent) return showError("Fill all expense fields");
+        const created = await expensesApi.create(payload);
+        expensesT.prepend(expenseRow(created));
+        closeModal('addExpenseModal'); e.target.reset(); showSuccess("Expense added");
+      }catch(err){ showError(err.message); }
+    });
+
+
+    // ---------- Edit handlers (open modals with current data) ----------
+    window.editRecord = (ev, type)=>{
+      const row = ev.target.closest('tr');
+      row.classList.add('editing');
+      if(type==='sale'){
+        $('editSaleBooking').value = row.cells[1].innerText;
+        const _clientEl = $('editSaleClient');
+        if (_clientEl) _clientEl.value = '';
+        $('editSaleItem').value    = row.cells[3].innerText;
+        $('editSaleDesc').value    = row.cells[4].innerText;
+        $('editSaleTotal').value   = row.cells[5].innerText.replace(/[₱,]/g,'');
+        $('editSaleDate').value    = row.cells[6].innerText;
+        openModal('editSaleModal');
+      } else if(type==='expense'){
+        $('editExpenseDesc').value     = row.cells[1].innerText;
+        $('editExpenseAmount').value   = row.cells[2].innerText.replace(/[₱,]/g,'');
+        $('editExpenseCategory').value = row.cells[3].innerText;
+        $('editExpenseDate').value     = row.cells[4].innerText;
+        openModal('editExpenseModal');
+      } else if(type==='booking'){
+        // optional: you can add an edit booking modal & call bookingsApi.update
+        showError("Inline edit booking not implemented. Use Review for approve/decline.");
+      }
+    };
+
+    $('editSaleForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const row = document.querySelector('#salesTable tr.editing') || document.querySelector('#archivedSales tr.editing');
+      if(!row) return closeModal('editSaleModal');
+      const id = row.cells[0].innerText;
+      try{
+        const payload = {
+          booking_id: Number($('editSaleBooking').value||0) || undefined,
+          item_type: $('editSaleItem').value.trim() || undefined,
+          item_description: $('editSaleDesc').value.trim() || undefined,
+          total_amount: $('editSaleTotal').value ? Number($('editSaleTotal').value) : undefined,
+          payment_date: $('editSaleDate').value || undefined,
+        };
+        const updated = await salesApi.update(id, payload);
+        // Re-render row from response to keep formatting consistent
+        const fresh = salesRow(updated);
+        row.replaceWith(fresh);
+        closeModal('editSaleModal'); showSuccess("Sale updated");
+      }catch(err){ showError(err.message); }
+    });
+
+
+    $('editExpenseForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const row = document.querySelector('#expensesTable tr.editing') || document.querySelector('#archivedExpenses tr.editing');
+      if(!row) return closeModal('editExpenseModal');
+      const id = row.cells[0].innerText;
+      try{
+        const payload = {
+          description: $('editExpenseDesc').value.trim(),
+          amount: Number($('editExpenseAmount').value||0),
+          category: $('editExpenseCategory').value.trim() || undefined,
+          date_spent: $('editExpenseDate').value, // YYYY-MM-DD
+        };
+        const updated = await expensesApi.update(id, payload);
+        const fresh = expenseRow(updated);
+        row.replaceWith(fresh);
+        closeModal('editExpenseModal'); showSuccess("Expense updated");
+      }catch(err){ showError(err.message); }
+    });
+
+
+    // ---------- Booking review ----------
+    window.reviewBooking = async (ev) => {
+      const row = ev.target.closest('tr');
+      const id = Number(row.cells[0].innerText);
+      $('reviewBookingId').value = id;
+
+      // Fill the “Details” line from table columns
+      const type  = row.cells[1].innerText;
+      const items = row.cells[2].innerText;
+      $('reviewBookingDetails').innerText = `${type} - ${items}`;
+
+      // Default UI state
+      $('bookingDecision').value = 'approved';
+      $('declineReasonGroup').style.display = 'none';
+      $('declineReason').value = '';
+
+      // Determine role
+      let isAdmin = false;
+      try {
+        const me = await authApi.me();
+        const roleStr = String(me?.role?.value ?? me?.role ?? '').toUpperCase();
+        isAdmin = (roleStr === 'ADMIN');
+      } catch (_) {
+        isAdmin = false;
+      }
+
+      // Show client info for admins only
+      if (isAdmin) {
+        try {
+          const bk = await bookingsApi.get(id);
+          const clientName =
+            bk?.client_full_name ||
+            bk?.client_name ||
+            bk?.client?.full_name ||
+            (bk?.client_id != null ? `Client #${bk.client_id}` : '(client hidden)');
+          $('reviewBookingClient').innerText = clientName;
+        } catch {
+          $('reviewBookingClient').innerText = '(client hidden)';
+        }
+      } else {
+        $('reviewBookingClient').innerText = '(client hidden)';
+      }
+
+      openModal('reviewBookingModal');
+    };
+
+
+
+    $('bookingDecision').addEventListener('change', ()=>{
+      $('declineReasonGroup').style.display = $('bookingDecision').value === 'declined' ? 'block' : 'none';
+    });
+
+    $('reviewForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = Number($('reviewBookingId').value);
+      const decision = $('bookingDecision').value;           // "approved" | "declined"
+      const reason = $('declineReason').value.trim() || undefined;
+
+      try {
+        const res = await bookingsApi.decide(id, decision);
+
+        // Refresh bookings list (backend default is pending)
+        await loadBookings();
+
+      if (decision === 'approved') {
+        await loadReceipts();
+        showSuccess('Booking approved');
+      } else {
+        // No local cache; just refresh from backend
+        await loadDeclines();
+        showSuccess('Booking declined');
+      }
+
+
+        closeModal('reviewBookingModal');
+      } catch (err) {
+        showError(err.message);
+      }
+    });
+
+
+
+
+    // ---------- Inquiries ----------
+    window.openRespondInquiry = (ev)=>{
+      const row = ev.target.closest('tr');
+      $('inquiryIdField').value = row.cells[0].innerText;
+      $('responseField').value = '';
+      openModal('inquiryModal');
+    };
+
+    $('inquiryForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const id = Number($('inquiryIdField').value);
+      const resp = $('responseField').value.trim();
+      if(!resp) return showError("Response cannot be empty");
+      try{
+        const updated = await inquiriesApi.respond(id, resp); // backend sets status/responded_by/at
+        // update whichever table currently holds the row (live/archived)
+        const row = [...document.querySelectorAll('#inquiriesTable tr, #archivedInquiries tr')].find(r => r.cells[0].innerText == id);
+        if (row){
+          row.cells[6].innerText = updated.responded_by ?? 'Admin';
+          row.cells[7].innerText = (updated.responded_at ?? new Date().toISOString()).toString().slice(0,19).replace('T',' ');
+          row.cells[4].innerText = updated.status ?? 'responded';
+        }
+        closeModal('inquiryModal'); showSuccess("Inquiry responded");
+      }catch(err){ showError(err.message); }
+    });
+
+
+    // ---------- Archive / Restore ----------
+    let archiveCtx = null; // { row, fromId, toId }
+    window.confirmArchive = (ev, fromId, toId)=>{
+      const row = ev.target.closest('tr');
+      archiveCtx = { row, fromId, toId };
+      openModal('archiveModal');
+    };
+    window.archiveNo = ()=>{ archiveCtx=null; closeModal('archiveModal'); };
+
+    window.archiveYes = ()=>{
+      if(!archiveCtx) return closeModal('archiveModal');
+      const { row, fromId, toId } = archiveCtx;
+      const clone = row.cloneNode(true);
+      // mark origin so we can restore
+      clone.dataset.original = fromId;
+      // adjust actions: add restore, keep edit/review/respond for visibility
+      const type = mapType(fromId);
+      clone.querySelector('td:last-child').innerHTML = actionsHtmlArchived(type);
+      document.getElementById(toId).prepend(clone);
+      row.remove();
+      closeModal('archiveModal');
+      archiveCtx=null;
+      showSuccess("Archived");
+    };
+
+    window.restoreRecord = (ev)=>{
+      const row = ev.target.closest('tr');
+      const origin = row.dataset.original;
+      if(!origin) return showError("Original table unknown");
+      row.querySelector('td:last-child').innerHTML = actionsHtmlLive(mapType(origin));
+      document.getElementById(origin).prepend(row);
+      delete row.dataset.original;
+      showSuccess("Restored");
+    };
+
+    function mapType(tbodyId){
+      if (tbodyId.includes('sales'))    return 'sale';
+      if (tbodyId.includes('expenses')) return 'expense';
+      if (tbodyId.includes('bookings')) return 'booking';
+      if (tbodyId.includes('inquiries'))return 'inquiry';
+      return 'sale';
+    }
+    function actionsHtmlLive(type){
+      if(type==='sale')    return `<button class="btn-edit" onclick="editRecord(event,'sale')">Edit</button> <button class="btn-archive" onclick="confirmArchive(event,'salesTable','archivedSales')">Archive</button>`;
+      if(type==='expense') return `<button class="btn-edit" onclick="editRecord(event,'expense')">Edit</button> <button class="btn-archive" onclick="confirmArchive(event,'expensesTable','archivedExpenses')">Archive</button>`;
+      if(type==='booking') return `<button class="btn-review" onclick="reviewBooking(event)">Review</button> <button class="btn-edit" onclick="editRecord(event,'booking')">Edit</button> <button class="btn-archive" onclick="confirmArchive(event,'bookingsTable','archivedBookings')">Archive</button>`;
+      if(type==='inquiry') return `<button class="btn-respond" onclick="openRespondInquiry(event)">Respond</button> <button class="btn-archive" onclick="confirmArchive(event,'inquiriesTable','archivedInquiries')">Archive</button>`;
+      return '';
+    }
+    function actionsHtmlArchived(type){
+      if(type==='sale')    return `<button class="btn-edit" onclick="editRecord(event,'sale')">Edit</button> <button class="btn-restore" onclick="restoreRecord(event)">Restore</button>`;
+      if(type==='expense') return `<button class="btn-edit" onclick="editRecord(event,'expense')">Edit</button> <button class="btn-restore" onclick="restoreRecord(event)">Restore</button>`;
+      if(type==='booking') return `<button class="btn-review" onclick="reviewBooking(event)">Review</button> <button class="btn-edit" onclick="editRecord(event,'booking')">Edit</button> <button class="btn-restore" onclick="restoreRecord(event)">Restore</button>`;
+      if(type==='inquiry') return `<button class="btn-respond" onclick="openRespondInquiry(event)">Respond</button> <button class="btn-restore" onclick="restoreRecord(event)">Restore</button>`;
+      return '';
+    }
+
+    // ---------- Utils ----------
+    function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    // ---------- Init ----------
+    await loadAll();
+
+    // close modals on backdrop click
+    window.addEventListener("click", (e) => {
+      document.querySelectorAll(".modal").forEach(m => { if (e.target === m) m.style.display = "none"; });
+    });
+    // expose some functions for inline handlers
+    window.openRespondInquiry = window.openRespondInquiry;
+    window.reviewBooking = window.reviewBooking;
+    window.editRecord = window.editRecord;
+    window.confirmArchive = window.confirmArchive;
+    window.restoreRecord = window.restoreRecord;
+    window.openModal  = openModal;
+    window.closeModal = closeModal;
+    // Make functions available to inline onclick="..."
+    Object.assign(window, {
+      showView,
+      openModal,
+      closeModal,
+      confirmArchive,
+      restoreRecord,
+      editRecord,
+      reviewBooking,
+      openRespondInquiry,
+      loadDeclines,
+    });
+
+  </script>
+</body>
+</html>

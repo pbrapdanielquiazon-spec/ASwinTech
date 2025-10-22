@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Feeding & Schedules</title>
+  <link rel="stylesheet" href="/Admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Tabs */
+    .tabs { margin: 20px 0; }
+    .tab-btn {
+      background: #f0f0f0; border: none; padding: 10px 20px;
+      cursor: pointer; margin-right: 5px; border-radius: 5px;
+    }
+    .tab-btn.active { background: #43A047; color: #fff; }
+    .record-view { display: none; }
+    .record-view.active { display: block; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0;
+      width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal-content {
+      background: #fff; margin: 5% auto; padding: 20px; border-radius: 8px;
+      width: 500px; max-width: 90%;
+    }
+    .modal h2 { margin-bottom: 15px; }
+    .close { float: right; font-size: 22px; cursor: pointer; }
+
+    /* Forms & Buttons */
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;
+    }
+    .btn-auth { background: #43A047; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; }
+    .btn-auth:hover { background: #2e7d32; }
+    .btn-add, .btn-edit, .btn-archive, .btn-restore {
+      padding: 6px 12px; margin: 2px; border: none; border-radius: 5px; cursor: pointer;
+    }
+    .btn-add { background: #29B6F6; color: #fff; }
+    .btn-edit { background: #FFA726; color: #fff; }
+    .btn-archive { background: #EF5350; color: #fff; }
+    .btn-restore { background: #29B6F6; color: #fff; }
+    .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .admin-table th, .admin-table td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    .admin-table th { background: #f9f9f9; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html" class="active"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Feeding & Schedules</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('logs')">🍽 Feeding Logs</button>
+      <button class="tab-btn" onclick="showView('schedules')">📅 Feeding Schedules</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Records</button>
+    </div>
+
+    <!-- Feeding Logs -->
+    <section id="logs" class="record-view active">
+      <h2>Feeding Logs</h2>
+      <button class="btn-add" onclick="openModal('addLogModal')">+ Log Feeding</button>
+      <table class="admin-table"><thead>
+        <tr><th>Log ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity (kg)</th><th>Feeding Time</th><th>Caretaker</th><th>Actions</th></tr>
+      </thead><tbody id="logTable">
+      </tbody></table>
+    </section>
+
+    <!-- Feeding Schedules -->
+    <section id="schedules" class="record-view">
+      <h2>Feeding Schedules</h2>
+      <button class="btn-add" onclick="openModal('addScheduleModal')">+ Set Feeding Schedule</button>
+      <table class="admin-table"><thead>
+        <tr><th>Schedule ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity (kg)</th><th>Scheduled Time</th><th>Assigned Caretaker</th><th>Status</th><th>Actions</th></tr>
+      </thead><tbody id="scheduleTable">
+      </tbody></table>
+    </section>
+
+    <!-- Archived -->
+    <section id="archived" class="record-view">
+      <h2>Archived Records</h2>
+      <div style="margin-bottom:14px;">
+        <label>Show: </label>
+        <select id="archiveFilter" onchange="filterArchived()">
+          <option value="all">All</option>
+          <option value="log">Feeding Logs</option>
+          <option value="schedule">Feeding Schedules</option>
+        </select>
+      </div>
+
+      <div class="archived-section" data-type="log" style="margin-bottom:18px;">
+        <h3>🍽 Archived Feeding Logs</h3>
+        <table class="admin-table"><thead>
+          <tr><th>Log ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Feeding Time</th><th>Caretaker</th><th>Actions</th></tr>
+        </thead><tbody id="archivedLogs"></tbody></table>
+      </div>
+
+      <div class="archived-section" data-type="schedule">
+        <h3>📅 Archived Feeding Schedules</h3>
+        <table class="admin-table"><thead>
+          <tr><th>Schedule ID</th><th>Litter ID</th><th>Feed Type</th><th>Quantity</th><th>Scheduled Time</th><th>Assigned Caretaker</th><th>Status</th><th>Actions</th></tr>
+        </thead><tbody id="archivedSchedules"></tbody></table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <!-- Add/Edit Feeding Log -->
+  <div id="addLogModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addLogModal')">&times;</span>
+    <h2>Add Feeding Log</h2>
+    <form onsubmit="return addRecord(event,'log')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="logLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="logFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="logQty"></div>
+      <div class="form-group"><label>Feeding Time</label><input type="datetime-local" id="logTime" step="1"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editLogModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editLogModal')">&times;</span>
+    <h2>Edit Feeding Log</h2>
+    <form onsubmit="return updateRecord(event,'log')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="editLogLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="editLogFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="editLogQty"></div>
+      <div class="form-group"><label>Feeding Time</label><input type="datetime-local" id="editLogTime" step="1"></div>
+      <div class="form-group"><label>Caretaker</label><input type="text" id="editLogCaretaker"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Add/Edit Feeding Schedule -->
+  <div id="addScheduleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addScheduleModal')">&times;</span>
+    <h2>Add Feeding Schedule</h2>
+    <form onsubmit="return addRecord(event,'schedule')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="schLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="schFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="schQty"></div>
+      <div class="form-group"><label>Scheduled Time</label><input type="datetime-local" id="schTime"></div>
+      <div class="form-group"><label>Assigned Caretaker</label><input type="text" id="schCaretaker"></div>
+      <div class="form-group"><label>Status</label><select id="schStatus"><option>Pending</option><option>Completed</option></select></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editScheduleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editScheduleModal')">&times;</span>
+    <h2>Edit Feeding Schedule</h2>
+    <form onsubmit="return updateRecord(event,'schedule')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="editSchLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="editSchFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="editSchQty"></div>
+      <div class="form-group"><label>Scheduled Time</label><input type="datetime-local" id="editSchTime"></div>
+      <div class="form-group"><label>Assigned Caretaker</label><input type="text" id="editSchCaretaker"></div>
+      <div class="form-group"><label>Status</label><select id="editSchStatus"><option>Pending</option><option>Completed</option></select></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Archive Confirmation -->
+  <div id="archiveModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Are you sure you want to archive this record?</h3>
+      <button onclick="archiveYes()">Yes, Archive</button>
+      <button onclick="archiveNo()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3>✅ Saved!</h3>
+    <button onclick="closeModal('successModal')">OK</button>
+  </div></div>
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3>❌ Invalid Input!</h3>
+    <button onclick="closeModal('errorModal')">OK</button>
+  </div></div>
+
+<script type="module">
+/* ===================== CONFIG ===================== */
+/* CHANGE THIS IF YOUR API LIVES ELSEWHERE */
+const API_BASE = "http://localhost:8000/api";
+
+/* ===== token helpers from your app (already present) ===== */
+const TOKEN_KEY = "auth_token";
+function getToken(){
+  return localStorage.getItem("auth_token")
+      || localStorage.getItem("token")
+      || localStorage.getItem("access_token")
+      || "";
+}
+function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
+
+/* ===== simple JSON fetch helper with bearer ===== */
+async function jreq(path, {method="GET", body=null, params=null, auth=true} = {}) {
+  const url = new URL(API_BASE + path);
+  if (params) {
+    Object.entries(params).forEach(([k,v])=>{
+      if (v==null) return;
+      Array.isArray(v) ? v.forEach(x=>url.searchParams.append(k,x))
+                       : url.searchParams.append(k,v);
+    });
+  }
+  const headers = { Accept: "application/json" };
+
+  // add Authorization only when wanted and present
+  if (auth) {
+    const t = getToken();
+    if (t) headers.Authorization = `Bearer ${t}`;
+  }
+  if (body !== null) { headers["Content-Type"]="application/json"; body = JSON.stringify(body); }
+
+  const res = await fetch(url, { method, headers, body });
+  if (!res.ok) {
+    // you can keep your 401 handler if you want, but we’re focusing on map creation
+    let text;
+    try { text = await res.text(); } catch { text = `HTTP ${res.status}`; }
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json") ? res.json() : res.text();
+}
+
+/* ===================== API CLIENTS ===================== */
+const feedingLogsApi = {
+  list:      ()            => jreq("/feeding-logs"),
+  create:    (data)        => jreq("/feeding-logs",          { method:"POST", body:data }),
+  update:    (id, data)    => jreq(`/feeding-logs/${id}`,     { method:"PUT",  body:data }),
+  remove:    (id)          => jreq(`/feeding-logs/${id}`,     { method:"DELETE" }),
+};
+
+const usersApi = {
+  // Your route is /api/api/auth/admin/users, and it is now public (no admin required)
+  listCaretakers: () =>
+    jreq("/api/auth/admin/users", {
+      params: { active_only: true, role: "caretaker" },
+      auth: false,          // <-- do NOT send Authorization header
+    }),
+};
+
+/* ===================== UTILITIES ===================== */
+const $ = (sel) => document.querySelector(sel);
+function openModal(id){ document.getElementById(id).style.display="block"; }
+function closeModal(id){ document.getElementById(id).style.display="none"; }
+
+function showView(v){
+  document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+  document.getElementById(v).classList.add("active");
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelector(`.tab-btn[onclick="showView('${v}')"]`).classList.add("active");
+}
+window.showView = showView;
+
+/* strict YYYY-MM-DDTHH:mm:ss */
+function toNaive(dt){
+  if (!dt) return null;
+  const d = new Date(dt);
+  const pad = (n)=>`${n}`.padStart(2,"0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* ===================== LOOKUP MAPS ===================== */
+// Map user_id -> display name
+let usersMap = new Map(); // user_id -> display name
+
+async function loadUsersMap() {
+  try {
+    // If you have a broader /users endpoint, use that.
+    // Otherwise this caretaker-only list is fine for now.
+    const raw = await usersApi.listCaretakers();
+    const arr =
+      Array.isArray(raw) ? raw :
+      raw?.users ?? raw?.items ?? raw?.results ?? raw?.data ?? [];
+
+    usersMap = new Map(arr.map(u => {
+      const id = Number(u.user_id ?? u.id);
+      const name =
+        u.name ||
+        u.full_name ||
+        [u.first_name, u.last_name].filter(Boolean).join(" ") ||
+        u.username ||
+        u.email ||
+        `#${id}`;
+      return [id, name];
+    }));
+  } catch (err) {
+    console.warn("Users fetch failed; names will show as #id", err);
+    usersMap = new Map();
+  }
+}
+
+function nameForUser(id) {
+  if (id == null || id === "") return "";
+  return usersMap.get(Number(id)) || `#${id}`;
+}
+
+
+
+/* ===================== FEEDING LOGS (BACKEND) ===================== */
+const logTbody = document.getElementById("logTable");
+let editing = { kind:null, id:null, tr:null }; // for edit modals
+let archiving = { tr:null, snapshot:null, kind:null };
+
+function renderLogRow(r){
+  const id           = r.feeding_log_id ?? r.id;
+  const litter_id    = r.litter_id ?? "";
+  const feed_type    = r.feed_type ?? "";
+  const quantity_kg  = r.quantity_kg ?? "";
+  const feeding_time = r.feeding_time ?? "";
+  const user_id      = r.user_id ?? r.caretaker_id ?? null; // fallback just in case
+
+  const tr = document.createElement("tr");
+  tr.dataset.id = id;
+  tr.dataset.userId = user_id ?? "";
+  tr.innerHTML = `
+    <td>${id}</td>
+    <td>${litter_id}</td>
+    <td>${feed_type}</td>
+    <td>${quantity_kg}</td>
+    <td>${feeding_time}</td>
+    <td>${nameForUser(user_id)}</td>
+    <td>
+      <button class="btn-edit" data-kind="log">Edit</button>
+      <button class="btn-archive" data-kind="log">Archive</button>
+    </td>`;
+  return tr;
+}
+
+
+function renderArchivedLogRow(snapshot) {
+  const tr = document.createElement("tr");
+  tr.dataset.userId = snapshot.user_id ?? "";
+  tr.innerHTML = `
+    <td>${snapshot.id}</td>
+    <td>${snapshot.litter_id ?? ""}</td>
+    <td>${snapshot.feed_type ?? ""}</td>
+    <td>${snapshot.quantity_kg ?? ""}</td>
+    <td>${snapshot.feeding_time ?? ""}</td>
+    <td>${snapshot.user_name ?? ""}</td>
+    <td><button class="btn-restore" data-kind="log">Restore</button></td>`;
+  return tr;
+}
+
+
+async function loadLogs(){
+  logTbody.innerHTML = "";
+  const rows = await feedingLogsApi.list();
+  rows.forEach(r => logTbody.appendChild(renderLogRow(r)));
+}
+
+/* Add Log */
+document.querySelector("#addLogModal form").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const payload = {
+    litter_id:    Number($("#logLitter").value),
+    feed_type:    $("#logFeed").value.trim(),
+    quantity_kg:  Number($("#logQty").value),
+    feeding_time: toNaive($("#logTime").value)  // strict format
+    // DO NOT send user_id; backend assigns from Bearer token
+  };
+  if (!payload.litter_id || !payload.feed_type || isNaN(payload.quantity_kg) || !payload.feeding_time){
+    openModal("errorModal"); return false;
+  }
+  const created = await feedingLogsApi.create(payload);
+  logTbody.appendChild(renderLogRow(created));
+  closeModal("addLogModal"); openModal("successModal");
+});
+
+/* Edit Log open */
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const tr = btn.closest("tr");
+  if (btn.classList.contains("btn-edit") && btn.dataset.kind==="log"){
+    editing = { kind:"log", id: tr.dataset.id, tr };
+    const c = tr.children;
+    $("#editLogLitter").value    = c[1].innerText;
+    $("#editLogFeed").value      = c[2].innerText;
+    $("#editLogQty").value       = c[3].innerText;
+    // convert "YYYY-MM-DDTHH:mm:ss" to input value (needs no change)
+    $("#editLogTime").value      = c[4].innerText;
+    $("#editLogCaretaker").value = c[5].innerText; // display only; backend sets caretaker
+    openModal("editLogModal");
+  }
+});
+
+/* Save Edit Log */
+document.querySelector("#editLogModal form").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  if (editing.kind!=="log") return;
+  const payload = {
+    litter_id:    Number($("#editLogLitter").value) || undefined,
+    feed_type:    $("#editLogFeed").value.trim() || undefined,
+    quantity_kg:  ($("#editLogQty").value===""? undefined : Number($("#editLogQty").value)),
+    feeding_time: $("#editLogTime").value ? toNaive($("#editLogTime").value) : undefined
+    // DO NOT send user_id; backend keeps original or re-derives from token if policy says so
+  };
+  const updated = await feedingLogsApi.update(editing.id, payload);
+  const fresh = renderLogRow(updated);
+  editing.tr.replaceWith(fresh);
+  editing = { kind:null, id:null, tr:null };
+  closeModal("editLogModal"); openModal("successModal");
+});
+
+
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest(".btn-archive");
+  if (!btn || btn.dataset.kind !== "log") return;
+
+  const tr = btn.closest("tr");
+  const c = tr.children;
+  archiving = {
+    tr,
+    kind: "log",
+    snapshot: {
+      id:             c[0].innerText,
+      litter_id:      c[1].innerText,
+      feed_type:      c[2].innerText,
+      quantity_kg:    c[3].innerText,
+      feeding_time:   c[4].innerText,
+      user_name:      c[5].innerText,
+      user_id:        tr.dataset.userId || ""
+    }
+  };
+  openModal("archiveModal");
+});
+
+
+window.archiveYes = async ()=>{
+  if (!archiving.tr) return closeModal("archiveModal");
+
+  if (archiving.kind === "log") {
+    const id = archiving.tr.dataset.id;
+    await feedingLogsApi.remove(id);
+
+    // build a proper archived row (no cloning)
+    const archivedRow = renderArchivedLogRow({
+      id:             archiving.snapshot.id,
+      litter_id:      archiving.snapshot.litter_id,
+      feed_type:      archiving.snapshot.feed_type,
+      quantity_kg:    archiving.snapshot.quantity_kg,
+      feeding_time:   archiving.snapshot.feeding_time,
+      caretaker_name: archiving.snapshot.caretaker_name,
+      caretaker_id:   archiving.snapshot.caretaker_id
+    });
+    document.getElementById("archivedLogs").appendChild(archivedRow);
+
+    // remove from live
+    archiving.tr.remove();
+  }
+
+  closeModal("archiveModal");
+};
+
+window.archiveNo = ()=> closeModal("archiveModal");
+
+/* Restore from Archive (re-create in backend from row text) */
+document.addEventListener("click", async (e)=>{
+  const btn = e.target.closest(".btn-restore");
+  if (!btn) return;
+  const row = btn.closest("tr");
+  const kind = btn.dataset.kind;
+  
+  if (kind === "log") {
+    const c = row.children;
+    const payload = {
+      litter_id:    Number(c[1].innerText),
+      feed_type:    c[2].innerText,
+      quantity_kg:  Number(c[3].innerText),
+      // ensure strict format even if someone edited text in archived table
+      feeding_time: toNaive(c[4].innerText),
+      // optional – only if backend permits:
+      caretaker_id: row.dataset.caretakerId ? Number(row.dataset.caretakerId) : undefined
+    };
+
+    const created = await feedingLogsApi.create(payload);
+    logTbody.appendChild(renderLogRow(created));
+    row.remove();
+  }
+
+});
+
+/* ===================== FEEDING SCHEDULES (FRONTEND ONLY) ===================== */
+const SKEY = "feed_schedules";
+const schTbody = document.getElementById("scheduleTable");
+const archivedSchTbody = document.getElementById("archivedSchedules");
+
+function getSchedules(){ try { return JSON.parse(localStorage.getItem(SKEY) || "[]"); } catch { return []; } }
+function setSchedules(arr){ localStorage.setItem(SKEY, JSON.stringify(arr)); }
+function nextSchId(){ const a=getSchedules(); return (a.reduce((m,x)=>Math.max(m, Number(x.id)||0),0) + 1); }
+
+function renderScheduleRow(s){
+  const tr = document.createElement("tr");
+  tr.dataset.id = s.id;
+  tr.innerHTML = `
+    <td>${s.id}</td>
+    <td>${s.litter_id ?? ""}</td>
+    <td>${s.feed_type ?? ""}</td>
+    <td>${s.quantity ?? ""}</td>
+    <td>${s.scheduled_time ?? ""}</td>
+    <td>${s.caretaker_name ?? ""}</td>
+    <td>${s.status ?? "Pending"}</td>
+    <td>
+      <button class="btn-edit" data-kind="schedule">Edit</button>
+      <button class="btn-archive" data-kind="schedule">Archive</button>
+    </td>`;
+  return tr;
+}
+
+function loadSchedules(){
+  schTbody.innerHTML = "";
+  getSchedules().forEach(s => schTbody.appendChild(renderScheduleRow(s)));
+}
+
+document.querySelector("#addScheduleModal form").addEventListener("submit",(e)=>{
+  e.preventDefault();
+  const s = {
+    id: nextSchId(),
+    litter_id: Number($("#schLitter").value) || null,
+    feed_type: $("#schFeed").value.trim(),
+    quantity: Number($("#schQty").value) || null,
+    scheduled_time: toNaive($("#schTime").value),
+    caretaker_name: $("#schCaretaker").value.trim(), // name-only (no backend)
+    status: $("#schStatus").value
+  };
+  if (!s.litter_id || !s.feed_type || !s.quantity || !s.scheduled_time) { openModal("errorModal"); return; }
+  const all = getSchedules(); all.push(s); setSchedules(all);
+  schTbody.appendChild(renderScheduleRow(s));
+  closeModal("addScheduleModal"); openModal("successModal");
+});
+
+document.addEventListener("click",(e)=>{
+  const btn = e.target.closest(".btn-edit");
+  if (!btn) return;
+  const tr = btn.closest("tr");
+  if (btn.dataset.kind==="schedule"){
+    $("#editSchLitter").value    = tr.children[1].innerText;
+    $("#editSchFeed").value      = tr.children[2].innerText;
+    $("#editSchQty").value       = tr.children[3].innerText;
+    $("#editSchTime").value      = tr.children[4].innerText;
+    $("#editSchCaretaker").value = tr.children[5].innerText;
+    $("#editSchStatus").value    = tr.children[6].innerText || "Pending";
+    document.getElementById("editScheduleModal").dataset.rowId = tr.dataset.id;
+    openModal("editScheduleModal");
+  }
+});
+
+document.querySelector("#editScheduleModal form").addEventListener("submit",(e)=>{
+  e.preventDefault();
+  const id = Number(document.getElementById("editScheduleModal").dataset.rowId);
+  const all = getSchedules().map(s => s.id===id ? {
+    ...s,
+    litter_id: Number($("#editSchLitter").value)||null,
+    feed_type: $("#editSchFeed").value.trim(),
+    quantity: Number($("#editSchQty").value)||null,
+    scheduled_time: toNaive($("#editSchTime").value),
+    caretaker_name: $("#editSchCaretaker").value.trim(),
+    status: $("#editSchStatus").value
+  } : s);
+  setSchedules(all);
+  loadSchedules();
+  closeModal("editScheduleModal"); openModal("successModal");
+});
+
+/* Archive schedules (front-end only) */
+document.addEventListener("click",(e)=>{
+  const btn = e.target.closest(".btn-archive");
+  if (!btn || btn.dataset.kind!=="schedule") return;
+  const tr = btn.closest("tr");
+  const id = Number(tr.dataset.id);
+  // move UI + remove from storage
+  const all = getSchedules().filter(s => s.id!==id);
+  setSchedules(all);
+  const clone = tr.cloneNode(true);
+  clone.querySelector("td:last-child").innerHTML = `<button class="btn-restore" data-kind="schedule">Restore</button>`;
+  archivedSchTbody.appendChild(clone);
+  tr.remove();
+});
+
+/* Restore schedules (front-end only) */
+document.addEventListener("click",(e)=>{
+  const btn = e.target.closest(".btn-restore");
+  if (!btn || btn.dataset.kind!=="schedule") return;
+  const tr = btn.closest("tr");
+  const s = {
+    id: Number(tr.children[0].innerText),
+    litter_id: Number(tr.children[1].innerText) || null,
+    feed_type: tr.children[2].innerText,
+    quantity: Number(tr.children[3].innerText) || null,
+    scheduled_time: tr.children[4].innerText,
+    caretaker_name: tr.children[5].innerText,
+    status: tr.children[6].innerText || "Pending",
+  };
+  const all = getSchedules(); all.push(s); setSchedules(all);
+  loadSchedules();
+  tr.remove();
+});
+
+/* ===================== ARCHIVE FILTER ===================== */
+window.filterArchived = function(){
+  const v = document.getElementById("archiveFilter").value;
+  document.querySelectorAll(".archived-section").forEach(sec=>{
+    const t = sec.getAttribute("data-type");
+    sec.style.display = (v==="all" || v===t) ? "" : "none";
+  });
+};
+// --- Logout binding: clears tokens and redirects to login ---
+document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  try {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+  } catch {}
+  window.location.href = "/Zhomepage/login.html";
+});
+
+/* ===================== INIT ===================== */
+(async function init(){
+  // load lookups first so caretaker names resolve
+  await loadUsersMap();
+  await loadLogs();
+  loadSchedules();
+})();
+
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+</script>
+
+</body>
+</html>

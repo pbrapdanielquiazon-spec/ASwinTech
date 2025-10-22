@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Procurement Dashboard</title>
+  <link rel="stylesheet" href="/Procurement-Staff/procurement.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* small extras for the cards/breakdowns */
+    .cards { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:16px; }
+    .card { background:#fff; border-radius:12px; padding:18px; box-shadow:0 6px 16px rgba(0,0,0,.06); }
+    .card h3 { margin:0 0 8px; font-size:1.05rem; }
+    .muted { color:#666; font-size:.9rem; }
+    .mini-list { margin-top:8px; }
+    .mini-list li{ display:flex; justify-content:space-between; padding:4px 0; border-top:1px dashed #eee; }
+    .toolbar { display:flex; align-items:center; gap:8px; margin-top:8px; }
+    .note { margin-top:8px; color:#777; font-size:.9rem; }
+    @media (max-width: 900px){ .cards{ grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-procurement.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> Dashboard</a>
+      <a href="procurement-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="supplies-procurement.html"><i class="fa-solid fa-warehouse"></i> Manage Supplies</a>
+      <a href="expenses-procurement.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Expenses</a>
+      <a href="reports-procurement.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Procurement Dashboard</h1>
+
+    <div class="cards" id="cards">
+      <!-- Total Supplies -->
+      <div class="card">
+        <h3><i class="fa-solid fa-warehouse"></i> Total Supplies</h3>
+        <div id="total-supplies" style="font-size:1.6rem; font-weight:700;">0</div>
+        <div class="muted">Items across all categories</div>
+        <ul class="mini-list" id="supplies-by-category"></ul>
+        <div class="note" id="supplies-note" style="display:none;">No supplies yet.</div>
+      </div>
+
+      <!-- Low Stock Items -->
+      <div class="card">
+        <h3><i class="fa-solid fa-triangle-exclamation"></i> Low Stock Items</h3>
+        <div id="low-stock" style="font-size:1.6rem; font-weight:700;">0</div>
+        <div class="muted">Thresholds: Feed ≤ 10 • Others ≤ 3</div>
+        <ul class="mini-list" id="low-stock-list"></ul>
+        <div class="note" id="low-stock-note" style="display:none;">Nice! Nothing is low on stock.</div>
+      </div>
+
+      <!-- Total Expenses -->
+      <div class="card">
+        <h3><i class="fa-solid fa-peso-sign"></i> Total Expenses</h3>
+        <div id="total-expenses" style="font-size:1.6rem; font-weight:700;">₱0</div>
+        <div class="muted">All-time total</div>
+
+        <div class="toolbar">
+          <label for="monthFilter" class="muted">Monthly:</label>
+          <select id="monthFilter"></select>
+          <div style="margin-left:auto" class="muted" id="monthSumLabel">₱0</div>
+        </div>
+        <div class="note" id="expenses-note" style="display:none;">No expenses recorded yet.</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  // ---------- endpoints (no bearer) ----------
+  const API_BASE = "http://localhost:8000/api"; // your FastAPI mount
+
+  // helper: PHP currency (2 decimals)
+  function pesos(n) {
+    const x = Number.parseFloat(n || 0);
+    return "₱" + x.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // DOM refs
+  const elTotalSupplies   = document.getElementById("total-supplies");
+  const elByCat           = document.getElementById("supplies-by-category");
+  const elSuppliesNote    = document.getElementById("supplies-note");
+
+  const elLowStock        = document.getElementById("low-stock");
+  const elLowList         = document.getElementById("low-stock-list");
+  const elLowNote         = document.getElementById("low-stock-note");
+
+  const elTotalExpenses   = document.getElementById("total-expenses");
+  const elMonthFilter     = document.getElementById("monthFilter");
+  const elMonthSumLabel   = document.getElementById("monthSumLabel");
+  const elExpensesNote    = document.getElementById("expenses-note");
+
+  // ---------- fetchers (no auth headers) ----------
+  async function fetchSupplies() {
+    const res = await fetch(`${API_BASE}/supplies`, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ id, item_name, category, quantity, unit, updated_at, updated_by }]
+  }
+  async function fetchExpenses() {
+    const res = await fetch(`${API_BASE}/expenses`, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json(); // [{ id, description, amount, category, date_spent }]
+  }
+
+  // ---------- helpers ----------
+  // treat strings like "100" or "500.00" safely
+  const num = (v) => Number.parseFloat(String(v ?? "").replace(/,/g, "")) || 0;
+
+  function isLowStock(s) {
+    const qty = num(s.quantity);
+    const cat = String(s.category || "").toLowerCase();
+    const threshold = (cat === "feed") ? 10 : 3;   // feed ≤10, others ≤3
+    return qty <= threshold;
+  }
+  function ym(dateStr) {
+    // make "YYYY-MM" from "YYYY-MM-DD"
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) {
+      // fallback for strict strings
+      const m = String(dateStr).match(/^(\d{4})-(\d{2})-/);
+      return m ? `${m[1]}-${m[2]}` : "";
+    }
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }
+
+  // ---------- renderers ----------
+  function renderSupplies(list) {
+    // Total = number of rows
+    elTotalSupplies.textContent = Array.isArray(list) ? String(list.length) : "0";
+    elSuppliesNote.style.display = (list && list.length) ? "none" : "block";
+
+    // Per-category counts
+    const byCat = {};
+    (list || []).forEach(s => {
+      const k = s.category || "Uncategorized";
+      byCat[k] = (byCat[k] || 0) + 1;
+    });
+    elByCat.innerHTML = Object.entries(byCat)
+      .sort((a,b)=> a[0].localeCompare(b[0]))
+      .map(([k,v]) => `<li><span>${k}</span><strong>${v}</strong></li>`)
+      .join("");
+
+    // Low stock list
+    const lows = (list || []).filter(isLowStock);
+    elLowStock.textContent = String(lows.length || 0);
+    elLowNote.style.display = lows.length ? "none" : "block";
+    elLowList.innerHTML = lows.slice(0, 6).map(s => `
+      <li>
+        <span>${s.item_name} <em class="muted">(${s.category || "N/A"})</em></span>
+        <strong>${num(s.quantity)} ${s.unit || ""}</strong>
+      </li>
+    `).join("");
+  }
+
+  function buildMonthOptions(expenses) {
+    const keys = Array.from(new Set((expenses || []).map(e => ym(e.date_spent))))
+      .filter(Boolean)
+      .sort()
+      .reverse(); // newest first
+    elMonthFilter.innerHTML =
+      `<option value="">All months</option>` +
+      keys.map(k => {
+        const label = new Date(`${k}-01T00:00:00`).toLocaleString("en", { month: "long", year: "numeric" });
+        return `<option value="${k}">${label}</option>`;
+      }).join("");
+  }
+
+  function renderExpenses(expenses) {
+    const total = (expenses || []).reduce((sum, e) => sum + num(e.amount), 0);
+    elTotalExpenses.textContent = pesos(total);
+    elExpensesNote.style.display = (expenses && expenses.length) ? "none" : "block";
+
+    buildMonthOptions(expenses);
+
+    const updateMonthSum = () => {
+      const key = elMonthFilter.value;
+      const monthSum = (expenses || [])
+        .filter(e => !key || ym(e.date_spent) === key)
+        .reduce((sum, e) => sum + num(e.amount), 0);
+      elMonthSumLabel.textContent = pesos(monthSum);
+    };
+    elMonthFilter.onchange = updateMonthSum;
+    updateMonthSum();
+  }
+
+  // ---------- init ----------
+  (async function init() {
+    try {
+      const [supplies, expenses] = await Promise.all([fetchSupplies(), fetchExpenses()]);
+      renderSupplies(supplies || []);
+      renderExpenses(expenses || []);
+    } catch (err) {
+      console.error("Dashboard load failed:", err);
+      // show empty states gracefully
+      elSuppliesNote.style.display = "block";
+      elLowNote.style.display = "block";
+      elExpensesNote.style.display = "block";
+    }
+  })();
+
+  // logout (kept simple; your app can replace this)
+  document.getElementById("logout")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    localStorage.removeItem("token");
+    localStorage.removeItem("auth_token");
+    window.location.href = "/Zhomepage/login.html";
+  });
+</script>
+
+</body>
+</html>

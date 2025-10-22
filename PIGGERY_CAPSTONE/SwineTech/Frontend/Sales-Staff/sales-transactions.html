@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>SwineTech | Sales Staff — Sales</title>
+  <link rel="stylesheet" href="/Sales-Staff/sales.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .tabs { display:flex; gap:8px; margin:14px 0 18px; }
+    .tab-btn { background:#f0f0f0; border:none; padding:8px 12px; cursor:pointer; border-radius:8px; }
+    .tab-btn.active { background:#2e7d32; color:#fff; }
+
+    .toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:10px 0 16px; }
+    .quick-dates { display:inline-flex; gap:6px; }
+    .quick-dates button { background:#f6f6f6; border:1px solid #e2e2e2; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .quick-dates button.active { background:#2e7d32; border-color:#2e7d32; color:#fff; }
+    .badge { background:#eef3ef; color:#2e7d32; border-radius:999px; padding:2px 8px; font-size:.85rem; margin-left:6px; }
+
+    .admin-table { width:100%; border-collapse:collapse; }
+    .admin-table th, .admin-table td { border:1px solid #ddd; padding:8px; text-align:center; font-size:14px; }
+    .admin-table th { background:#f7f7f7; }
+    .actions { display:flex; gap:6px; justify-content:center; }
+    .btn { border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:.9rem; }
+    .btn-add { background:#2e7d32; color:#fff; }
+    .btn-edit { background:#FFA726; color:#fff; }
+    .btn-archive { background:#B3261E; color:#fff; }
+    .btn-restore { background:#29B6F6; color:#fff; }
+    .empty { text-align:center; color:#777; padding:16px 8px; }
+
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10; }
+    .modal .content { width:560px; max-width:95vw; background:#fff; margin:6% auto; border-radius:12px; padding:18px; }
+    .content h2 { margin:0 0 12px; }
+    .form-group { margin-bottom:12px; text-align:left; }
+    label { display:block; margin-bottom:6px; }
+    input, select, textarea { width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; }
+    .modal .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+    .btn-close { background:#ddd; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech(Sales Staff)</div>
+    <nav>
+      <a href="dashboard-sales.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="salesstaff-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="bookings-sales.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="sales-records.html" class="active"><i class="fa-solid fa-receipt"></i> Sales Transactions</a>
+      <a href="reports-sales.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Sales</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="live">Sales</button>
+      <button class="tab-btn" data-tab="archived">Archived</button>
+    </div>
+
+    <!-- Toolbar (date quick filters + count badge) -->
+    <div class="toolbar">
+      <div><button class="btn btn-add" id="btnAdd"><i class="fa-solid fa-circle-plus"></i> Record Sale</button></div>
+      <div style="margin-left:auto;"></div>
+      <strong>Date:</strong>
+      <div class="quick-dates" id="dateTabs">
+        <button data-range="all" class="active">All</button>
+        <button data-range="today">Today</button>
+        <button data-range="week">This week</button>
+      </div>
+      <span class="badge" id="countBadge">0</span>
+    </div>
+
+    <!-- Sales table -->
+    <section id="liveSection">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Sale_ID</th>
+            <th>Booking_ID</th>
+            <th>Item_Type</th>
+            <th>Description</th>
+            <th>Total</th>
+            <th>Payment_Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="salesTable"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </section>
+
+    <!-- Archived table (client-side move/restore) -->
+    <section id="archivedSection" style="display:none;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Sale_ID</th>
+            <th>Booking_ID</th>
+            <th>Item_Type</th>
+            <th>Description</th>
+            <th>Total</th>
+            <th>Payment_Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="archivedSales"><tr><td colspan="7" class="empty">Nothing archived.</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add/Edit Modal -->
+  <div class="modal" id="saleModal">
+    <div class="content">
+      <h2 id="saleModalTitle">Record Sale</h2>
+      <form id="saleForm">
+        <input type="hidden" id="editId" />
+        <div class="form-group">
+          <label>Booking_ID (approved only)</label>
+          <select id="bookingSelect" required>
+            <option value="" disabled selected>— Select approved booking —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment_Date <small>(YYYY-MM-DD)</small></label>
+          <input type="date" id="paymentDate" required />
+        </div>
+        <div class="form-group">
+          <label>Total Amount</label>
+          <input type="number" id="totalAmount" step="0.01" min="0" required />
+        </div>
+        <div class="form-group">
+          <label>Item_Type (optional)</label>
+          <input type="text" id="itemType" placeholder="Pig / Service / Other" />
+        </div>
+        <div class="form-group">
+          <label>Description (optional)</label>
+          <input type="text" id="description" placeholder="e.g., Grower 70kg" />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-close" id="saleCancel">Cancel</button>
+          <button class="btn btn-add" type="submit" id="saleSubmit">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    /* ====== Config / Auth ====== */
+    const API_BASE = "http://localhost:8000/api";
+    const TOKEN = localStorage.getItem("token") || "";
+    const authHeader = TOKEN ? { "Authorization": `Bearer ${TOKEN}` } : {};
+
+    document.getElementById("logout")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "/Zhomepage/login.html";
+    });
+
+    /* ====== Elements ====== */
+    const $ = (id) => document.getElementById(id);
+    const salesT = $("salesTable");
+    const archivedT = $("archivedSales");
+    const countBadge = $("countBadge");
+    const saleModal = $("saleModal");
+    const saleForm = $("saleForm");
+    const saleModalTitle = $("saleModalTitle");
+    const editId = $("editId");
+    const bookingSelect = $("bookingSelect");
+    const paymentDate = $("paymentDate");
+    const totalAmount = $("totalAmount");
+    const itemType = $("itemType");
+    const description = $("description");
+
+    /* ====== State ====== */
+    let allSales = [];              // full list from backend
+    let approvedBookings = [];      // for dropdown
+    let dateFilter = "all";         // all | today | week
+
+    /* ====== Helpers ====== */
+    function fmtMoney(v){ const n = Number(v||0); return "₱" + n.toLocaleString(); }
+    function fmtDate(iso){ if(!iso) return "-"; const d=new Date(iso); return Number.isNaN(d)? iso : d.toISOString().slice(0,10); }
+    function inToday(iso){
+      if(!iso) return false; const d=new Date(iso), n=new Date();
+      return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
+    }
+    function weekBounds(date=new Date()){
+      const d=new Date(date), day=d.getDay(), diff=(day+6)%7;
+      const mon=new Date(d); mon.setDate(d.getDate()-diff); mon.setHours(0,0,0,0);
+      const sun=new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+      return [mon,sun];
+    }
+    function inThisWeek(iso){
+      if(!iso) return false; const d=new Date(iso); const [s,e]=weekBounds(new Date()); return d>=s && d<=e;
+    }
+    function byDateFilter(rows){
+      if(dateFilter==="all") return rows;
+      if(dateFilter==="today") return rows.filter(r => inToday(r.payment_date));
+      if(dateFilter==="week") return rows.filter(r => inThisWeek(r.payment_date));
+      return rows;
+    }
+
+    function tr(html){ const el=document.createElement("tr"); el.innerHTML=html; return el; }
+
+    function salesRow(r){
+      const row = tr(`
+        <td>${r.id ?? r.sale_id ?? ""}</td>
+        <td>${r.booking_id ?? ""}</td>
+        <td>${escapeHtml(r.item_type ?? "")}</td>
+        <td>${escapeHtml(r.item_description ?? "")}</td>
+        <td>${fmtMoney(r.total_amount ?? 0)}</td>
+        <td>${fmtDate(r.payment_date)}</td>
+        <td class="actions">
+          <button class="btn btn-edit" data-id="${r.id ?? r.sale_id}"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-archive" data-archive="${r.id ?? r.sale_id}"><i class="fa-solid fa-box-archive"></i> Archive</button>
+        </td>
+      `);
+      row.querySelector('[data-id]')?.addEventListener('click', () => openEdit(r));
+      row.querySelector('[data-archive]')?.addEventListener('click', () => archiveRow(row));
+      return row;
+    }
+
+    function archivedRow(rHtml){
+      const row = tr(rHtml);
+      // switch action cell to "Restore"
+      const td = row.querySelector("td:last-child");
+      td.innerHTML = `<button class="btn btn-restore"><i class="fa-solid fa-rotate-left"></i> Restore</button>`;
+      td.querySelector("button")?.addEventListener("click", () => {
+        row.querySelector("td:last-child").innerHTML = ""; // will be replaced by live actions when re-rendered
+        // move back to live table top
+        salesT.prepend(row);
+        updateArchivedPlaceholder();
+      });
+      return row;
+    }
+
+    function updateCountBadge(){
+      countBadge.textContent = byDateFilter(allSales).length.toString();
+    }
+
+    function updateArchivedPlaceholder(){
+      if(archivedT.children.length === 0){
+        archivedT.innerHTML = `<tr><td colspan="7" class="empty">Nothing archived.</td></tr>`;
+      }else{
+        // remove placeholder if present
+        if(archivedT.children.length===1 && archivedT.querySelector(".empty")) return;
+      }
+    }
+
+    function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    /* ====== API ====== */
+    async function fetchSales(){
+      const res = await fetch(`${API_BASE}/sales`, { headers: { "Accept":"application/json", ...authHeader }});
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function fetchApprovedBookings(){
+      const res = await fetch(`${API_BASE}/bookings?status=approved`, { headers: { "Accept":"application/json", ...authHeader }});
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function createSale(payload){
+      const res = await fetch(`${API_BASE}/sales`, {
+        method:"POST",
+        headers:{ "Accept":"application/json","Content-Type":"application/json", ...authHeader },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function updateSale(id, payload){
+      const res = await fetch(`${API_BASE}/sales/${id}`, {
+        method:"PUT",
+        headers:{ "Accept":"application/json","Content-Type":"application/json", ...authHeader },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    /* ====== Render ====== */
+    function renderSales(){
+      salesT.innerHTML = "";
+      const rows = byDateFilter(allSales);
+      if(!rows.length){
+        salesT.innerHTML = `<tr><td colspan="7" class="empty">No sales to show.</td></tr>`;
+        updateCountBadge();
+        return;
+      }
+      rows.forEach(r => salesT.appendChild(salesRow(r)));
+      updateCountBadge();
+    }
+
+    /* ====== Archive (client-only) ====== */
+    function archiveRow(row){
+      const clone = archivedRow(row.outerHTML);
+      // clear any existing placeholder
+      if(archivedT.children.length===1 && archivedT.querySelector(".empty")) archivedT.innerHTML = "";
+      archivedT.prepend(clone);
+      row.remove();
+      updateArchivedPlaceholder();
+    }
+
+    /* ====== Modal: Add / Edit ====== */
+    function openAdd(){
+      saleModalTitle.textContent = "Record Sale";
+      editId.value = "";
+      paymentDate.value = "";
+      totalAmount.value = "";
+      itemType.value = "";
+      description.value = "";
+      // preserve current bookingSelect options (loaded on init)
+      bookingSelect.value = "";
+      saleModal.style.display = "block";
+    }
+
+    function openEdit(r){
+      saleModalTitle.textContent = "Edit Sale";
+      editId.value = r.id ?? r.sale_id ?? "";
+      bookingSelect.value = r.booking_id ?? "" ; // may not exist in list if booking was removed
+      paymentDate.value = r.payment_date ? String(r.payment_date).slice(0,10) : "";
+      totalAmount.value = r.total_amount ?? "";
+      itemType.value = r.item_type ?? "";
+      description.value = r.item_description ?? "";
+      saleModal.style.display = "block";
+    }
+
+    $("btnAdd").addEventListener("click", openAdd);
+    $("saleCancel").addEventListener("click", () => saleModal.style.display = "none");
+    window.addEventListener("click", (e)=>{ if(e.target === saleModal) saleModal.style.display = "none"; });
+
+    saleForm.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      // required: booking_id, payment_date, total_amount
+      const payload = {
+        booking_id: Number(bookingSelect.value || 0) || undefined,
+        payment_date: paymentDate.value || undefined,
+        total_amount: totalAmount.value ? Number(totalAmount.value) : undefined,
+        item_type: itemType.value.trim() || undefined,
+        item_description: description.value.trim() || undefined,
+      };
+      if(!payload.booking_id || !payload.payment_date || payload.total_amount == null){
+        alert("Please fill Booking, Payment Date and Total Amount."); return;
+      }
+      try{
+        if(editId.value){
+          const updated = await updateSale(editId.value, payload);
+          // replace row in UI
+          const idx = allSales.findIndex(s => String(s.id ?? s.sale_id) === String(editId.value));
+          if(idx >= 0) allSales[idx] = updated;
+        }else{
+          const created = await createSale(payload);
+          allSales.unshift(created);
+        }
+        saleModal.style.display = "none";
+        renderSales();
+      }catch(err){
+        alert(err.message || err);
+      }
+    });
+
+    /* ====== Date filters ====== */
+    document.querySelectorAll("#dateTabs button").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        document.querySelectorAll("#dateTabs button").forEach(x=>x.classList.remove("active"));
+        b.classList.add("active");
+        dateFilter = b.dataset.range;
+        renderSales();
+      });
+    });
+
+    /* ====== Tabs (Live / Archived) ====== */
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    tabButtons.forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        tabButtons.forEach(x=>x.classList.remove("active"));
+        btn.classList.add("active");
+        const isLive = btn.dataset.tab === "live";
+        document.getElementById("liveSection").style.display = isLive ? "" : "none";
+        document.getElementById("archivedSection").style.display = isLive ? "none" : "";
+      });
+    });
+
+    /* ====== Init ====== */
+    async function init(){
+      try{
+        // Approved bookings for dropdown
+        approvedBookings = await fetchApprovedBookings().catch(()=>[]);
+        // Fill dropdown
+        bookingSelect.innerHTML = `<option value="" disabled selected>— Select approved booking —</option>` +
+          approvedBookings.map(b => `<option value="${b.id ?? b.booking_id}">#${b.id ?? b.booking_id} • ${b.type ?? b.booking_type ?? 'booking'} (${fmtDate(b.booking_date)})</option>`).join("");
+
+        // Sales
+        allSales = await fetchSales().catch(()=>[]);
+        renderSales();
+        updateArchivedPlaceholder();
+      }catch(e){
+        salesT.innerHTML = `<tr><td colspan="7" class="empty">${escapeHtml(e.message || 'Failed to load data.')}</td></tr>`;
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Sales Staff Dashboard</title>
+  <link rel="stylesheet" href="/Sales-Staff/sales.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .filter-row { display:flex; gap:12px; align-items:center; margin:12px 0 20px; }
+    .mini { font-size:.9rem; color:#666; }
+    .pending-list { margin-top: 12px; }
+    .pending-item {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 12px; border:1px solid #eee; border-radius:8px; margin-bottom:8px; background:#fafafa;
+    }
+    .btn-approve {
+      background:#2e7d32; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer;
+    }
+    .btn-approve[disabled]{ opacity:.6; cursor:not-allowed; }
+    .note { color:#777; font-size:.9rem; margin-top:6px; }
+    .dashboard-cards { display:grid; grid-template-columns: repeat(3, minmax(220px,1fr)); gap:16px; }
+    .card { background:#fff; border-radius:12px; padding:18px; box-shadow:0 4px 12px rgba(0,0,0,.08); }
+    .card h3 { margin:0 0 6px; }
+    .card p { font-size:1.6rem; margin:0; }
+    .btn-link { display:inline-block; margin-top:6px; font-size:.9rem; }
+    .btn-decline{
+        background:#b00020; 
+        color:#fff; 
+        border:none; 
+        padding:6px 10px; 
+        border-radius:6px; 
+        cursor:pointer;
+        margin-left:8px;
+      }
+      .btn-decline[disabled]{ opacity:.6; cursor:not-allowed; }
+
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech(Sales Staff)</div>
+    <nav>
+      <a href="dashboard-sales.html" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="salesstaff-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="bookings-sales.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="sales-transactions.html"><i class="fa-solid fa-receipt"></i> Sales Transactions</a>
+      <a href="reports-sales.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Sales Staff Dashboard</h1>
+
+    <!-- Month filter (sales only) -->
+    <div class="filter-row">
+      <label for="monthFilter"><i class="fa-regular fa-calendar"></i> Filter month (sales):</label>
+      <input type="month" id="monthFilter" />
+      <button id="clearMonth" type="button">Clear</button>
+      <span class="mini" id="filterHint">Showing: All time</span>
+    </div>
+
+    <!-- Cards -->
+    <div class="dashboard-cards">
+      <div class="card">
+        <h3>Total Sales</h3>
+        <p id="totalSales">₱0.00</p>
+        <div class="note" id="salesNote">No sales yet.</div>
+      </div>
+      <div class="card">
+        <h3>Completed Transactions</h3>
+        <p id="completedCount">0</p>
+      </div>
+      <div class="card">
+        <h3>Pending Bookings</h3>
+        <p id="pendingCount">0</p>
+        <a href="bookings-sales.html" class="btn-link">View all</a>
+      </div>
+    </div>
+
+    <!-- Quick list of pending with Approve buttons -->
+    <section class="pending-list">
+      <h2><i class="fa-solid fa-hourglass-half"></i> Pending bookings (quick actions)</h2>
+      <div id="pendingWrap"></div>
+      <div class="note">Only the first 5 are shown here. Use the Bookings page for full actions.</div>
+    </section>
+  </main>
+
+  <script>
+    // === Config ===
+    // Using root endpoints exactly as specified:
+    // GET /sales, GET /bookings?status=pending (no auth)
+    // POST /bookings/{id}/decision with Bearer auth
+    const API_BASE = "http://localhost:8000/api";
+
+    // try all common keys your app uses elsewhere
+    const TOKEN =
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token") ||
+      "";
+
+const AUTH_HEADERS = TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {};
+const JSON_HEADERS = { Accept: "application/json", ...AUTH_HEADERS };
+
+
+    // --- Utilities ---
+    const pesoFmt = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
+    const matchesMonth = (iso, y, m) => {
+      if (!iso || y == null || m == null) return true;
+      const d = new Date(iso);
+      return d.getFullYear() === y && (d.getMonth() + 1) === m;
+    };
+    function setFilterHint(y, m) {
+      const el = document.getElementById("filterHint");
+      if (y && m) {
+        const label = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+        el.textContent = `Showing: ${label}`;
+      } else {
+        el.textContent = "Showing: All time";
+      }
+    }
+
+    // --- API calls ---
+    async function fetchSales() {
+      const res = await fetch(`${API_BASE}/sales`, {
+        headers: JSON_HEADERS,
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+
+
+    async function fetchPendingBookings() {
+      const res = await fetch(`${API_BASE}/bookings?status=pending`, {
+        headers: JSON_HEADERS,
+        credentials: "include"
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+
+    async function approveBooking(id) {
+      const res = await fetch(`${API_BASE}/bookings/${id}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...JSON_HEADERS },
+        credentials: "include",
+        body: JSON.stringify({ decision: "approved" })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function declineBooking(id, reason) {
+      const res = await fetch(`${API_BASE}/bookings/${id}/decision`, {
+        method: "POST",
+        headers: { "Accept": "application/json", "Content-Type": "application/json", ...AUTH_HEADERS },
+        credentials: "include",
+        body: JSON.stringify({ decision: "declined", ...(reason ? { reason } : {}) })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+
+
+
+    // --- Renderers ---
+    function renderSalesCards(sales, y = null, m = null) {
+      const filtered = (y && m) ? sales.filter(s => matchesMonth(s.payment_date, y, m)) : sales;
+
+      // Completed transactions = count of sales (after filter)
+      document.getElementById("completedCount").textContent = filtered.length;
+
+      // Total sales = sum total_amount
+      const total = filtered.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+      document.getElementById("totalSales").textContent = pesoFmt.format(total);
+
+      // Empty note
+      const note = document.getElementById("salesNote");
+      note.textContent = filtered.length ? "" : "No sales in this period.";
+    }
+
+    function renderPendingList(bookings) {
+      document.getElementById("pendingCount").textContent = bookings.length;
+
+      const wrap = document.getElementById("pendingWrap");
+      wrap.innerHTML = "";
+
+      if (!bookings.length) {
+        wrap.innerHTML = `<div class="note">No pending bookings right now.</div>`;
+        return;
+      }
+
+      bookings.slice(0, 5).forEach(b => {
+        const pigsText = Array.isArray(b.pigs_ids) && b.pigs_ids.length ? b.pigs_ids.join(", ") : "None";
+        const div = document.createElement("div");
+        div.className = "pending-item";
+        div.innerHTML = `
+          <div>
+            <strong>#${b.id}</strong> — ${b.type || "booking"}<br/>
+            <span class="mini">Client: ${b.client_id ?? "-"}</span><br/>
+            <span class="mini">Pigs: ${pigsText}</span><br/>
+            <span class="mini">Booked: ${b.booking_date || "-"}</span>
+          </div>
+          <div>
+            <button class="btn-approve" data-id="${b.id}">
+              <i class="fa-solid fa-circle-check"></i> Approve
+            </button>
+            <button class="btn-decline" data-id="${b.id}">
+              <i class="fa-solid fa-ban"></i> Decline
+            </button>
+          </div>
+        `;
+        wrap.appendChild(div);
+      });
+
+      // Approve click handlers
+      wrap.querySelectorAll(".btn-approve").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          const id = btn.dataset.id;
+          try {
+            await approveBooking(id);
+            btn.closest(".pending-item").remove();
+            const remaining = wrap.querySelectorAll(".pending-item").length;
+            document.getElementById("pendingCount").textContent = remaining.toString();
+            if (!remaining) wrap.innerHTML = `<div class="note">No pending bookings right now.</div>`;
+          } catch (e) {
+            alert("Approve failed: " + e.message);
+            btn.disabled = false;
+          }
+        });
+      });
+
+      // Decline click handlers
+      wrap.querySelectorAll(".btn-decline").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          const reason = prompt("Optional reason for decline (leave blank to skip):") || "";
+          btn.disabled = true;
+          try {
+            await declineBooking(id, reason.trim());
+            btn.closest(".pending-item").remove();
+            const remaining = wrap.querySelectorAll(".pending-item").length;
+            document.getElementById("pendingCount").textContent = remaining.toString();
+            if (!remaining) wrap.innerHTML = `<div class="note">No pending bookings right now.</div>`;
+          } catch (e) {
+            alert("Decline failed: " + e.message);
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+
+
+    // --- Init ---
+    (async function init() {
+      const monthInput = document.getElementById("monthFilter");
+      const clearBtn = document.getElementById("clearMonth");
+      let filterYear = null, filterMonth = null;
+
+      async function refresh() {
+        try {
+          const [sales, pendings] = await Promise.all([fetchSales(), fetchPendingBookings()]);
+          renderSalesCards(sales, filterYear, filterMonth);
+          renderPendingList(pendings);
+        } catch (e) {
+          console.warn(e);
+          renderSalesCards([], filterYear, filterMonth);
+          renderPendingList([]);
+        }
+      }
+
+      monthInput.addEventListener("change", () => {
+        if (monthInput.value) {
+          const [y, m] = monthInput.value.split("-").map(Number);
+          filterYear = y; filterMonth = m;
+          setFilterHint(y, m);
+        } else {
+          filterYear = filterMonth = null;
+          setFilterHint(null, null);
+        }
+        refresh();
+      });
+
+      clearBtn.addEventListener("click", () => {
+        monthInput.value = "";
+        filterYear = filterMonth = null;
+        setFilterHint(null, null);
+        refresh();
+      });
+
+      setFilterHint(null, null);
+      refresh();
+    })();
+
+    // Logout: clear token and go to login
+    document.getElementById("logout")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "/Zhomepage/login.html";
+    });
+  </script>
+</body>
+</html>

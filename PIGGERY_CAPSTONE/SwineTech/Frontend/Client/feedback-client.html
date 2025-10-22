@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Client Feedback</title>
+  <link rel="stylesheet" href="/Client/client.css">
+  <link rel="stylesheet" href="/Admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* Simple modal for Add Feedback */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:999; }
+    .modal .box { background:#fff; width:520px; max-width:95%; margin:6% auto; border-radius:12px; padding:20px; position:relative; }
+    .modal .close { position:absolute; right:12px; top:10px; font-size:20px; color:#666; cursor:pointer; }
+    .modal .close:hover { color:#d00; }
+    .form-group{ margin-bottom:12px }
+    .form-group label{ display:block; font-weight:600; margin-bottom:6px }
+    .form-group textarea{ width:100%; min-height:110px; border:1px solid #ddd; border-radius:8px; padding:8px; resize:vertical }
+    .btn-auth{ width:100% }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#bookings"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#inquiry"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+
+      <!-- Feedback in navbar -->
+      <a href="feedback-client.html" class="active"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+
+      <a href="availablepig-bookings-inquiry-receipts-client.html#receipts"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+  <h1>My Feedback</h1>
+  <button class="btn-add" style="margin:6px 0 14px;" onclick="openModal()">+ Add Feedback</button>
+
+
+    <table class="admin-table" style="margin-top:12px;">
+      <thead>
+        <tr>
+          <th>Feedback ID</th>
+          <th>Comment</th>
+          <th>Submitted At</th>
+        </tr>
+      </thead>
+      <tbody id="feedbackTable">
+        <tr><td colspan="3">Loading…</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Add Feedback Modal -->
+  <div id="feedbackModal" class="modal" aria-hidden="true">
+    <div class="box" role="dialog" aria-labelledby="fbTitle">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <h2 id="fbTitle" style="text-align:center; margin:0 0 10px;">Add Feedback</h2>
+      <form id="feedbackForm" onsubmit="return submitFeedback(event)">
+        <div class="form-group">
+          <label for="comment">Your Feedback</label>
+          <textarea id="comment" required placeholder="Write your feedback here…"></textarea>
+        </div>
+        <button class="btn-auth btn-primary" type="submit">Submit</button>
+        <p id="fbMsg" style="margin-top:8px;"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    /************ Config ************/
+    const API_BASE = "http://localhost:8000/api";
+
+    /************ Auth helpers ************/
+    function getToken() {
+      return localStorage.getItem("auth_token")
+          || localStorage.getItem("token")
+          || localStorage.getItem("access_token");
+    }
+    function clearToken() {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("token");
+      localStorage.removeItem("access_token");
+    }
+    async function authFetch(url, opts = {}) {
+      const token = getToken();
+      const headers = Object.assign(
+        { "Content-Type": "application/json" },
+        token ? { Authorization: `Bearer ${token}` } : {}
+      );
+      const res = await fetch(url, { ...opts, headers });
+      if (!res.ok) {
+        const msg = await res.text().catch(() => res.statusText);
+        throw new Error(`HTTP ${res.status}: ${msg}`);
+      }
+      return res.json();
+    }
+
+    /************ Data ************/
+    let feedbackRows = [];
+
+    function formatDatePH(iso) {
+      if (!iso) return "-";
+      try {
+        const d = new Date(iso);
+        const parts = d.toLocaleString('en-PH', {
+          timeZone: 'Asia/Manila',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hour12: false
+        });
+        const [mmddyyyy, time] = parts.split(',').map(s => s.trim());
+        const [m, day, y] = mmddyyyy.split('/');
+        return `${y}-${m.padStart(2,'0')}-${day.padStart(2,'0')} ${time}`;
+      } catch { return iso; }
+    }
+
+    async function loadMyFeedback() {
+      try {
+        // GET /feedback/mine (auth scoped)
+        const rows = await authFetch(`${API_BASE}/feedback/mine`);
+        feedbackRows = Array.isArray(rows) ? rows.map(r => ({
+          id: r.id ?? r.feedback_id ?? "-",
+          comment: r.comment ?? r.message ?? "",
+          submitted_at: r.submitted_at ?? r.created_at ?? ""
+        })) : [];
+      } catch (e) {
+        console.error("loadMyFeedback failed:", e);
+        feedbackRows = [];
+      }
+      renderFeedbackTable();
+    }
+
+    function renderFeedbackTable() {
+      const tbody = document.getElementById("feedbackTable");
+      tbody.innerHTML = "";
+      if (!feedbackRows.length) {
+        tbody.innerHTML = "<tr><td colspan='3'>No feedback yet.</td></tr>";
+        return;
+      }
+      feedbackRows.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.id}</td>
+          <td>${escapeHtml(row.comment)}</td>
+          <td>${escapeHtml(formatDatePH(row.submitted_at))}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /************ Add Feedback ************/
+    function openModal() {
+      document.getElementById("comment").value = "";
+      document.getElementById("fbMsg").textContent = "";
+      document.getElementById("feedbackModal").style.display = "block";
+    }
+    function closeModal() {
+      document.getElementById("feedbackModal").style.display = "none";
+    }
+    async function submitFeedback(e) {
+      e.preventDefault();
+      const comment = document.getElementById("comment").value.trim();
+      if (!comment) { setFbMsg("Please enter your feedback.", true); return false; }
+      try {
+        // POST /feedback   -> { comment: "..." }
+        await authFetch(`${API_BASE}/feedback`, {
+          method: "POST",
+          body: JSON.stringify({ comment })
+        });
+        setFbMsg("Feedback submitted.", false);
+        await loadMyFeedback();
+        setTimeout(closeModal, 600);
+      } catch (err) {
+        console.error("submitFeedback failed:", err);
+        setFbMsg("Failed to submit feedback. Please try again.", true);
+      }
+      return true;
+    }
+    function setFbMsg(text, isErr) {
+      const p = document.getElementById("fbMsg");
+      p.textContent = text;
+      p.style.color = isErr ? "crimson" : "green";
+    }
+
+    /************ Misc UI ************/
+    document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+      e.preventDefault(); clearToken(); window.location.href = "/Zhomepage/login.html";
+    });
+    window.addEventListener("click", (e) => {
+      const m = document.getElementById("feedbackModal");
+      if (e.target === m) closeModal();
+    });
+    function escapeHtml(s) {
+      return (""+s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    /************ Init ************/
+    document.addEventListener("DOMContentLoaded", loadMyFeedback);
+  </script>
+</body>
+</html>

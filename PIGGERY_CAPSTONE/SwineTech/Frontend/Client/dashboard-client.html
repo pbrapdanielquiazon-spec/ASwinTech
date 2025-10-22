@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Client Dashboard</title>
+  <link rel="stylesheet" href="/Client/client.css">
+  <link rel="stylesheet" href="/Admin/admin.css"> <!-- reuse shared styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html" class="active"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs" onclick="showSection('pigs')"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#bookings" onclick="showSection('bookings')"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#inquiry" onclick="showSection('inquiry')"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+
+      <!-- NEW: Feedback link -->
+      <a href="feedback-client.html"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+
+      <a href="availablepig-bookings-inquiry-receipts-client.html#receipts" onclick="showSection('receipts')"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Welcome, Client!</h1>
+    <p class="sub-text">Manage your bookings, inquiries, and feedback all in one place.</p>
+
+    <!-- Dashboard Cards -->
+    <div class="dashboard-cards">
+      <div class="card">
+        <i class="fa-solid fa-calendar-check icon"></i>
+        <h3>My Bookings</h3>
+        <p><span id="bookingCount">—</span> <span id="bookingLabel">reservations</span></p>
+        <a href="availablepig-bookings-inquiry-receipts-client.html#bookings" class="btn-link">View Bookings</a>
+      </div>
+
+      <div class="card">
+        <i class="fa-solid fa-comment-dots icon"></i>
+        <h3>Feedback Submitted</h3>
+        <p><span id="feedbackCount">—</span> <span id="feedbackLabel">feedback</span></p>
+        <a href="feedback-client.html" class="btn-link">Manage Feedback</a>
+      </div>
+
+      <div class="card">
+        <i class="fa-solid fa-receipt icon"></i>
+        <h3>Receipts</h3>
+        <p><span id="receiptCount">—</span> <span id="receiptLabel">available</span></p>
+        <a href="availablepig-bookings-inquiry-receipts-client.html#receipts" class="btn-link">View Receipts</a>
+      </div>
+    </div>
+  </main>
+  <script>
+  const API_BASE = "http://localhost:8000/api";
+
+  function getToken() {
+    return (
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("access_token")
+    );
+  }
+  function clearToken() {
+    ["auth_token","token","access_token"].forEach(k=>{
+      localStorage.removeItem(k); sessionStorage.removeItem(k);
+    });
+  }
+  document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+    e.preventDefault(); clearToken(); window.location.href = "/Zhomepage/login.html";
+  });
+
+  async function authFetch(url, opts = {}) {
+    const headers = Object.assign(
+      { "Content-Type": "application/json", Accept: "application/json" },
+      getToken() ? { Authorization: `Bearer ${getToken()}` } : {}
+    );
+    const res = await fetch(url, { ...opts, headers });
+    const txt = await res.text();
+    let data; try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
+    if (!res.ok) {
+      const err = new Error(data?.detail || res.statusText || "Request failed");
+      err.status = res.status; err.body = data; throw err;
+    }
+    return data;
+  }
+
+  function pluralize(n, singular, plural) {
+    return n === 1 ? singular : (plural || singular + "s");
+  }
+  function setCount(idCount, idLabel, n, singular, plural) {
+    const c = document.getElementById(idCount);
+    const l = document.getElementById(idLabel);
+    if (c) c.textContent = n;
+    if (l) l.textContent = pluralize(n, singular, plural);
+  }
+
+  /**
+   * Count only *my* receipts from the raw /receipts array.
+   * Handles both "paired rows" (payload + header) and single-row styles.
+   */
+  function countMyReceipts(rows, myId, bookingMap) {
+    if (!Array.isArray(rows)) return 0;
+    let count = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i] || {};
+      const rd  = row && typeof row.receipt_data === "object" ? row.receipt_data : null;
+
+      if (rd) {
+        // Logical receipt with payload in this row
+        const bookingId = String(rd.booking_id ?? row.booking_id ?? "");
+        const cid = rd.client_id != null
+          ? String(rd.client_id)
+          : (bookingMap.get(bookingId) ?? null);
+
+        if (cid === String(myId)) count++;
+
+        // Consume optional partner "header" row
+        const next = rows[i + 1] || {};
+        const nextIsHeader = (!next.receipt_data && (next.id != null || next.receipt_id != null));
+        if (nextIsHeader) i++;
+      } else {
+        // Single-row style or header-only
+        const bookingId = String(row.booking_id ?? "");
+        const cid = row?.receipt_data?.client_id != null
+          ? String(row.receipt_data.client_id)
+          : (bookingMap.get(bookingId) ?? null);
+
+        // Only count rows that truly represent a receipt AND belong to me
+        const looksLikeReceipt = !!(row.receipt_no || row.receipt_id || (row.id != null && bookingId));
+        if (looksLikeReceipt && cid === String(myId)) count++;
+      }
+    }
+    return count;
+  }
+
+  async function loadDashboardCounts() {
+    try {
+      // Who am I?
+      const me = await authFetch(`${API_BASE}/auth/me`);
+      const myId = String(me.user_id);
+
+      // Bookings (backend already scopes to client; still filter defensively)
+      const bookingsRaw = await authFetch(`${API_BASE}/bookings`);
+      const myBookings = (Array.isArray(bookingsRaw) ? bookingsRaw : [])
+        .filter(b => (b.client_id == null) ? true : String(b.client_id) === myId);
+
+      // Map booking_id -> client_id (as string) for receipts fallback
+      const bookingMap = new Map(
+        myBookings.map(b => [String(b.id ?? b.booking_id), String(b.client_id ?? myId)])
+      );
+
+      setCount("bookingCount", "bookingLabel", myBookings.length, "reservation");
+
+      // Feedback for this client
+      const feedback = await authFetch(`${API_BASE}/feedback/mine`);
+      const feedbackTotal = Array.isArray(feedback) ? feedback.length : 0;
+      setCount("feedbackCount", "feedbackLabel", feedbackTotal, "feedback");
+
+      // Receipts: only mine
+      const receiptsRaw = await authFetch(`${API_BASE}/receipts`);
+      const myReceiptCount = countMyReceipts(receiptsRaw, myId, bookingMap);
+      setCount("receiptCount", "receiptLabel", myReceiptCount, "available", "available");
+
+    } catch (err) {
+      console.error("loadDashboardCounts failed:", err);
+      // Don’t leave stale numbers if something fails
+      setCount("bookingCount", "bookingLabel", 0, "reservation");
+      setCount("feedbackCount", "feedbackLabel", 0, "feedback");
+      setCount("receiptCount", "receiptLabel", 0, "available", "available");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", loadDashboardCounts);
+</script>
+
+
+</body>
+</html>

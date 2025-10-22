@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Admin Dashboard</title>
+  <link rel="stylesheet" href="/Admin/admin.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   
+</head>
+<body>
+    
+  <!-- Sidebar -->
+    <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html" class="active"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+ <main  class="dashboard">
+   <h1>Admin Dashboard</h1>
+
+    <!-- Cards -->
+    <div class="cards">
+      <div class="card">
+        <i class="fa-solid fa-piggy-bank"></i>
+        <h2>120 Pigs</h2>
+        <p>Available for sale</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-calendar-check"></i>
+        <h2>15 Bookings</h2>
+        <p>Pending approval</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-cash-register"></i>
+        <h2>₱250,000</h2>
+        <p>Sales this month</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-users"></i>
+        <h2>— Users</h2>
+        <p>Registered accounts</p>
+      </div>
+    </div>
+
+    <!-- Sample Table -->
+    <h2>Recent Bookings</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Booking ID</th>
+          <th>Client</th>
+          <th>Item</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>B001</td>
+          <td>Juan Dela Cruz</td>
+          <td>Landrace Pig</td>
+          <td>Pending</td>
+          <td>
+            <button class="btn btn-edit">Approve</button>
+            <button class="btn btn-archive">Decline</button>
+          </td>
+        </tr>
+        <tr>
+          <td>B002</td>
+          <td>Maria Santos</td>
+          <td>Lechon Service</td>
+          <td>Approved</td>
+          <td>
+            <button class="btn btn-edit">View</button>
+            <button class="btn btn-archive">Cancel</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div id="bk-pager" style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+      <button class="btn btn-ghost" id="bk-prev">&laquo; Prev</button>
+      <span id="bk-page" style="min-width:80px; text-align:center">Page 1/1</span>
+      <button class="btn btn-ghost" id="bk-next">Next &raquo;</button>
+    </div>
+
+   </main>
+
+   <script type="module">
+  import { getToken, clearToken, setLoginRedirect, authApi, availApi, bookingsApi, salesApi, adminApi } from "/_shared/api.js";
+
+  // If your login lives elsewhere, change this path
+  setLoginRedirect("/Zhomepage/login.html");
+
+  // Elements
+  const els = {
+    pigsCard: document.querySelector('.cards .card:nth-child(1) h2'),
+    pendingCard: document.querySelector('.cards .card:nth-child(2) h2'),
+    salesCard: document.querySelector('.cards .card:nth-child(3) h2'),
+    usersCard: document.querySelector('.cards .card:nth-child(4) h2'), // we won't use now
+    bookingsTbody: document.querySelector('.admin-table tbody'),
+    logout: document.getElementById('logout'),
+  };
+
+  // Utils
+  const peso = (n) => '₱' + (Number(n || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth(); // 0..11
+  const isThisMonth = (iso) => {
+    if (!iso) return false;
+    const d = new Date(iso);
+    return d.getFullYear() === y && d.getMonth() === m;
+  };
+
+  async function requireAuth() {
+    if (!getToken()) {
+      window.location.href = "/Zhomepage/login.html";
+      return false;
+    }
+    try {
+      await authApi.me(); // smoke test token
+      return true;
+    } catch {
+      clearToken();
+      window.location.href = "/Zhomepage/login.html";
+      return false;
+    }
+  }
+
+  async function loadPigsCount() {
+    try {
+      // Admin can call /available-pigs (you enabled ADMIN/CARETAKER)
+      const list = await availApi.list(); // returns available pigs (public fields)
+      els.pigsCard.textContent = `${Array.isArray(list) ? list.length : 0} Pigs`;
+    } catch (e) {
+      console.warn("available-pigs failed:", e);
+      els.pigsCard.textContent = "—";
+    }
+  }
+
+  async function loadPendingBookingsCount() {
+    try {
+      // NOTE: bookingsApi.list expects a STRING, not an object.
+      const rows = await bookingsApi.list("pending");
+      const count = Array.isArray(rows) ? rows.length : 0;
+      els.pendingCard.textContent = `${count} Bookings`;
+    } catch (e) {
+      console.warn("bookings count failed:", e);
+      els.pendingCard.textContent = "—";
+    }
+  }
+
+
+  async function loadSalesThisMonth() {
+    try {
+      const rows = await salesApi.list(); // no filters; sum client-side by payment_date in current month
+      let sum = 0;
+      if (Array.isArray(rows)) {
+        for (const s of rows) {
+          if (isThisMonth(s?.payment_date)) {
+            // total_amount is Decimal in API → may arrive as string
+            const val = Number(s?.total_amount ?? 0);
+            if (!Number.isNaN(val)) sum += val;
+          }
+        }
+      }
+      els.salesCard.textContent = peso(sum);
+    } catch (e) {
+      console.warn("sales failed:", e);
+      els.salesCard.textContent = "₱—";
+    }
+  }
+  async function loadUserCount() {
+  try {
+    // true = count only active users (set to false if you want ALL)
+    const total = await adminApi.usersTotal(true);
+    els.usersCard.textContent = `${total} Users`;
+  } catch (e) {
+    console.warn("users count failed:", e);
+    els.usersCard.textContent = "—";
+  }
+}
+
+    // ---- simple client-side pagination state for the dashboard ----
+    let BK_ALL = [];           // combined pending + approved
+    let BK_PAGE = 1;
+    const BK_SIZE = 10;
+
+    function renderBookingsPage() {
+      // guards
+      if (!Array.isArray(BK_ALL)) BK_ALL = [];
+      const totalPages = Math.max(1, Math.ceil(BK_ALL.length / BK_SIZE));
+      BK_PAGE = Math.min(Math.max(1, BK_PAGE), totalPages);
+
+      const start = (BK_PAGE - 1) * BK_SIZE;
+      const slice = BK_ALL.slice(start, start + BK_SIZE);
+
+      els.bookingsTbody.innerHTML = "";
+
+      if (slice.length === 0) {
+        els.bookingsTbody.innerHTML =
+          `<tr><td colspan="5" style="text-align:center;color:#777;">No bookings to show</td></tr>`;
+      } else {
+        for (const b of slice) {
+          const clientId = (typeof b.client_id !== "undefined") ? b.client_id : "—";
+          const pigs = Array.isArray(b.pigs_ids) ? b.pigs_ids.join(", ") : "—";
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${b.id}</td>
+            <td>${clientId}</td>
+            <td>${pigs}</td>
+            <td>${(b.status || "").toString().toUpperCase()}</td>
+            <td>
+              ${
+                (b.status === "pending")
+                  ? `<button class="btn btn-edit" data-id="${b.id}" data-action="approve">Approve</button>
+                    <button class="btn btn-archive" data-id="${b.id}" data-action="decline">Decline</button>`
+                  : `<button class="btn btn-edit" data-id="${b.id}" data-action="view">View</button>`
+              }
+            </td>
+          `;
+          els.bookingsTbody.appendChild(tr);
+        }
+      }
+
+      // update pager text + buttons
+      document.getElementById("bk-page").textContent = `Page ${BK_PAGE}/${totalPages}`;
+      document.getElementById("bk-prev").disabled = (BK_PAGE <= 1);
+      document.getElementById("bk-next").disabled = (BK_PAGE >= totalPages);
+    }
+
+    async function loadRecentBookings() {
+      try {
+        // IMPORTANT: pass strings, not objects
+        const [pending, approved] = await Promise.all([
+          bookingsApi.list("pending"),
+          bookingsApi.list("approved"),
+        ]);
+
+        // combine, sort (newest first). If your API guarantees order, this is still safe.
+        const a = Array.isArray(pending) ? pending : [];
+        const b = Array.isArray(approved) ? approved : [];
+        BK_ALL = [...a, ...b].sort((x, y) => {
+          // prefer booking_date desc; fallback to id desc
+          const dx = new Date(x.booking_date || 0).getTime();
+          const dy = new Date(y.booking_date || 0).getTime();
+          if (dx !== dy) return dy - dx;
+          return (y.id || 0) - (x.id || 0);
+        });
+
+        BK_PAGE = 1;
+        renderBookingsPage();
+
+        // One (and only one) click handler to keep things clean
+        // Approve / Decline (only for 'pending' rows)
+        els.bookingsTbody.onclick = async (e) => {
+          const btn = e.target.closest("button[data-action]");
+          if (!btn) return;
+          const id = btn.getAttribute("data-id");
+          const action = btn.getAttribute("data-action");
+          if (action === "approve" || action === "decline") {
+            try {
+              await bookingsApi.decide(id, action === "approve" ? "approved" : "declined");
+              await Promise.all([loadRecentBookings(), loadPendingBookingsCount()]);
+              alert(`✅ Booking ${id} ${action === "approve" ? "approved" : "declined"}.`);
+            } catch (err) {
+              console.error("decision failed:", err);
+              alert("❌ Could not update booking: " + (err?.message || ""));
+            }
+          } else if (action === "view") {
+            // optional: navigate or open modal
+            // window.location.href = `/Frontend/admin-manage-sales-expenses-bookings.html#booking=${id}`;
+          }
+        };
+
+      } catch (e) {
+        console.warn("recent bookings failed:", e);
+        els.bookingsTbody.innerHTML =
+          `<tr><td colspan="5" style="text-align:center;color:#b00;">Failed to load bookings.</td></tr>`;
+      }
+    }
+
+    // pager buttons (wire once)
+    document.getElementById("bk-prev").addEventListener("click", () => {
+      BK_PAGE = Math.max(1, BK_PAGE - 1);
+      renderBookingsPage();
+    });
+    document.getElementById("bk-next").addEventListener("click", () => {
+      BK_PAGE = BK_PAGE + 1;
+      renderBookingsPage();
+    });
+
+
+  // Logout
+  els.logout?.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearToken();
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  // Boot
+  (async () => {
+    const ok = await requireAuth();
+    if (!ok) return;
+
+    await Promise.all([
+      loadPigsCount(),
+      loadPendingBookingsCount(),
+      loadSalesThisMonth(),
+      loadRecentBookings(),
+      loadUserCount(), // new
+    ]);
+  })();
+</script>
+
+</body>
+</html>

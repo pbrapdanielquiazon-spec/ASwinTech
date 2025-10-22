@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Manage Users</title>
+  <link rel="stylesheet" href="/Admin/admin.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .tabs{margin:20px 0}
+    .tab-btn{background:#f0f0f0;border:none;padding:10px 20px;cursor:pointer;margin-right:5px;border-radius:5px}
+    .tab-btn.active{background:#43A047;color:#fff}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+    .admin-table{width:100%;border-collapse:collapse;margin-top:10px}
+    .admin-table th,.admin-table td{border:1px solid #ccc;padding:8px;text-align:center}
+    .admin-table th{background:#f9f9f9}
+    .btn-add,.btn-edit,.btn-archive,.btn-restore{padding:6px 12px;margin:2px;border:none;border-radius:5px;cursor:pointer}
+    .btn-add{background:#29B6F6;color:#fff}
+    .btn-edit{background:#FFA726;color:#fff}
+    .btn-archive{background:#EF5350;color:#fff}
+    .btn-restore{background:#29B6F6;color:#fff}
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10}
+    .modal-content{background:#fff;margin:5% auto;padding:20px;border-radius:8px;width:520px;max-width:92%}
+    .close{float:right;font-size:22px;cursor:pointer}
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;margin-bottom:5px}
+    .form-group input,.form-group select{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px}
+    .btn-auth{background:#43A047;color:#fff;border:none;padding:10px;width:100%;border-radius:5px;cursor:pointer}
+    .btn-auth:hover{background:#2e7d32}
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html" class="active"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Manage Users</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="openTab(event,'activeUsers')">👤 Active Users</button>
+      <button class="tab-btn" onclick="openTab(event,'archivedUsers')">📂 Archived Users</button>
+      <button class="btn-add" style="margin-left:auto" onclick="openAddModal()">+ Add New User</button>
+      <button class="btn-add" onclick="reloadUsers()">⟳ Refresh</button>
+    </div>
+
+    <!-- Active -->
+    <section id="activeUsers" class="tab-content active">
+      <table class="admin-table" id="userTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Full Name</th><th>Username</th><th>Email</th>
+            <th>Role</th><th>Status</th><th>Profile Picture</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Archived -->
+    <section id="archivedUsers" class="tab-content">
+      <table class="admin-table" id="archivedTable">
+        <thead>
+          <tr>
+            <th>ID</th><th>Full Name</th><th>Username</th><th>Email</th>
+            <th>Role</th><th>Status</th><th>Profile Picture</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">&times;</span>
+        <h2>Edit User</h2>
+        <form id="editForm">
+          <input type="hidden" id="edit_id">
+          <div class="form-group"><label>Full Name</label><input type="text" id="edit_fullname" required></div>
+          <div class="form-group"><label>Username (locked)</label><input type="text" id="edit_username" readonly></div>
+          <div class="form-group"><label>Email</label><input type="email" id="edit_email" required></div>
+          <div class="form-group"><label>Role</label>
+            <select id="edit_role">
+              <option value="ADMIN">Admin</option>
+              <option value="SALES">Sales</option>
+              <option value="PROCUREMENT">Procurement</option>
+              <option value="CARETAKER">Caretaker</option>
+              <option value="CLIENT">Client</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Status</label>
+            <select id="edit_status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Profile Picture (preview only)</label>
+            <input type="file" id="edit_picture" accept="image/*" onchange="previewImage(this,'editPreview')">
+            <img id="editPreview" src="" alt="Preview" width="80" style="margin-top:10px;display:none;">
+          </div>
+          <button type="submit" class="btn-auth">Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div id="addModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeAddModal()">&times;</span>
+        <h2>Add User</h2>
+        <form id="addForm">
+          <div class="form-group"><label>Full Name</label><input type="text" id="add_fullname" required></div>
+          <div class="form-group"><label>Username</label><input type="text" id="add_username" required></div>
+          <div class="form-group"><label>Password</label><input type="password" id="add_password" required></div>
+          <div class="form-group"><label>Email</label><input type="email" id="add_email" required></div>
+          <div class="form-group"><label>Role</label>
+            <select id="add_role">
+              <option value="ADMIN">Admin</option>
+              <option value="SALES">Sales</option>
+              <option value="PROCUREMENT">Procurement</option>
+              <option value="CARETAKER">Caretaker</option>
+              <option value="CLIENT">Client</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Status</label>
+            <select id="add_status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Profile Picture (preview only)</label>
+            <input type="file" id="add_picture" accept="image/*" onchange="previewImage(this,'addPreview')">
+            <img id="addPreview" src="" alt="Preview" width="80" style="margin-top:10px;display:none;">
+          </div>
+          <button type="submit" class="btn-auth">Create User</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Confirm / Archive / Success -->
+    <div id="confirmModal" class="modal"><div class="modal-content">
+      <h3 id="confirmTitle">⚠️ Confirm action?</h3>
+      <button id="confirmYes">Yes</button>
+      <button onclick="closeModal('confirmModal')">Cancel</button>
+    </div></div>
+
+    <div id="archiveModal" class="modal"><div class="modal-content">
+      <h3>⚠️ Archive this user?</h3>
+      <button id="archiveYes">Yes, Archive</button>
+      <button onclick="closeModal('archiveModal')">Cancel</button>
+    </div></div>
+
+    <div id="successMessage" class="modal"><div class="modal-content">
+      <h3 id="successText">✅ Success!</h3>
+      <button onclick="closeModal('successMessage')">OK</button>
+    </div></div>
+  </main>
+
+  <!-- Script -->
+  <script type="module">
+    import { getToken, clearToken, authApi } from "/_shared/api.js";
+
+    // --- Minimal users API (JSON). Adjust paths if yours differ. ---
+    const API_BASE = "http://127.0.0.1:8000/api"; // adjust if needed
+    async function api(path, { method = "GET", body, auth = true } = {}) {
+      const headers = { "Accept": "application/json" };
+      if (body !== undefined) headers["Content-Type"] = "application/json";
+      if (auth && getToken()) headers["Authorization"] = "Bearer " + getToken();
+
+      const url = API_BASE + path;  // helpful for logs
+      let res;
+      try {
+        res = await fetch(url, { method, headers, body: body !== undefined ? JSON.stringify(body) : undefined });
+      } catch (networkErr) {
+        console.error(`Fetch failed for ${url}:`, networkErr);
+        throw new Error(`Network error calling ${url}`);
+      }
+
+      // Try read text (so we can show error payloads)
+      const text = await res.text();
+      if (!res.ok) {
+        console.error(`HTTP ${res.status} for ${url}. Body:`, text);
+        throw new Error(`HTTP ${res.status} on ${url}`);
+      }
+
+      // Parse JSON if possible, else return raw text
+      try { return text ? JSON.parse(text) : null; }
+      catch {
+        console.warn(`Non-JSON response from ${url}. Returning text.`);
+        return text;
+      }
+    }
+
+    const usersApi = {
+  list: ({ activeOnly = false, role = "", q = "" } = {}) => {
+    const params = new URLSearchParams();
+    if (activeOnly) params.set("active_only", "true");
+    if (role)      params.set("role", role);
+    if (q)         params.set("q", q);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    return api(`/api/auth/admin/users${qs}`);   // <- correct
+  },
+  create:  (data)     => api(`/auth/admin/users`, { method: "POST", body: data }),
+  update:  (id, data) => api(`/auth/users/${id}`,  { method: "PUT",  body: data }),
+  setStatus: (id, s)  => api(`/auth/users/${id}`,  { method: "PUT",  body: { status: String(s).toUpperCase() } }),
+};
+
+
+    // --- DOM helpers ---
+    const $ = (id)=>document.getElementById(id);
+    function openTab(evt, tabName){
+      document.querySelectorAll(".tab-content").forEach(c=>c.classList.remove("active"));
+      $(tabName).classList.add("active");
+      document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+      evt.currentTarget.classList.add("active");
+    }
+    function openModal(id){ $(id).style.display="block"; }
+    function closeModal(id){ $(id).style.display="none"; }
+    function previewImage(input, previewId){
+      const f = input.files?.[0]; const img=$(previewId);
+      if(!f){ img.src=""; img.style.display="none"; return; }
+      const r = new FileReader();
+      r.onload = e => { img.src = e.target.result; img.style.display="block"; };
+      r.readAsDataURL(f);
+    }
+    function getStatusLabel(u) {
+      // Prefer the string status from API ("ACTIVE"/"INACTIVE")
+      if (typeof u.status === "string") {
+        return u.status.toUpperCase() === "ACTIVE" ? "active" : "inactive";
+      }
+      // Fallback to boolean if present
+      if (typeof u.is_active === "boolean") {
+        return u.is_active ? "active" : "inactive";
+      }
+      return "inactive";
+    }
+    function success(msg){ $("successText").innerText = msg; openModal("successMessage"); }
+
+    // ==== Frontend-only archive helpers (users) ====
+    const USERS_ARCHIVE_KEY = "archived_user_ids";
+    const getUserArchive = () => {
+      try { return new Set(JSON.parse(localStorage.getItem(USERS_ARCHIVE_KEY) || "[]")); }
+      catch { return new Set(); }
+    };
+    const saveUserArchive = (set) => {
+      localStorage.setItem(USERS_ARCHIVE_KEY, JSON.stringify([...set]));
+    };
+
+
+    // --- state ---
+    let me = null;
+    let archiveTargetId = null;
+    let editTargetId = null;
+
+    // --- render ---
+    function renderRow(u){
+      const tr = document.createElement("tr");
+
+      const role = (u.role?.value || u.role || "").toString().toUpperCase();
+      const statusLabel = getStatusLabel(u);
+      const isInactive = statusLabel === "inactive";
+      const id = u.user_id ?? u.id;
+      const isArchivedFrontend = getUserArchive().has(Number(id));
+
+
+      tr.innerHTML = `
+        <td>${id}</td>
+        <td>${esc(u.full_name || u.name || "")}</td>
+        <td>${esc(u.username || "")}</td>
+        <td>${esc(u.email || "")}</td>
+        <td>${esc(role)}</td>
+        <td>${statusLabel}</td>
+        <td>${
+          u.profile_picture_url
+            ? `<img src="${u.profile_picture_url}" width="40">`
+            : `<img src="/static/placeholder-user.png" width="40">`
+        }</td>
+        <td>
+        ${
+          isArchivedFrontend
+            ? `<button class="btn-restore" data-id="${id}">Restore</button>`
+            : `<button class="btn-edit" data-id="${id}">Edit</button> <button class="btn-archive" data-id="${id}">Archive</button>`
+        }
+        </td>
+      `;
+
+      // Wire up the row "Edit" button (the modal open you already had)
+      const editBtn = tr.querySelector(".btn-edit");
+      if (editBtn) editBtn.onclick = () => openEditFromRow(id, tr);
+
+      return tr;
+    }
+
+    function esc(s){ return (""+s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+    const activeBody   = document.querySelector("#userTable tbody");
+    const archivedBody = document.querySelector("#archivedTable tbody");
+
+    async function reloadUsers() {
+      // Clear both tables
+      activeBody.innerHTML = "";
+      archivedBody.innerHTML = "";
+
+      let list;
+      try {
+        list = await usersApi.list();               // your existing API call
+      } catch (err) {
+        console.error("usersApi.list failed:", err);
+        activeBody.innerHTML = `<tr><td colspan="8" style="color:#b00">Failed to load users.</td></tr>`;
+        return;
+      }
+
+      if (!Array.isArray(list)) {
+        console.error("Unexpected /users payload:", list);
+        activeBody.innerHTML = `<tr><td colspan="8" style="color:#b00">Unexpected response.</td></tr>`;
+        return;
+      }
+
+      const archivedSet = getUserArchive();
+      let activeCount = 0, archivedCount = 0;
+
+      for (const u of list) {
+        // Defensive: normalize id, role, status for display
+        const id = Number(u.user_id ?? u.id);
+        if (!Number.isFinite(id)) {
+          console.warn("Skipping row without id:", u);
+          continue;
+        }
+        const row = renderRow(u);
+
+        if (archivedSet.has(id)) {
+          archivedBody.appendChild(row);
+          archivedCount++;
+        } else {
+          activeBody.appendChild(row);
+          activeCount++;
+        }
+      }
+
+      if (activeCount === 0) {
+        activeBody.innerHTML = `<tr><td colspan="8" style="color:#777">No active users</td></tr>`;
+      }
+      if (archivedCount === 0) {
+        archivedBody.innerHTML = `<tr><td colspan="8" style="color:#777">No archived users</td></tr>`;
+      }
+    }
+
+    // Works for buttons in both tables
+    // Frontend-only archive/restore (localStorage)
+    document.addEventListener("click", (e) => {
+      const archiveBtn = e.target.closest(".btn-archive");
+      const restoreBtn = e.target.closest(".btn-restore");
+      if (!archiveBtn && !restoreBtn) return;
+
+      const id = Number((archiveBtn || restoreBtn).dataset.id);
+      const set = getUserArchive();
+
+      if (archiveBtn) {
+        set.add(id);
+        saveUserArchive(set);
+        success("✅ User moved to Archive (frontend only)");
+      } else {
+        set.delete(id);
+        saveUserArchive(set);
+        success("✅ User restored (frontend only)");
+      }
+
+      reloadUsers();
+    });
+
+
+    // --- open edit from row ---
+    function openEditFromRow(id, tr){
+      editTargetId = id;
+      const cells = tr.cells;
+      $("edit_id").value = id;
+      $("edit_fullname").value = cells[1].innerText;
+      $("edit_username").value = cells[2].innerText; // locked
+      $("edit_email").value = cells[3].innerText;
+      $("edit_role").value = (cells[4].innerText || "CLIENT").toUpperCase();
+      $("edit_status").value = (cells[5].innerText || "active").toLowerCase();
+      $("edit_picture").value = "";
+      $("editPreview").style.display="none";
+      openModal("editModal");
+    }
+    function closeEditModal(){ closeModal("editModal"); editTargetId=null; }
+    function openAddModal(){ openModal("addModal"); }
+    function closeAddModal(){ closeModal("addModal"); $("addForm").reset(); $("addPreview").style.display="none"; }
+
+    // --- form submit handlers ---
+    $("addForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const body = {
+        name: $("add_fullname").value.trim(),
+        username: $("add_username").value.trim(),
+        password: $("add_password").value,
+        email: $("add_email").value.trim(),
+        role: $("add_role").value,                       // already uppercased options
+        status: $("add_status").value.toUpperCase(),    // <- normalize to API’s expected format
+      };
+
+      if(!body.name || !body.username || !body.password || !body.email) return success("❌ Fill all fields");
+      try{
+        await usersApi.create(body);
+        closeAddModal();
+        await reloadUsers();
+        success("✅ User created");
+      }catch(err){ success("❌ " + (err.message||"Create failed")); }
+    });
+
+    document.getElementById("editForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("edit_id").value;
+
+      const body = {};
+      const name   = document.getElementById("edit_fullname").value.trim();
+      const email  = document.getElementById("edit_email").value.trim();
+      const role   = document.getElementById("edit_role").value;        // e.g. "SALES"
+      const status = document.getElementById("edit_status").value;      // "active" | "inactive"
+
+      if (name)   body.name = name;
+      if (email)  body.email = email;
+      if (role)   body.role = role.toUpperCase();       // backend expects Role enum (uppercase)
+      if (status) body.status = status.toLowerCase();   // backend expects lowercase
+
+      try {
+        await usersApi.update(id, body);  // same API you already use
+        closeEditModal();
+        await reloadUsers();
+        success("✅ User updated");
+      } catch (err) {
+        success("❌ " + (err?.message || "Update failed"));
+      }
+    });
+
+
+    // --- archive / restore ---
+    $("archiveYes").onclick = async ()=>{
+      if(!archiveTargetId) return closeModal("archiveModal");
+      try{
+        await usersApi.setStatus(archiveTargetId, "inactive");
+        archiveTargetId = null;
+        closeModal("archiveModal");
+        await reloadUsers();
+        success("✅ User archived");
+      }catch(err){ success("❌ " + (err.message||"Archive failed")); }
+    };
+    async function restoreUser(id){
+      try{
+        await usersApi.setStatus(id, "active");
+        await reloadUsers();
+        success("✅ User restored");
+      }catch(err){ success("❌ " + (err.message||"Restore failed")); }
+    }
+
+    // --- bootstrap ---
+    async function init(){
+      // auth check
+      if(!getToken()) return (window.location.href = "/Zhomepage/login.html");
+      try {
+        const meData = await authApi.me();
+        me = meData;
+        // optional: gate by role
+        const role = (me.role?.value || me.role || "").toString().toUpperCase();
+        if(role !== "ADMIN"){ alert("Admins only"); return (window.location.href="/Frontend/dashboard-admin.html"); }
+      } catch {
+        clearToken(); return (window.location.href="/Zhomepage/login.html");
+      }
+      await reloadUsers();
+    }
+
+    // Close modals on outside click
+    window.addEventListener("click",(e)=>{
+      document.querySelectorAll(".modal").forEach(m=>{ if(e.target===m) m.style.display="none"; });
+    });
+
+    init();
+
+    window.openTab = openTab;
+    window.openAddModal = openAddModal;
+    window.closeAddModal = closeAddModal;
+    window.openEditFromRow = openEditFromRow;
+    window.closeEditModal = closeEditModal;
+    window.previewImage = previewImage;
+    window.reloadUsers = reloadUsers;
+    window.closeModal = closeModal;
+    // --- Logout (clears token and goes to login)
+  document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearToken();
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  </script>
+</body>
+</html>

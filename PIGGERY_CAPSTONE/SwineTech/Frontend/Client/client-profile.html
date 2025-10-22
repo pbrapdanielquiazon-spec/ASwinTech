@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | My Profile</title>
+  <link rel="stylesheet" href="/Client/client.css">
+  <link rel="stylesheet" href="/Admin/admin.css"> <!-- shared styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    .toast {
+      position: fixed;
+      right: 20px;
+      bottom: 24px;
+      min-width: 240px;
+      max-width: 80vw;
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: #fff;
+      background: #333;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .25s ease, transform .25s ease;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background:#2e7d32; }
+    .toast.error { background:#c62828; }
+    .toast.info { background:#455a64; }
+  </style>
+
+</head>
+<body>
+ <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs" onclick="showSection('pigs')"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#bookings" onclick="showSection('bookings')"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#inquiries" onclick="showSection('inquiry')"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="feedback-client.html"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#receipts" onclick="showSection('receipts')"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html" class="active"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>My Profile</h1>
+    <p class="sub-text">Manage your personal details, security, and profile picture.</p>
+
+    <div class="profile-container">
+      <form id="profileForm" enctype="multipart/form-data" class="profile-form">
+
+
+        <!-- Profile Picture Section -->
+        <section class="profile-section">
+          <h2><i class="fa-solid fa-image"></i> Profile Picture</h2>
+          <div class="profile-picture">
+            <img src="images/default-profile.png" alt="Profile Picture" id="profilePreview">
+            <label for="profile_picture" class="btn-upload">
+              <i class="fa-solid fa-upload"></i> Upload New
+            </label>
+            <input type="file" id="profile_picture" name="profile_picture" accept="image/*" onchange="previewImage(event)">
+          </div>
+        </section>
+
+        <!-- Personal Information Section -->
+        <div class="form-group">
+          <label for="fullname">Full Name</label>
+          <input type="text" id="fullname" name="fullname" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" disabled>
+        </div>
+
+
+        <!-- Security Section -->
+        <div class="form-group">
+          <label for="password">New Password</label>
+          <input type="password" id="password" name="password" placeholder="Leave blank if unchanged">
+        </div>
+
+        <div class="form-group">
+          <label for="confirm_password">Confirm New Password</label>
+          <input type="password" id="confirm_password" name="confirm_password" placeholder="Leave blank if unchanged">
+        </div>
+        <p id="profileMsg" class="sub-text" style="margin:10px 0 0;"></p>
+
+        <!-- Save Button -->
+        <div class="form-actions">
+          <button type="button" id="saveBtn" class="btn-auth"><i class="fa-solid fa-save"></i> Save Changes</button>
+        </div>
+
+      </form>
+    </div>
+  </main>
+
+  <script>
+    /* ===== Config / helpers ===== */
+    const API_BASE = "http://localhost:8000/api";
+
+    function getToken() {
+      return (
+        localStorage.getItem("auth_token") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("access_token")
+      );
+    }
+
+    async function authFetch(url, opts = {}) {
+      const headers = Object.assign(
+        { "Content-Type": "application/json" },
+        getToken() ? { Authorization: `Bearer ${getToken()}` } : {}
+      );
+      const res = await fetch(url, { ...opts, headers });
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
+      if (!res.ok) {
+        const err = new Error(typeof data === "string" ? data : (data?.detail || res.statusText));
+        err.status = res.status;
+        err.body = data;
+        throw err;
+      }
+      return data;
+    }
+
+    function setMsg(msg, type = "info") {
+      const el = document.getElementById("profileMsg");
+      if (!el) return;
+      el.textContent = msg || "";
+      el.style.color = type === "success" ? "#2e7d32" : type === "error" ? "#c62828" : "#555";
+      el.style.fontWeight = type === "success" ? "600" : "400";
+    }
+
+    /* ===== Prefill profile from GET /auth/me ===== */
+    async function loadMe() {
+      try {
+        const me = await authFetch(`${API_BASE}/auth/me`);
+        // Expected: { user_id, username, email, role, status, name }
+        document.getElementById("fullname").value = me.name ?? "";
+        document.getElementById("email").value = me.email ?? "";
+        document.getElementById("username").value = me.username ?? "";
+        setMsg(""); // clear any old message
+      } catch (e) {
+        setMsg("Failed to load your profile. Please refresh.", "error");
+        console.error(e);
+      }
+    }
+
+    /* ===== Submit handler (PUT /auth/me) ===== */
+    async function handleSubmit(e) {
+      e.preventDefault();
+      setMsg("");
+
+      const name = document.getElementById("fullname").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const pwd = document.getElementById("password").value;
+      const pwd2 = document.getElementById("confirm_password").value;
+
+      // Basic validation
+      if (!name || !email) {
+        setMsg("Name and email are required.", "error");
+        return;
+      }
+      if (pwd || pwd2) {
+        if (pwd.length < 8) {
+          setMsg("New password must be at least 8 characters.", "error");
+          return;
+        }
+        if (pwd !== pwd2) {
+          setMsg("Passwords do not match.", "error");
+          return;
+        }
+      }
+
+      // Build payload; send password only if provided
+      const payload = { name, email };
+      if (pwd) payload.password = pwd;
+
+      try {
+        await authFetch(`${API_BASE}/auth/me`, {
+          method: "PUT",
+          body: JSON.stringify(payload)
+        });
+
+        setMsg("Your profile was updated successfully.", "success");
+        showToast("Your profile was updated successfully.", "success");
+
+        document.getElementById("password").value = "";
+        document.getElementById("confirm_password").value = "";
+        loadMe(); // refresh values
+      } catch (err) {
+        if (err.status === 409 || /unique/i.test(String(err.body?.detail || ""))) {
+          setMsg("That email is already in use. Please use a different one.", "error");
+          showToast("That email is already in use. Please use a different one.", "error");
+        } else if (err.status === 422) {
+          setMsg("Please check your input and try again.", "error");
+        } else if (err.status === 401) {
+          setMsg("Session expired. Please log in again.", "error");
+        } else {
+          setMsg(err.message || "Failed to update profile.", "error");
+        }
+        console.error(err);
+      }
+    }
+
+    function showToast(message, type = "info") {
+      const el = document.getElementById("toast");
+      if (!el) return;
+      el.className = `toast ${type}`;
+      el.textContent = message;
+      el.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => el.classList.remove("show"), 2600);
+    }
+
+
+    // Image preview (front-end only)
+    function previewImage(event) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        document.getElementById('profilePreview').src = reader.result;
+      };
+      const file = event.target.files?.[0];
+      if (file) reader.readAsDataURL(file);
+    }
+    window.previewImage = previewImage;
+
+    /* ===== Wire up on load ===== */
+    document.addEventListener("DOMContentLoaded", () => {
+      // lock username (defense in depth)
+      document.getElementById("username").setAttribute("disabled", "disabled");
+
+      loadMe(); // prefill
+
+      // intercept the form submission
+  const msg = document.getElementById("profileMsg");
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", () => {
+      if (msg) { msg.style.display = "block"; msg.textContent = "Saving…"; msg.style.color = "#555"; }
+      handleSubmit(new Event("submit")); // call the same logic
+    });
+  }
+});
+  function getToken() {
+    // Try all known keys
+    return localStorage.getItem("auth_token")
+        || localStorage.getItem("token")
+        || localStorage.getItem("access_token");
+  }
+
+  function clearToken() {
+    // Wipe all the common keys we’ve used anywhere
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    // (Optional) also clear session storage variants
+    sessionStorage.removeItem("auth_token");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("access_token");
+  }
+
+  document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearToken();
+    // Redirect to your login page (adjust this path if yours is different)
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  </script>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>

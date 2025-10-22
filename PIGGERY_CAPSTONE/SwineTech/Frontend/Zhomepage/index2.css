@@ -1,0 +1,143 @@
+:root {
+  --color-primary: #2E3B4E;   /* Dark Slate */
+  --color-accent: #43A047;    /* Fresh Green */
+  --color-support1: #FFF3E0;  /* Beige */
+  --color-support2: #29B6F6;  /* Sky Blue */
+  --color-neutral1: #ffffff;  /* White */
+  --color-neutral2: #f5f5f5;  /* Off-White */
+  --color-neutral3: #555;     /* Dark Gray */
+}
+/* Reset & Base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: var(--color-neutral2);
+  color: var(--color-neutral3);
+  line-height: 1.6;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 40px;
+  background: var(--color-primary);
+  color: var(--color-neutral1);
+  position: sticky;
+  top: 0;
+}
+
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-support2); /* Sky Blue */
+}
+
+.navbar nav a {
+  margin-left: 20px;
+  text-decoration: none;
+  color: var(--color-neutral1);
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+
+
+/* Hero Section */
+.hero {
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0 20px;
+  background: linear-gradient(to right, var(--color-primary), var(--color-accent));
+  color: var(--color-neutral1);
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  margin-bottom: 30px;
+  max-width: 600px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 12px 25px;
+  margin: 5px;
+  border-radius: 30px;
+  font-weight: bold;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-neutral1);
+}
+
+.btn-primary:hover {
+  background: #2e7d32;
+}
+
+.btn-accent {
+  background: var(--color-support2);
+  color: var(--color-neutral1);
+}
+
+.btn-accent:hover {
+  background: #0288d1;
+}
+
+.btn-outline {
+  border: 2px solid var(--color-neutral1);
+  color: var(--color-neutral1);
+  background: transparent;
+}
+
+.btn-outline:hover {
+  background: var(--color-neutral1);
+  color: var(--color-primary);
+}
+
+/* About Section */
+#about {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+#about h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: var(--color-primary);
+}
+
+#about p {
+  max-width: 700px;
+  margin: auto;
+  font-size: 1.1rem;
+  color: var(--color-neutral3);
+}
+
+/* Footer */
+footer {
+  background: var(--color-primary);
+  color: var(--color-neutral1);
+  text-align: center;
+  padding: 15px;
+  margin-top: 40px;
+}

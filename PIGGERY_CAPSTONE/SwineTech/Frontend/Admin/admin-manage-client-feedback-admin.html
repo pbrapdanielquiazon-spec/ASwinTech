@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Client Feedback</title>
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .btn { padding: 6px 10px; border: none; border-radius: 8px; background: #334155; color: #fff; cursor: pointer; }
+    .btn:hover { background: #475569; }
+    .btn-ghost { background: transparent; border: 1px solid #64748b; color: #e2e8f0; }
+    .muted { color: #94a3b8; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html" class="active"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Client Feedback</h1>
+    <p class="page-desc">
+      Here, Admins can review feedback submitted by clients. Clients can submit or edit their own feedback in their dashboard.
+    </p>
+
+    <!-- Table -->
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Feedback ID</th>
+          <th>Client ID</th>
+          <th>Comment</th>
+          <th>Date Submitted</th>
+          <th>Last Updated</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-feedback">
+        <!-- Filled by JS -->
+      </tbody>
+    </table>
+
+    <p id="empty-state" class="muted" style="display:none;margin-top:8px">
+      No feedback yet.
+    </p>
+  </main>
+
+  <!-- Feedback Modal -->
+  <div id="feedbackModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" id="modal-close">&times;</span>
+      <h2>Edit Feedback</h2>
+
+      <form id="form-edit">
+        <div class="form-group">
+          <label for="client_id">Client ID</label>
+          <input type="number" id="client_id" name="client_id" readonly />
+        </div>
+
+        <div class="form-group">
+          <label for="comment">Comment</label>
+          <textarea id="comment" name="comment" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <button type="submit" class="btn">Save Feedback</button>
+          <button type="button" class="btn btn-ghost" id="btn-cancel">Cancel</button>
+        </div>
+
+        <input type="hidden" id="feedback_id" />
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+  import { authApi, feedbackApi } from "../_shared/api.js";
+
+  // ---------- Auth (any authenticated user) ----------
+  try {
+    await authApi.me(); // just ensure a valid session; ignore roles
+  } catch (err) {
+    window.location.href = "/Zhomepage/login.html";
+  }
+
+  // ---------- Logout wiring (optional) ----------
+  document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    localStorage.removeItem("token");
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  // ---------- DOM refs ----------
+  const tbody = document.getElementById("tbody-feedback");
+  const emptyState = document.getElementById("empty-state");
+
+  // ---------- Utilities ----------
+  function pad(n){ return (n < 10 ? "0" : "") + n; }
+  function formatDateISO(v) {
+    if (!v) return "";
+    try {
+      const d = new Date(v);
+      const yyyy = d.getFullYear();
+      const MM   = pad(d.getMonth() + 1);
+      const dd   = pad(d.getDate());
+      const hh   = pad(d.getHours());
+      const mm   = pad(d.getMinutes());
+      const ss   = pad(d.getSeconds());
+      return `${yyyy}-${MM}-${dd} ${hh}:${mm}:${ss}`;
+    } catch {
+      return v;
+    }
+  }
+  function esc(s=""){
+    return String(s)
+      .replace(/&/g,"&amp;")
+      .replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;")
+      .replace(/"/g,"&quot;")
+      .replace(/'/g,"&#39;");
+  }
+
+  // ---------- Render ----------
+  function renderRows(rows) {
+    tbody.innerHTML = "";
+    if (!rows || rows.length === 0) {
+      emptyState.style.display = "block";
+      return;
+    }
+    emptyState.style.display = "none";
+
+    // Sort by updated_at desc (fallback to submitted_at)
+    rows.sort((a, b) => {
+      const ua = new Date(a.updated_at ?? a.submitted_at ?? 0).getTime();
+      const ub = new Date(b.updated_at ?? b.submitted_at ?? 0).getTime();
+      return ub - ua;
+    });
+
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.client_id ?? "-"}</td>
+        <td>${esc(r.comment ?? "")}</td>
+        <td>${formatDateISO(r.submitted_at)}</td>
+        <td>${formatDateISO(r.updated_at)}</td>
+        <td><!-- no actions by policy --></td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // ---------- Load ----------
+  async function loadFeedback() {
+    try {
+      const rows = await feedbackApi.list(); // no params
+      renderRows(rows);
+    } catch (err) {
+      alert("Failed to load feedback: " + (err?.message || err));
+    }
+  }
+
+  // ---------- Init ----------
+  await loadFeedback();
+</script>
+
+
+</body>
+</html>
