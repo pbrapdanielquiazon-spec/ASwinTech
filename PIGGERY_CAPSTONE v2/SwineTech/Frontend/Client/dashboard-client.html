@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Client Dashboard</title>
+  <link rel="stylesheet" href="/Client/client.css">
+  <link rel="stylesheet" href="/Admin/admin.css"> <!-- reuse shared styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<style>
+/* --- Dashboard Makeover (content only) --- */
+:root{
+  --stroke:#EEF2F6; --card:#fff; --ink:#0f172a; --muted:#6b7280;
+  --bg:#F7F8FA; --shadow:0 8px 24px rgba(16,24,40,.08);
+  --green:#2E7D32; --green2:#1B5E20;
+}
+
+#clientDashboard{ padding-top: 8px; }
+
+/* hero */
+.db-hero{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:4px 0 16px}
+.db-title{margin:0 0 6px;font-size:28px;font-weight:800;color:var(--ink)}
+.db-sub{margin:0;color:var(--muted)}
+.db-quick{display:flex;gap:8px;flex-wrap:wrap}
+.db-btn{background:var(--green);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;display:inline-block}
+.db-btn:hover{background:var(--green2)}
+.db-btn.alt{background:#29B6F6}
+.db-btn.alt:hover{background:#0288D1}
+.db-btn.ghost{background:#f1f5f9;color:#0f172a}
+.db-btn.ghost:hover{background:#e2e8f0}
+
+/* KPIs */
+.db-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:8px 0 18px}
+.kpi-card{background:var(--card);border:1px solid var(--stroke);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.kpi-label{font-weight:700;color:#334155}
+.kpi-value{font-size:30px;font-weight:800;color:var(--ink)}
+
+/* grid layout */
+.db-grid{display:grid;grid-template-columns:1.3fr .9fr;gap:16px}
+.db-col{display:flex;flex-direction:column;gap:16px}
+.db-card{background:var(--card);border:1px solid var(--stroke);border-radius:16px;box-shadow:var(--shadow);padding:14px}
+.db-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.db-card-head h2{margin:0;font-size:20px}
+.db-link{color:#0ea5e9;text-decoration:none;font-weight:700}
+.db-link:hover{text-decoration:underline}
+.empty{color:var(--muted);padding:10px 4px}
+
+/* Recent activity */
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px dashed var(--stroke)}
+.timeline li:first-child{border-top:none}
+.tl-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:999px;background:#f1f5f9;font-weight:800}
+.tl-content{flex:1}
+.tl-title{font-weight:800}
+.tl-meta{font-size:.85rem;color:var(--muted)}
+
+/* Mini bookings */
+.cards-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.mini-book{border:1px solid var(--stroke);border-radius:14px;padding:12px;background:#fff}
+.mb-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.mb-type{font-weight:800}
+.status-pill{padding:2px 8px;border-radius:999px;font-weight:800;font-size:.8rem;border:1px solid #e5e7eb;background:#f8fafc}
+.status-Approved,.status-responded{background:#ecfdf5;border-color:#bbf7d0;color:#065f46}
+.status-Pending,.status-pending{background:#fff7ed;border-color:#fed7aa;color:#92400e}
+.status-Declined,.status-declined{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+
+/* Inbox (inquiry cards) */
+.inquiry-cards{display:grid;grid-template-columns:1fr;gap:14px}
+.inq-card{
+  border:2px solid var(--stroke);border-radius:18px;background:#fff;box-shadow:var(--shadow);
+  padding:16px;display:flex;flex-direction:column;gap:10px
+}
+.inq-card.border-unread{border-color:#bfdbfe}
+.inq-card.border-pending{border-color:#fed7aa}
+.inq-card.border-responded{border-color:#bbf7d0}
+.inq-head{display:flex;align-items:center;justify-content:space-between}
+.inq-subject{font-size:.9rem;font-weight:800;color:#334155;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inq-badge{padding:2px 10px;border-radius:999px;font-weight:800;font-size:.8rem;border:1px solid #e5e7eb;background:#f8fafc}
+.inq-badge.unread{background:#eff6ff;border-color:#bfdbfe;color:#1e40af}
+.inq-badge.pending{background:#fff7ed;border-color:#fed7aa;color:#92400e}
+.inq-badge.responded{background:#ecfdf5;border-color:#bbf7d0;color:#065f46}
+.inq-center{display:grid;gap:8px;text-align:center}
+.inq-message{font-size:1.05rem;color:#475569}
+.inq-response{font-size:1.15rem;font-weight:800;color:#111827}
+.inq-meta{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-start}
+.meta-chip{background:#f3f4f6;border:1px solid #e5e7eb;padding:2px 8px;border-radius:999px;font-size:.78rem;color:#475569}
+
+.list-lines{list-style:none;margin:0;padding:0}
+.list-lines li{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px dashed var(--stroke)}
+.list-lines li:first-child{border-top:none}
+
+/* responsive */
+@media (max-width: 1100px){ .db-grid{grid-template-columns:1fr} }
+@media (max-width: 800px){ .db-kpis{grid-template-columns:repeat(2,1fr)} }
+</style>
+
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html" class="active"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs" onclick="showSection('pigs')"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#bookings" onclick="showSection('bookings')"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#inquiry" onclick="showSection('inquiry')"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+
+      <!-- NEW: Feedback link -->
+      <a href="feedback-client.html"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+
+      <a href="availablepig-bookings-inquiry-receipts-client.html#receipts" onclick="showSection('receipts')"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+<main class="dashboard" id="clientDashboard">
+  <!-- Hero -->
+  <header class="db-hero">
+    <div>
+      <h1 class="db-title">Welcome, Client!</h1>
+      <p class="db-sub">Manage bookings, inquiries, feedback, and receipts.</p>
+    </div>
+    <div class="db-quick">
+      <a href="availablepig-bookings-inquiry-receipts-client.html#inquiry" class="db-btn">New Inquiry</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#bookings" class="db-btn alt">Book Order</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs" class="db-btn ghost">View Available Pigs</a>
+    </div>
+  </header>
+
+  <!-- KPI row -->
+  <section class="db-kpis" id="kpiRow">
+    <div class="kpi-card">
+      <div class="kpi-top"><span class="kpi-label">Pending Bookings</span></div>
+      <div class="kpi-value" id="kpiPending">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top"><span class="kpi-label">Approved Bookings</span></div>
+      <div class="kpi-value" id="kpiApproved">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top"><span class="kpi-label">Unread Inquiries</span></div>
+      <div class="kpi-value" id="kpiUnread">—</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-top"><span class="kpi-label">Receipts Available</span></div>
+      <div class="kpi-value" id="kpiReceipts">—</div>
+    </div>
+  </section>
+
+  <!-- Main grid -->
+  <section class="db-grid">
+    <!-- Left column -->
+    <div class="db-col">
+      <!-- Recent Activity -->
+      <div class="db-card">
+        <div class="db-card-head">
+          <h2>Recent Activity</h2>
+          <a class="db-link" href="availablepig-bookings-inquiry-receipts-client.html#bookings">Open pages</a>
+        </div>
+        <ul class="timeline" id="recentList"></ul>
+        <div class="empty" id="recentEmpty">No recent activity yet.</div>
+      </div>
+
+      <!-- My Bookings (last 5) -->
+      <div class="db-card">
+        <div class="db-card-head">
+          <h2>My Bookings</h2>
+          <a class="db-link" href="availablepig-bookings-inquiry-receipts-client.html#bookings">View all</a>
+        </div>
+        <div class="cards-row" id="miniBookings"></div>
+        <div class="empty" id="miniBookingsEmpty">No reservations yet.</div>
+      </div>
+    </div>
+
+    <!-- Right column -->
+    <div class="db-col">
+      <!-- Inbox (Inquiries) -->
+      <div class="db-card">
+        <div class="db-card-head">
+          <h2>Inbox (Inquiries)</h2>
+          <a class="db-link" href="availablepig-bookings-inquiry-receipts-client.html#inquiry">Manage</a>
+        </div>
+        <div id="inboxCards" class="inquiry-cards"></div>
+        <div class="empty" id="inboxEmpty">No inquiries yet.</div>
+      </div>
+
+      <!-- Receipts (last 5) -->
+      <div class="db-card">
+        <div class="db-card-head">
+          <h2>Receipts</h2>
+          <a class="db-link" href="availablepig-bookings-inquiry-receipts-client.html#receipts">View all</a>
+        </div>
+        <ul class="list-lines" id="receiptList"></ul>
+        <div class="empty" id="receiptEmpty">Receipts show here after approval.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+  <script>
+  const API_BASE = "http://localhost:8000/api";
+
+  function getToken() {
+    return (
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("token") ||
+      localStorage.getItem("access_token")
+    );
+  }
+  function clearToken() {
+    ["auth_token","token","access_token"].forEach(k=>{
+      localStorage.removeItem(k); sessionStorage.removeItem(k);
+    });
+  }
+  document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+    e.preventDefault(); clearToken(); window.location.href = "/Zhomepage/login.html";
+  });
+
+  async function authFetch(url, opts = {}) {
+    const headers = Object.assign(
+      { "Content-Type": "application/json", Accept: "application/json" },
+      getToken() ? { Authorization: `Bearer ${getToken()}` } : {}
+    );
+    const res = await fetch(url, { ...opts, headers });
+    const txt = await res.text();
+    let data; try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
+    if (!res.ok) {
+      const err = new Error(data?.detail || res.statusText || "Request failed");
+      err.status = res.status; err.body = data; throw err;
+    }
+    return data;
+  }
+
+  /* ---------- Dashboard data painters ---------- */
+const esc = s => (""+(s??"")).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+
+/* KPIs */
+function setKpis({pending=0, approved=0, unread=0, receipts=0}){
+  document.getElementById("kpiPending").textContent   = pending;
+  document.getElementById("kpiApproved").textContent  = approved;
+  document.getElementById("kpiUnread").textContent    = unread;
+  document.getElementById("kpiReceipts").textContent  = receipts;
+}
+
+/* Recent activity */
+function paintRecent(list){
+  const ul = document.getElementById("recentList");
+  const empty = document.getElementById("recentEmpty");
+  ul.innerHTML = "";
+  if (!list.length){ empty.style.display=""; return; }
+  empty.style.display="none";
+  list.slice(0,10).forEach(ev=>{
+    const li   = document.createElement("li");
+    const icon = document.createElement("div");
+    icon.className = "tl-icon";
+    icon.textContent = ev.kind === "booking" ? "📅" : (ev.kind === "inquiry" ? "💬" : "🧾");
+    const cnt  = document.createElement("div");
+    cnt.className = "tl-content";
+    cnt.innerHTML = `<div class="tl-title">${esc(ev.title)}</div><div class="tl-meta">${esc(ev.time)}</div>`;
+    li.append(icon, cnt); ul.appendChild(li);
+  });
+}
+
+/* Bookings mini cards */
+function paintMiniBookings(rows){
+  const wrap = document.getElementById("miniBookings");
+  const empty = document.getElementById("miniBookingsEmpty");
+  wrap.innerHTML = "";
+  if (!rows.length){ empty.style.display=""; return; }
+  empty.style.display="none";
+  rows.slice(0,5).forEach(b=>{
+    const status = String(b.status||"").toLowerCase();
+    const pillClass = status.includes("approved") ? "status-Approved"
+                    : status.includes("pending")  ? "status-Pending"
+                    : status.includes("declined") ? "status-Declined" : "status-pill";
+    const div = document.createElement("div");
+    div.className = "mini-book";
+    div.innerHTML = `
+      <div class="mb-top">
+        <div class="mb-type">${esc(b.type || "-")}</div>
+        <span class="status-pill ${pillClass}">${esc(b.status||"-")}</span>
+      </div>
+      <div class="tl-meta">Booking ID: ${esc(b.id)}</div>
+      <div class="tl-meta">Date: ${esc((b.booking_date||"").slice(0,10))}</div>
+    `;
+    wrap.appendChild(div);
+  });
+}
+
+/* Inbox (inquiry cards) */
+function paintInbox(inquiries){
+  const wrap = document.getElementById("inboxCards");
+  const empty = document.getElementById("inboxEmpty");
+  wrap.innerHTML = "";
+  if (!inquiries.length){ empty.style.display=""; return; }
+  empty.style.display="none";
+
+  inquiries.slice(0,3).forEach(q=>{
+    const s = String(q.status||"").toLowerCase();
+    const border = s.includes("responded") ? "border-responded" : s.includes("pending") ? "border-pending" : "border-unread";
+    const badge  = s.includes("responded") ? "responded" : s.includes("pending") ? "pending" : "unread";
+
+    const card = document.createElement("div");
+    card.className = `inq-card ${border}`;
+    card.innerHTML = `
+      <div class="inq-head">
+        <div class="inq-subject" title="${esc(q.subject||'(no subject)')}">${esc(q.subject||'(no subject)')}</div>
+        <span class="inq-badge ${badge}">${esc(q.status||'-')}</span>
+      </div>
+      <div class="inq-center">
+        <div class="inq-message">${esc(q.message||'(no message)')}</div>
+        <div class="inq-response">${esc(q.response||'(no response yet)')}</div>
+      </div>
+      <div class="inq-meta">
+        <span class="meta-chip">Submitted: ${esc(q.submitted_at||'-')}</span>
+        <span class="meta-chip">Responded By: ${esc(q.responded_by||'-')}</span>
+        <span class="meta-chip">Responded At: ${esc(q.responded_at||'-')}</span>
+        <span class="meta-chip">Inquiry #${esc(q.inquiry_id||'')}</span>
+        <span class="meta-chip">Client #${esc(q.client_id||'')}</span>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+/* Receipts list */
+function paintReceipts(rows){
+  const ul = document.getElementById("receiptList");
+  const empty = document.getElementById("receiptEmpty");
+  ul.innerHTML = "";
+  if (!rows.length){ empty.style.display=""; return; }
+  empty.style.display="none";
+  rows.slice(0,5).forEach(r=>{
+    const li = document.createElement("li");
+    li.innerHTML = `<span><strong>${esc(r.receipt_no||'-')}</strong> — Booking ${esc(r.booking_id||'-')}</span>
+                    <span class="tl-meta">${esc((r.generated_at||'').slice(0,16))}</span>`;
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- Load + wire data (uses your existing authFetch) ---------- */
+async function loadDashboard(){
+  try{
+    const me = await authFetch(`${API_BASE}/auth/me`).catch(()=>null);
+
+    const [bookingsRaw, inquiriesRaw, receiptsRaw] = await Promise.all([
+      authFetch(`${API_BASE}/bookings`).catch(()=>[]),
+      authFetch(`${API_BASE}/inquiries`).catch(()=>[]),
+      authFetch(`${API_BASE}/receipts`).catch(()=>[]),
+    ]);
+
+    const bookings = (Array.isArray(bookingsRaw)? bookingsRaw: []).map(b=>({
+      id: b.id ?? b.booking_id, status: b.status ?? "-", type: b.type ?? "-", booking_date: b.booking_date ?? ""
+    }));
+
+    const inquiries = (Array.isArray(inquiriesRaw)? inquiriesRaw: []).map(r=>({
+      inquiry_id:  r.inquiry_id ?? r.id ?? "-",
+      client_id:   r.client_id ?? "-",
+      subject:     r.subject ?? "",
+      message:     r.message ?? "",
+      status:      r.status ?? "unread",
+      submitted_at:r.submitted_at ?? "",
+      responded_by:r.responded_by ?? "-",
+      responded_at:r.responded_at ?? "-",
+      response:    r.response ?? r.response_message ?? ""
+    }));
+
+    const receipts = (Array.isArray(receiptsRaw)? receiptsRaw: []).map(x=>{
+      const d = (x && typeof x.receipt_data === "object") ? x.receipt_data : {};
+      return {
+        booking_id:  x.booking_id ?? d.booking_id ?? "-",
+        receipt_no:  d.receipt_no ?? x.receipt_no ?? "-",
+        generated_at:d.generated_at ?? x.generated_at ?? ""
+      };
+    });
+
+    // KPIs
+    const pending   = bookings.filter(b => /pending/i.test(b.status)).length;
+    const approved  = bookings.filter(b => /approved|confirmed/i.test(b.status)).length;
+    const unread    = inquiries.filter(q => /unread/i.test(q.status)).length;
+    const rcptCount = receipts.length;
+    setKpis({pending, approved, unread, receipts: rcptCount});
+
+    // Recent
+    const events = [];
+    bookings.forEach(b=> events.push({kind:"booking", time:b.booking_date||"", title:`Booking #${b.id} — ${b.status}`}));
+    inquiries.forEach(q=>{
+      if (q.responded_at) events.push({kind:"inquiry", time:q.responded_at, title:`Inquiry #${q.inquiry_id} responded`});
+      else events.push({kind:"inquiry", time:q.submitted_at, title:`Inquiry #${q.inquiry_id} submitted`});
+    });
+    receipts.forEach(r=> events.push({kind:"receipt", time:r.generated_at||"", title:`Receipt ${r.receipt_no} generated`}));
+    events.sort((a,b)=> (new Date(b.time) - new Date(a.time)) || 0);
+    paintRecent(events);
+
+    // Sections
+    bookings.sort((a,b)=> (new Date(b.booking_date) - new Date(a.booking_date)) || 0);
+    paintMiniBookings(bookings);
+    inquiries.sort((a,b)=> (new Date(b.submitted_at) - new Date(a.submitted_at)) || 0);
+    paintInbox(inquiries);
+    receipts.sort((a,b)=> (new Date(b.generated_at) - new Date(a.generated_at)) || 0);
+    paintReceipts(receipts);
+
+  } catch(err){
+    console.error("Dashboard load failed:", err);
+  }
+}
+
+/* use this instead of loadDashboardCounts */
+document.addEventListener("DOMContentLoaded", loadDashboard);
+</script>
+
+</body>
+</html>

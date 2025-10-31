@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Sales Staff Dashboard</title>
+  <link rel="stylesheet" href="/Sales-Staff/sales.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .filter-row { display:flex; gap:12px; align-items:center; margin:12px 0 20px; }
+    .mini { font-size:.9rem; color:#666; }
+    .pending-list { margin-top: 12px; }
+    .pending-item {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:10px 12px; border:1px solid #eee; border-radius:8px; margin-bottom:8px; background:#fafafa;
+    }
+    .btn-approve {
+      background:#2e7d32; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer;
+    }
+    .btn-approve[disabled]{ opacity:.6; cursor:not-allowed; }
+    .btn-decline{
+      background:#b00020; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; margin-left:8px;
+    }
+    .btn-decline[disabled]{ opacity:.6; cursor:not-allowed; }
+    .note { color:#777; font-size:.9rem; margin-top:6px; }
+
+    .dashboard-cards { display:grid; grid-template-columns: repeat(5, minmax(180px,1fr)); gap:16px; }
+    .card { background:#fff; border-radius:12px; padding:18px; box-shadow:0 4px 12px rgba(0,0,0,.08); }
+    .card h3 { margin:0 0 6px; font-size:1rem; }
+    .card p { font-size:1.4rem; margin:0; }
+    .btn-link { display:inline-block; margin-top:6px; font-size:.9rem; }
+
+    /* Shortcuts */
+    .shortcuts { display:flex; gap:10px; margin:8px 0 18px; flex-wrap:wrap; }
+    .shortcut-btn { border:1px solid #e5e7eb; background:#f8fafb; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:600; }
+    .shortcut-btn:hover { background:#eef2f6; }
+
+    /* Modal (Add Sale) */
+    .modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50}
+    .modal-content{
+      background:#fff;margin:5% auto;max-width:640px;width:92%;border-radius:16px;padding:20px 22px;
+      box-shadow:0 20px 40px rgba(16,24,40,.25);border:1px solid #eef2f6
+    }
+    .close{float:right;font-size:22px;cursor:pointer;color:#6b7280}
+    .close:hover{color:#ef4444}
+    .form-group{margin-bottom:12px;text-align:left}
+    .form-group label{display:block;margin-bottom:6px;font-weight:600;color:#374151}
+    .form-group input,.form-group select{ width:100%; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; outline:none }
+    .form-group input:focus,.form-group select:focus{ border-color:#93c5fd; box-shadow:0 0 0 3px rgba(59,130,246,.15) }
+    .btn-auth{background:#1a7f37;color:#fff;border:none;padding:10px 12px;border-radius:12px;cursor:pointer;font-weight:700}
+    .btn-auth:hover{background:#15652c}
+
+    /* Alert strip */
+    .alert { margin:12px 0; padding:10px 12px; border:1px solid #ffedcc; background:#fff8e6; color:#7a4b00; border-radius:8px; }
+
+    /* Tiny sparkline */
+    #salesSpark { width:100%; height:40px; display:block; }
+    @media (max-width:1100px){ .dashboard-cards{ grid-template-columns: repeat(3, minmax(180px,1fr)); } }
+    @media (max-width:760px){ .dashboard-cards{ grid-template-columns: repeat(2, minmax(180px,1fr)); } }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech(Sales Staff)</div>
+    <nav>
+      <a href="dashboard-sales.html" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="salesstaff-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="bookings-sales.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="sales-transactions.html"><i class="fa-solid fa-receipt"></i> Sales Transactions</a>
+      <a href="reports-sales.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Sales Staff Dashboard</h1>
+
+    <!-- Shortcuts -->
+    <div class="shortcuts">
+      <button id="scRecordSale" class="shortcut-btn"><i class="fa-solid fa-plus"></i> Record Sale</button>
+      <a class="shortcut-btn" href="bookings-sales.html"><i class="fa-solid fa-list-check"></i> View All Bookings</a>
+      <a class="shortcut-btn" href="reports-sales.html"><i class="fa-solid fa-chart-pie"></i> Generate Reports</a>
+    </div>
+
+    <!-- Month filter (MTD default) -->
+    <div class="filter-row">
+      <label for="monthFilter"><i class="fa-regular fa-calendar"></i> Filter month (sales):</label>
+      <input type="month" id="monthFilter" />
+      <button id="clearMonth" type="button">Clear</button>
+      <span class="mini" id="filterHint">Showing: All time</span>
+    </div>
+
+    <!-- Alert for approved without sale (3+ days) -->
+    <div id="agingAlert" class="alert" style="display:none;"></div>
+
+    <!-- Cards -->
+    <div class="dashboard-cards">
+      <div class="card">
+        <h3>Total Sales</h3>
+        <p id="totalSales">₱0.00</p>
+        <canvas id="salesSpark" height="40"></canvas>
+      </div>
+      <div class="card">
+        <h3>Completed Transactions</h3>
+        <p id="completedCount">0</p>
+      </div>
+      <div class="card">
+        <h3>Avg Ticket Size</h3>
+        <p id="avgTicket">₱0.00</p>
+      </div>
+      <div class="card">
+        <h3>Conversion</h3>
+        <p id="conversion">0%</p>
+        <div class="mini" id="convNote"></div>
+      </div>
+      <div class="card">
+        <h3>Pending Bookings</h3>
+        <p id="pendingCount">0</p>
+        <a href="bookings-sales.html" class="btn-link">View all</a>
+      </div>
+    </div>
+
+    <!-- Quick list of pending with Approve/Decline -->
+    <section class="pending-list">
+      <h2><i class="fa-solid fa-hourglass-half"></i> Pending bookings (quick actions)</h2>
+      <div id="pendingWrap"></div>
+      <div class="note">Only the first 5 are shown here. Use the Bookings page for full actions.</div>
+    </section>
+  </main>
+
+  <!-- Add Sale Modal -->
+  <div id="addSaleModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('addSaleModal')">&times;</span>
+      <h2>Add Sale</h2>
+      <form id="saleForm">
+        <div class="form-group">
+          <label>Booking (approved only)</label>
+          <select id="saleBookingSelect" required>
+            <option value="" disabled selected>— Select approved booking —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Item_Type</label>
+          <select id="saleItem" required disabled>
+            <option value="" disabled selected>--</option>
+            <option value="pig">pig</option>
+            <option value="lechon">lechon</option>
+          </select>
+          <small class="mini">Auto-locked from booking</small>
+        </div>
+        <div class="form-group">
+          <label>Description (optional)</label>
+          <input type="text" id="saleDesc" placeholder="e.g., Grower 70kg" />
+        </div>
+        <div class="form-group">
+          <label>Total</label>
+          <input type="number" id="saleTotal" step="0.01" min="0.01" required />
+        </div>
+        <div class="form-group">
+          <label>Payment_Date</label>
+          <input type="date" id="saleDate" required />
+        </div>
+        <button class="btn-auth" type="submit" id="saleSaveBtn" disabled>Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // === Config ===
+    const API_BASE = "http://localhost:8000/api";
+    const TOKEN =
+      localStorage.getItem("auth_token") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token") || "";
+    const AUTH_HEADERS = TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {};
+    const JSON_HEADERS = { Accept: "application/json", ...AUTH_HEADERS };
+
+    // --- Utilities ---
+    const pesoFmt = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
+    const ymd = (d) => {
+      const dt = d instanceof Date ? d : new Date(d);
+      if (Number.isNaN(dt)) return "";
+      return dt.toISOString().slice(0,10);
+    };
+    const daysBetween = (a,b)=> Math.floor((new Date(a) - new Date(b)) / (1000*60*60*24));
+    const matchesMonth = (iso, y, m) => {
+      if (!iso || y == null || m == null) return true;
+      const d = new Date(iso);
+      return d.getFullYear() === y && (d.getMonth() + 1) === m;
+    };
+    function setFilterHint(y, m) {
+      const el = document.getElementById("filterHint");
+      if (y && m) {
+        const label = new Date(y, m - 1, 1).toLocaleString("en-US", { month: "long", year: "numeric" });
+        el.textContent = `Showing: ${label}`;
+      } else {
+        el.textContent = "Showing: All time";
+      }
+    }
+    function openModal(id){ const el=document.getElementById(id); if(el) el.style.display="block"; }
+    function closeModal(id){ const el=document.getElementById(id); if(el) el.style.display="none"; }
+
+    // --- API ---
+    async function fetchSales() {
+      const res = await fetch(`${API_BASE}/sales`, { headers: JSON_HEADERS, credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    async function fetchBookings(status) {
+      const res = await fetch(`${API_BASE}/bookings?status=${encodeURIComponent(status)}`, { headers: JSON_HEADERS, credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    async function approveBooking(id) {
+      const res = await fetch(`${API_BASE}/bookings/${id}/decision`, {
+        method: "POST", headers: { "Content-Type":"application/json", ...JSON_HEADERS },
+        credentials: "include", body: JSON.stringify({ decision: "approved" })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    async function declineBooking(id, reason) {
+      const res = await fetch(`${API_BASE}/bookings/${id}/decision`, {
+        method: "POST", headers: { "Accept":"application/json","Content-Type":"application/json", ...AUTH_HEADERS },
+        credentials: "include", body: JSON.stringify({ decision: "declined", ...(reason?{reason}:{}) })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+    async function createSale(payload){
+      const res = await fetch(`${API_BASE}/sales`, {
+        method:"POST", headers:{ "Content-Type":"application/json", ...JSON_HEADERS }, credentials:"include",
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    // --- Renderers ---
+    function renderSalesCards(sales, y = null, m = null, approved = []) {
+      const inRange = (row)=> (y && m) ? matchesMonth(row.payment_date, y, m) : true;
+      const filtered = sales.filter(inRange);
+
+      // Completed
+      document.getElementById("completedCount").textContent = filtered.length;
+
+      // Total
+      const total = filtered.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+      document.getElementById("totalSales").textContent = pesoFmt.format(total);
+
+      // Avg ticket
+      const avg = filtered.length ? total / filtered.length : 0;
+      document.getElementById("avgTicket").textContent = pesoFmt.format(avg);
+
+      // Conversion: approved bookings in range that have a sale
+      const approvedInRange = approved.filter(b => {
+        const d = b.booking_date || b.created_at || b.date;
+        return matchesMonth(d, y, m);
+      });
+      const saleByBooking = new Set(sales.map(s => Number(s.booking_id)));
+      const approvedWithSale = approvedInRange.filter(b => saleByBooking.has(Number(b.id ?? b.booking_id)));
+      const conv = approvedInRange.length ? Math.round( (approvedWithSale.length / approvedInRange.length) * 100 ) : 0;
+      document.getElementById("conversion").textContent = conv + "%";
+      document.getElementById("convNote").textContent =
+        approvedInRange.length ? `${approvedWithSale.length}/${approvedInRange.length} approved became sales` : "No approved bookings in range";
+
+      // Sparkline (daily totals)
+      drawSparkline("salesSpark", filtered);
+    }
+
+    function drawSparkline(id, rows){
+      const cvs = document.getElementById(id);
+      if(!cvs) return;
+      const ctx = cvs.getContext("2d");
+      ctx.clearRect(0,0,cvs.width,cvs.height);
+      if(!rows.length) return;
+
+      // bucket by day
+      const map = new Map();
+      rows.forEach(r=>{
+        const d = (r.payment_date||"").toString().slice(0,10);
+        map.set(d, (map.get(d)||0) + Number(r.total_amount||0));
+      });
+      const keys = Array.from(map.keys()).sort();
+      const vals = keys.map(k=> map.get(k));
+      // normalize
+      const W = cvs.width, H = cvs.height;
+      const max = Math.max(...vals);
+      const xs = keys.map((_,i)=> (i/(keys.length-1||1))*(W-2)+1 );
+      const ys = vals.map(v=> H-1 - (max? (v/max)*(H-2) : 0));
+
+      ctx.beginPath();
+      ctx.moveTo(xs[0], ys[0]);
+      for(let i=1;i<xs.length;i++){ ctx.lineTo(xs[i], ys[i]); }
+      ctx.stroke();
+    }
+
+    function renderPendingList(bookings) {
+      document.getElementById("pendingCount").textContent = bookings.length;
+
+      const wrap = document.getElementById("pendingWrap");
+      wrap.innerHTML = "";
+
+      if (!bookings.length) {
+        wrap.innerHTML = `<div class="note">No pending bookings right now.</div>`;
+        return;
+      }
+
+      bookings.slice(0, 5).forEach(b => {
+        const pigsText = Array.isArray(b.pigs_ids) && b.pigs_ids.length ? b.pigs_ids.join(", ") : "None";
+        const div = document.createElement("div");
+        div.className = "pending-item";
+        div.innerHTML = `
+          <div>
+            <strong>#${b.id}</strong> — ${b.type || "booking"}<br/>
+            <span class="mini">Client: ${b.client_id ?? "-"}</span><br/>
+            <span class="mini">Pigs: ${pigsText}</span><br/>
+            <span class="mini">Booked: ${b.booking_date || "-"}</span>
+          </div>
+          <div>
+            <button class="btn-approve" data-id="${b.id}">
+              <i class="fa-solid fa-circle-check"></i> Approve
+            </button>
+            <button class="btn-decline" data-id="${b.id}">
+              <i class="fa-solid fa-ban"></i> Decline
+            </button>
+          </div>
+        `;
+        wrap.appendChild(div);
+      });
+
+      // Approve / Decline
+      wrap.querySelectorAll(".btn-approve").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          const id = btn.dataset.id;
+          try {
+            await approveBooking(id);
+            btn.closest(".pending-item").remove();
+            const remaining = wrap.querySelectorAll(".pending-item").length;
+            document.getElementById("pendingCount").textContent = remaining.toString();
+            if (!remaining) wrap.innerHTML = `<div class="note">No pending bookings right now.</div>`;
+          } catch (e) {
+            alert("Approve failed: " + e.message);
+            btn.disabled = false;
+          }
+        });
+      });
+      wrap.querySelectorAll(".btn-decline").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.id;
+          const reason = prompt("Optional reason for decline (leave blank to skip):") || "";
+          btn.disabled = true;
+          try {
+            await declineBooking(id, reason.trim());
+            btn.closest(".pending-item").remove();
+            const remaining = wrap.querySelectorAll(".pending-item").length;
+            document.getElementById("pendingCount").textContent = remaining.toString();
+            if (!remaining) wrap.innerHTML = `<div class="note">No pending bookings right now.</div>`;
+          } catch (e) {
+            alert("Decline failed: " + e.message);
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+
+    // --- Add Sale modal logic ---
+    const saleBookingSelect = document.getElementById("saleBookingSelect");
+    const saleItem          = document.getElementById("saleItem");
+    const saleDate          = document.getElementById("saleDate");
+    const saleSaveBtn       = document.getElementById("saleSaveBtn");
+    let _approvedCache = [];
+
+    function deriveItemTypeFromBooking(bk){
+      const t = String(bk?.type ?? bk?.booking_type ?? "").toLowerCase();
+      if (t.includes("lechon")) return "lechon";
+      if (t.includes("pig"))    return "pig";
+      return "pig";
+    }
+
+    async function openAddSale(){
+      saleSaveBtn.disabled = true;
+      saleItem.value = ""; saleItem.disabled = true;
+      saleDate.value = ymd(new Date()); // today prefilled
+
+      if(!_approvedCache.length){
+        try{ _approvedCache = await fetchBookings("approved"); }
+        catch{ _approvedCache = []; }
+      }
+      const opts = _approvedCache.map(b=>{
+        const id = b.id ?? b.booking_id;
+        const typ = (b.type ?? b.booking_type ?? 'booking');
+        const d = ymd(b.booking_date);
+        return `<option value="${id}">#${id} • ${typ} (${d||'-'})</option>`;
+      }).join("");
+      saleBookingSelect.innerHTML = `<option value="" disabled selected>— Select approved booking —</option>` + opts;
+
+      openModal("addSaleModal");
+    }
+
+    saleBookingSelect.addEventListener("change", ()=>{
+      const id = Number(saleBookingSelect.value||0);
+      const bk = _approvedCache.find(x=> Number(x.id ?? x.booking_id) === id);
+      if(!id || !bk){ saleItem.value=""; saleItem.disabled=true; saleSaveBtn.disabled=true; return; }
+      saleItem.value = deriveItemTypeFromBooking(bk);
+      saleItem.disabled = true;
+      saleSaveBtn.disabled = false;
+    });
+
+    document.getElementById("saleForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      try{
+        const payload = {
+          booking_id: Number(saleBookingSelect.value||0),
+          item_type: saleItem.value,
+          item_description: document.getElementById("saleDesc").value.trim() || undefined,
+          total_amount: Number(document.getElementById("saleTotal").value || 0),
+          payment_date: document.getElementById("saleDate").value
+        };
+        if(!payload.booking_id || !payload.item_type || !payload.total_amount || !payload.payment_date)
+          return alert("Please complete the form.");
+        await createSale(payload);
+        closeModal("addSaleModal");
+        // refresh dashboard after creating sale
+        initRefresh();
+        alert("Sale recorded.");
+      }catch(err){ alert(err.message||"Failed to create sale"); }
+    });
+
+    // --- Aging alert (approved without sale ≥ 3 days) ---
+    function renderAgingAlert(approved, sales){
+      const saleByBooking = new Set((sales||[]).map(s=> Number(s.booking_id)));
+      const today = new Date();
+      const aged = (approved||[]).filter(b=>{
+        const bid = Number(b.id ?? b.booking_id);
+        if(saleByBooking.has(bid)) return false;
+        const d = b.booking_date || b.created_at || b.date;
+        return d && daysBetween(today, d) >= 3;
+      });
+      const box = document.getElementById("agingAlert");
+      if(aged.length){
+        box.style.display = "";
+        box.innerHTML = `⚠️ ${aged.length} approved booking(s) have no recorded sale in 3+ days. <a href="bookings-sales.html">Review now</a>`;
+      } else {
+        box.style.display = "none";
+        box.textContent = "";
+      }
+    }
+
+    // --- Pending list render helper (kept) ---
+    function renderAllPending(pendings){ renderPendingList(pendings||[]); }
+
+    // --- Init / Refresh (MTD default) ---
+    const monthInput = document.getElementById("monthFilter");
+    const clearBtn   = document.getElementById("clearMonth");
+    let filterYear = null, filterMonth = null;
+
+    async function initRefresh(){
+      try {
+        const [sales, pendings, approved] = await Promise.all([
+          fetchSales(),
+          fetchBookings("pending"),
+          fetchBookings("approved")
+        ]);
+        renderSalesCards(sales, filterYear, filterMonth, approved);
+        renderAllPending(pendings);
+        renderAgingAlert(approved, sales);
+      } catch (e) {
+        console.warn(e);
+        renderSalesCards([], filterYear, filterMonth, []);
+        renderAllPending([]);
+        renderAgingAlert([], []);
+      }
+    }
+
+    (function init(){
+      // MTD default
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+      monthInput.value = ym;
+      filterYear = now.getFullYear();
+      filterMonth = now.getMonth()+1;
+      setFilterHint(filterYear, filterMonth);
+      initRefresh();
+    })();
+
+    monthInput.addEventListener("change", () => {
+      if (monthInput.value) {
+        const [y, m] = monthInput.value.split("-").map(Number);
+        filterYear = y; filterMonth = m;
+        setFilterHint(y, m);
+      } else {
+        filterYear = filterMonth = null;
+        setFilterHint(null, null);
+      }
+      initRefresh();
+    });
+
+    clearBtn.addEventListener("click", () => {
+      monthInput.value = "";
+      filterYear = filterMonth = null;
+      setFilterHint(null, null);
+      initRefresh();
+    });
+
+    // Shortcuts
+    document.getElementById("scRecordSale").addEventListener("click", openAddSale);
+
+    // Close modals on backdrop / esc
+    window.addEventListener("click",(e)=>{ document.querySelectorAll(".modal").forEach(m=>{ if(e.target===m) m.style.display="none"; }); });
+    window.addEventListener("keydown",(e)=>{ if(e.key==="Escape") document.querySelectorAll(".modal").forEach(m=>m.style.display="none"); });
+
+    // Logout
+    document.getElementById("logout")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "/Zhomepage/login.html";
+    });
+  </script>
+</body>
+</html>

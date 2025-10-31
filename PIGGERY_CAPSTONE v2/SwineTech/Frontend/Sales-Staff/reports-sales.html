@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>SwineTech | Sales Staff — Sales Reports</title>
+
+  <link rel="stylesheet" href="/Sales-Staff/sales.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    .page-desc { margin: 6px 0 16px; color:#555; }
+    .actions-bar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:12px 0 16px; }
+
+    .seg { display:flex; gap:8px; align-items:center; }
+    .presets { display:inline-flex; gap:8px; }
+    .presets button {
+      background:#f6f6f6; border:1px solid #e2e2e2; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:.9rem;
+    }
+    .presets button.active { background:#2e7d32; color:#fff; border-color:#2e7d32; }
+
+    .date-range { display:flex; gap:8px; align-items:center; }
+    .date-range input { padding:6px 8px; border:1px solid #ddd; border-radius:8px; }
+
+    .btn-generate { background:#29B6F6; color:#fff; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; }
+    .btn-generate[disabled]{ opacity:.6; cursor:not-allowed; }
+
+    .badge { background:#eef3ef; color:#2e7d32; border-radius:999px; padding:2px 8px; font-size:.85rem; }
+
+    .empty { padding:18px; background:#fff; border:1px solid #eee; border-radius:8px; color:#666; }
+
+    .btn-view { background:#43A047; color:#fff; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .btn-archive { background:#b3261e; color:#fff; border:none; padding:6px 10px; border-radius:8px; cursor:pointer; }
+
+    /* Modal base */
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10; }
+    .modal .content {
+      width:860px; max-width:95vw; background:#fff; margin:4% auto; border-radius:16px; padding:18px 18px 16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);
+    }
+
+    .muted { color:#777; font-size:.9rem; }
+    .tag { display:inline-block; padding:2px 8px; border-radius:999px; background:#eef; font-size:.85rem; }
+    .chip { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid #e9e9e9; border-radius:999px; background:#fafafa; font-size:.85rem; }
+
+    .toolbar { display:flex; gap:8px; margin:10px 0 6px; }
+    .btn { border:none; cursor:pointer; border-radius:8px; padding:8px 12px; font-size:.9rem; display:inline-flex; gap:6px; align-items:center; }
+    .btn-print { background:#2e7d32; color:#fff; }
+    .btn-download { background:#1f6feb; color:#fff; }
+    .btn-close { background:#eee; color:#222; margin-left:auto; }
+
+    /* Report layout glam */
+    .kpis { display:grid; grid-template-columns: repeat(3, minmax(160px,1fr)); gap:12px; margin:12px 0 8px; }
+    .kpi {
+      background:#f8faf8; border:1px solid #e6efe6; border-radius:12px; padding:12px;
+      display:flex; flex-direction:column; gap:4px;
+    }
+    .kpi h4 { margin:0; font-size:.95rem; color:#335; font-weight:600; }
+    .kpi p { margin:0; font-size:1.6rem; font-weight:700; }
+    .kpi.rev    { background:#f4fbf6; border-color:#d9f0de; }
+    .kpi.exp    { background:#fff7f7; border-color:#f1d7d7; }
+    .kpi.prof   { background:#f6fbff; border-color:#d9eaf7; }
+
+    .by-month { margin-top:10px; }
+    .by-month h3 { margin:8px 0; }
+    .by-month table { width:100%; border-collapse:collapse; }
+    .by-month th, .by-month td { border:1px solid #eee; padding:8px; text-align:left; }
+    .by-month th { background:#f9f9f9; }
+
+    pre.report-json {
+      max-height: 45vh; overflow:auto; background:#fafafa; border:1px solid #eee; border-radius:8px; padding:12px;
+      white-space:pre-wrap; margin-top:10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech(Sales Staff)</div>
+    <nav>
+      <a href="/Sales-Staff/dashboard-sales.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="/Sales-Staff/salesstaff-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="/Sales-Staff/bookings-sales.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="/Sales-Staff/sales-transactions.html"><i class="fa-solid fa-receipt"></i> Sales Transactions</a>
+      <a href="/Sales-Staff/reports-sales.html" class="active"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Sales Reports</h1>
+    <p class="page-desc">Generate and view <strong>Sales</strong> reports. Print or download when viewing. <span class="badge" id="countBadge">0</span> reports in history.</p>
+
+    <!-- Generate controls -->
+    <div class="actions-bar">
+      <div class="seg">
+        <strong>Date:</strong>
+        <div class="presets" id="presets">
+          <button data-preset="7d" class="active">Last 7 days</button>
+          <button data-preset="30d">Last 30 days</button>
+          <button data-preset="month">This month</button>
+          <button data-preset="custom">Custom</button>
+        </div>
+      </div>
+
+      <div class="seg date-range" id="customRange" style="display:none">
+        <label>From</label>
+        <input type="date" id="dateFrom" />
+        <label>To</label>
+        <input type="date" id="dateTo" />
+      </div>
+
+      <button id="btnGenerate" class="btn-generate"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Sales Report</button>
+    </div>
+
+    <!-- History -->
+    <h2 style="margin:14px 0"><i class="fa-solid fa-clock-rotate-left"></i> Generated Reports</h2>
+    <table class="admin-table" id="reportsTable" style="display:none">
+      <thead>
+        <tr>
+          <th>Report ID</th>
+          <th>Type</th>
+          <th>Generated By</th>
+          <th>User ID</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="reportsTbody"></tbody>
+    </table>
+    <div id="reportsEmpty" class="empty" style="display:none">No sales reports yet.</div>
+  </main>
+
+  <!-- View Modal -->
+  <div id="reportModal" class="modal">
+    <div class="content" id="printArea">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <h2 style="margin-right:auto">Sales Report</h2>
+        <span class="tag" id="modalType">sales</span>
+        <span class="chip" id="modalWindow"><i class="fa-regular fa-calendar"></i> —</span>
+      </div>
+      <p class="muted">
+        <strong>Generated:</strong> <span id="modalWhen">—</span> •
+        <strong>By:</strong> <span id="modalBy">—</span> •
+        <strong>User ID:</strong> <span id="modalUserId">—</span>
+      </p>
+
+      <div class="kpis" id="kpis" style="display:none;">
+        <div class="kpi rev">
+          <h4><i class="fa-solid fa-peso-sign"></i> Revenue</h4>
+          <p id="kpiRevenue">—</p>
+        </div>
+        <div class="kpi exp">
+          <h4><i class="fa-solid fa-sack-xmark"></i> Expenses</h4>
+          <p id="kpiExpenses">—</p>
+        </div>
+        <div class="kpi prof">
+          <h4><i class="fa-solid fa-chart-line"></i> Profit</h4>
+          <p id="kpiProfit">—</p>
+        </div>
+      </div>
+
+      <div class="by-month" id="byMonthWrap" style="display:none;">
+        <h3>Breakdown by Month</h3>
+        <table id="byMonthTable">
+          <thead>
+            <tr><th>Month</th><th>Revenue</th><th>Expenses</th><th>Profit</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn btn-print" id="btnPrint"><i class="fa-solid fa-print"></i> Print</button>
+        <button class="btn btn-download" id="btnDownload"><i class="fa-solid fa-download"></i> Download JSON</button>
+        <button class="btn btn-close" id="btnClose"><i class="fa-solid fa-xmark"></i> Close</button>
+      </div>
+
+      <h3>Raw Data</h3>
+      <pre id="modalData" class="report-json">Loading…</pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { authApi, reportsApi, clearToken } from "/_shared/api.js";
+
+    /* ====== Fallback API base & token for direct fetches (archive) ====== */
+    const API_BASE = (window.API_BASE) || (location.origin.replace(/\/$/, '') + "/api");
+    const TOKEN = localStorage.getItem("token") || "";
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    const btnGenerate = $("#btnGenerate");
+    const presetsWrap = $("#presets");
+    const customRange = $("#customRange");
+    const dateFrom = $("#dateFrom");
+    const dateTo = $("#dateTo");
+    const countBadge = $("#countBadge");
+
+    const reportsTable = $("#reportsTable");
+    const reportsTbody = $("#reportsTbody");
+    const reportsEmpty = $("#reportsEmpty");
+
+    const modal = $("#reportModal");
+    const btnPrint = $("#btnPrint");
+    const btnDownload = $("#btnDownload");
+    const btnClose = $("#btnClose");
+    const modalType = $("#modalType");
+    const modalWhen = $("#modalWhen");
+    const modalBy = $("#modalBy");
+    const modalUserId = $("#modalUserId");
+    const modalWindow = $("#modalWindow");
+    const modalData = $("#modalData");
+    const printArea = $("#printArea");
+
+    const kpisWrap = $("#kpis");
+    const kpiRevenue = $("#kpiRevenue");
+    const kpiExpenses = $("#kpiExpenses");
+    const kpiProfit = $("#kpiProfit");
+    const byMonthWrap = $("#byMonthWrap");
+    const byMonthTableBody = $("#byMonthTable tbody");
+
+    let me = null;
+    let currentPreset = "7d";
+    let lastOpenedReport = null;
+
+    /* ========== Auth Gate ========== */
+    await gate();
+    async function gate(){
+      try{
+        me = await authApi.me();
+        const role = String(me?.role?.value ?? me?.role ?? "").toUpperCase();
+        if (role !== "SALES" && role !== "ADMIN") {
+          alert("Unauthorized: Sales role required.");
+          window.location.href = "/Zhomepage/login.html";
+          return;
+        }
+      }catch{
+        window.location.href = "/Zhomepage/login.html";
+        return;
+      }
+    }
+
+    /* ========== Presets & Date Helpers ========== */
+    function setPreset(p){
+      currentPreset = p;
+      $$("#presets button").forEach(b => b.classList.toggle("active", b.dataset.preset === p));
+      customRange.style.display = (p === "custom") ? "" : "none";
+      if (p !== "custom") { dateFrom.value = ""; dateTo.value = ""; }
+    }
+    function todayISO(){ return new Date().toISOString().slice(0,10); }
+    function pad(n){ return n.toString().padStart(2,"0"); }
+    function monthBounds(d=new Date()){ const y=d.getFullYear(), m=d.getMonth(); return [new Date(y,m,1), new Date(y,m+1,0)]; }
+    function dateToISO(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+    function getRange(){
+      const now = new Date();
+      if (currentPreset === "7d"){ return { to: todayISO(), from: dateToISO(new Date(now.getTime()-6*864e5)) }; }
+      if (currentPreset === "30d"){ return { to: todayISO(), from: dateToISO(new Date(now.getTime()-29*864e5)) }; }
+      if (currentPreset === "month"){ const [f,t]=monthBounds(now); return { from: dateToISO(f), to: dateToISO(t) }; }
+      return { from: dateFrom.value || todayISO(), to: dateTo.value || todayISO() };
+    }
+    presetsWrap.addEventListener("click", (e)=>{ const b=e.target.closest("button[data-preset]"); if(b) setPreset(b.dataset.preset); });
+
+    /* ========== History Loading ========== */
+    async function loadHistory(){
+      let rows = [];
+      try { rows = await reportsApi.list(); } catch (e) { alert(e?.message || "Failed to load reports"); }
+      rows = (rows || []).filter(r => String(r.report_type).toLowerCase() === "sales");
+      countBadge.textContent = (rows.length).toString();
+
+      if (!rows.length){
+        reportsTable.style.display = "none";
+        reportsEmpty.style.display = "block";
+        reportsTbody.innerHTML = "";
+        return;
+      }
+      reportsEmpty.style.display = "none";
+      reportsTable.style.display = "";
+      reportsTbody.innerHTML = rows.map(trReport).join("");
+
+      reportsTbody.querySelectorAll("[data-view]").forEach(b => b.addEventListener("click", () => openReport(b.dataset.id)));
+      reportsTbody.querySelectorAll("[data-archive]").forEach(b => b.addEventListener("click", () => archiveReport(b.dataset.id)));
+    }
+
+    function trReport(r){
+      const id = r.id ?? r.report_id ?? "";
+      const type = r.report_type ?? "sales";
+      const by = r.generated_by ?? "—";
+      const uid = r.user_id ?? by ?? "—";
+      return `
+        <tr>
+          <td>${id}</td>
+          <td><span class="tag">${type}</span></td>
+          <td>${by}</td>
+          <td>${uid}</td>
+          <td>
+            <button class="btn-view" data-view data-id="${id}">
+              <i class="fa-solid fa-eye"></i> View
+            </button>
+            <button class="btn-archive" data-archive data-id="${id}">
+              <i class="fa-solid fa-box-archive"></i> Archive
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+
+    /* ========== Generate ========== */
+    btnGenerate.addEventListener("click", async ()=>{
+      btnGenerate.disabled = true;
+      const { from, to } = getRange();
+      const payload = { report_type: "sales", filters: { date_from: from, date_to: to }, snapshot: true };
+      try{
+        const created = await reportsApi.generate(payload);
+        toast(`Generated Sales report (id ${created?.id ?? "—"}).`);
+        await loadHistory();
+      }catch(e){ alert(e?.message || "Failed to generate report"); }
+      finally{ btnGenerate.disabled = false; }
+    });
+
+    /* ========== View / Print / Download ========== */
+    async function openReport(id){
+      try {
+        const r = await reportsApi.get(id);
+        lastOpenedReport = r;
+
+        modalType.textContent = r.report_type ?? "sales";
+        modalWhen.textContent = fmtDate(r.generated_at);
+        modalBy.textContent = r.generated_by ?? "—";
+        modalUserId.textContent = r.user_id ?? r.generated_by ?? "—";
+
+        // prettify window chip
+        const win = r?.data?.window || r?.window;
+        modalWindow.innerHTML = `<i class="fa-regular fa-calendar"></i> ${win?.from ?? "—"} → ${win?.to ?? "—"}`;
+
+        // KPI cards
+        const revenue  = safeNum(r?.data?.revenue ?? r?.revenue);
+        const expenses = safeNum(r?.data?.expenses ?? r?.expenses);
+        const profit   = safeNum(r?.data?.profit ?? r?.profit);
+        if (!isNaN(revenue) || !isNaN(expenses) || !isNaN(profit)) {
+          kpisWrap.style.display = "";
+          kpiRevenue.textContent  = peso(revenue);
+          kpiExpenses.textContent = peso(expenses);
+          kpiProfit.textContent   = peso(profit);
+        } else {
+          kpisWrap.style.display = "none";
+        }
+
+        // By month table
+        const bym = r?.data?.by_month ?? r?.by_month;
+        if (Array.isArray(bym) && bym.length){
+          byMonthWrap.style.display = "";
+          byMonthTableBody.innerHTML = bym.map(m => `
+            <tr>
+              <td>${m.month ?? "—"}</td>
+              <td>${peso(m.revenue)}</td>
+              <td>${peso(m.expenses)}</td>
+              <td>${peso(m.profit)}</td>
+            </tr>
+          `).join("");
+        } else {
+          byMonthWrap.style.display = "none";
+          byMonthTableBody.innerHTML = "";
+        }
+
+        // Raw JSON
+        try { modalData.textContent = typeof r.data === "string" ? r.data : JSON.stringify(r.data ?? {}, null, 2); }
+        catch { modalData.textContent = String(r.data ?? ""); }
+
+        modal.style.display = "block";
+      } catch (e) {
+        alert(e?.message || "Failed to load report");
+      }
+    }
+
+    btnClose.addEventListener("click", () => modal.style.display = "none");
+    window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+
+    btnPrint.addEventListener("click", ()=>{
+      const w = window.open("", "_blank");
+      if (!w) return alert("Popup blocked.");
+      w.document.write(`
+        <html><head><title>Sales Report</title>
+          <link rel="stylesheet" href="/Sales-Staff/sales.css" />
+          <style>
+            body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;padding:20px;}
+            .tag,.chip{display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border:1px solid #e9e9e9;border-radius:999px;background:#fafafa;font-size:.9rem;}
+            .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 8px;}
+            .kpi{background:#f8faf8;border:1px solid #e6efe6;border-radius:12px;padding:12px;}
+            table{width:100%;border-collapse:collapse;}
+            th,td{border:1px solid #eee;padding:8px;text-align:left;}
+            th{background:#f9f9f9;}
+            pre{white-space:pre-wrap;background:#fafafa;border:1px solid #eee;border-radius:8px;padding:12px;}
+          </style>
+        </head><body>${printArea.innerHTML}</body></html>
+      `);
+      w.document.close(); w.focus(); w.print(); w.close();
+    });
+
+    btnDownload.addEventListener("click", ()=>{
+      if (!lastOpenedReport) return;
+      const blob = new Blob([JSON.stringify(lastOpenedReport, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `sales-report-${lastOpenedReport.id || "data"}.json`;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      a.remove();
+    });
+
+    /* ========== Archive (with robust fallbacks) ========== */
+    async function archiveReport(id){
+      if (!confirm("Archive this report?")) return;
+      try{
+        if (typeof reportsApi.archive === "function") {
+          await reportsApi.archive(id);
+        } else if (typeof reportsApi.update === "function") {
+          await reportsApi.update(id, { archived: true });
+        } else {
+          // direct backend calls if wrapper lacks archive/update
+          const ok = await tryDirectArchive(id);
+          if (!ok) throw new Error("Archive endpoint not available.");
+        }
+        toast("Report archived.");
+        await loadHistory();
+      }catch(e){
+        alert(e?.message || "Failed to archive report");
+      }
+    }
+
+    async function tryDirectArchive(id){
+      // Try POST /reports/{id}/archive
+      try{
+        const r = await fetch(`${API_BASE}/reports/${id}/archive`, {
+          method: "POST",
+          headers: { "Accept":"application/json", ...(TOKEN ? { "Authorization":`Bearer ${TOKEN}` } : {}) }
+        });
+        if (r.ok) return true;
+      }catch{}
+      // Try PUT /reports/{id} {archived:true}
+      try{
+        const r = await fetch(`${API_BASE}/reports/${id}`, {
+          method: "PUT",
+          headers: {
+            "Accept":"application/json",
+            "Content-Type":"application/json",
+            ...(TOKEN ? { "Authorization":`Bearer ${TOKEN}` } : {})
+          },
+          body: JSON.stringify({ archived:true })
+        });
+        if (r.ok) return true;
+      }catch{}
+      return false;
+    }
+
+    /* ========== Helpers ========== */
+    function fmtDate(s){ if (!s) return "—"; const d=new Date(s); return isNaN(d)?String(s):d.toLocaleString(); }
+    function peso(n){ const v=Number(n||0); return "₱"+v.toLocaleString(); }
+    function safeNum(v){ const n=Number(v); return isNaN(n)?NaN:n; }
+    function toast(msg){
+      const d = document.createElement("div");
+      d.textContent = msg;
+      d.style.position="fixed"; d.style.left="50%"; d.style.transform="translateX(-50%)";
+      d.style.bottom="20px"; d.style.background="#2e7d32"; d.style.color="#fff";
+      d.style.padding="10px 14px"; d.style.borderRadius="10px"; d.style.zIndex=99;
+      document.body.appendChild(d);
+      setTimeout(()=>d.remove(),1600);
+    }
+
+    $("#logout")?.addEventListener("click", (e) => {
+      e.preventDefault(); clearToken?.(); window.location.href = "/Zhomepage/login.html";
+    });
+
+    /* ========== Init ========== */
+    setPreset("7d");
+    await loadHistory();
+  </script>
+</body>
+</html>

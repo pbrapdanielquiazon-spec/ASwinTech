@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | My Profile</title>
+  <link rel="stylesheet" href="/Admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ===== Theme fallbacks (works with your admin.css variables) ===== */
+    :root{
+      --card-bg:#fff;
+      --card-border:#eef2f6;
+      --card-shadow:0 12px 28px rgba(16,24,40,.08);
+      --ink-900:#0f172a;
+      --ink-700:#334155;
+      --ink-600:#475569;
+      --ink-500:#64748b;
+      --brand:#1a7f37;
+      --brand-600:#15652c;
+      --brand-50:#e9f7ef;
+      --blue-300:#93c5fd;
+      --line:#e5e7eb;
+    }
+
+    /* ===== Layout ===== */
+    .profile-container{
+      display:grid;grid-template-columns:1fr 2fr;gap:24px;margin-top:20px;align-items:start;
+    }
+    @media (max-width: 992px){ .profile-container{grid-template-columns:1fr;} }
+
+    /* ===== Cards ===== */
+    .card{
+      background:var(--card-bg);
+      border:1px solid var(--card-border);
+      border-radius:16px;
+      box-shadow:var(--card-shadow);
+    }
+    .profile-card{padding:26px;text-align:center;}
+    .profile-form{padding:26px;}
+
+    /* ===== Avatar ===== */
+    .avatar{
+      width:144px;height:144px;border-radius:50%;
+      overflow:hidden;margin:2px auto 14px;border:4px solid var(--brand-50);
+      box-shadow:0 6px 18px rgba(2,6,23,.15);
+    }
+    .avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+
+    /* File input -> pretty button */
+    .file-row{display:flex;justify-content:center;gap:8px;margin-bottom:6px}
+    .file-input{position:relative}
+    .file-input input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer}
+    .btn-file{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 12px;border-radius:10px;border:1px solid var(--line);
+      background:#f8fafc;color:var(--ink-700);font-weight:600;cursor:pointer;
+    }
+    .btn-file i{font-size:14px}
+
+    .hint{font-size:12px;color:var(--ink-500);}
+
+    /* ===== Identity ===== */
+    .profile-card h2{margin:10px 0 4px;color:var(--ink-900)}
+    .role-pill{
+      display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+      background:#f1f5f9;border:1px solid #e2e8f0;color:var(--ink-600);font-weight:700;font-size:12px
+    }
+    .role-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--brand)}
+
+    /* ===== Form ===== */
+    .profile-form h3{margin-bottom:16px;color:var(--ink-900);font-size:1.1rem}
+    .form-group{margin-bottom:16px}
+    .form-group label{display:block;margin-bottom:6px;font-weight:600;color:var(--ink-700)}
+    .form-group input{
+      width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+      font-size:.95rem;transition:border .2s, box-shadow .2s;background:#fff
+    }
+    .form-group input:focus{
+      outline:none;border-color:var(--blue-300);
+      box-shadow:0 0 0 3px rgba(59,130,246,.15)
+    }
+    .form-group input[readonly]{background:#f8fafc;color:var(--ink-600)}
+
+    /* ===== Buttons ===== */
+    .btn-auth{
+      display:inline-flex;align-items:center;gap:8px;justify-content:center;
+      background:var(--brand);color:#fff;padding:12px;border:none;border-radius:12px;
+      cursor:pointer;font-weight:800;width:100%;
+    }
+    .btn-auth:hover{background:var(--brand-600)}
+
+        /* --- Lightweight modal (matches your card style) --- */
+    .modal-lite{
+      position:fixed; inset:0; display:grid; place-items:center; 
+      background:rgba(17,24,39,.55); z-index:100;
+    }
+    .modal-lite__box{
+      width:min(520px,92%); background:#fff; border:1px solid var(--card-border);
+      border-radius:16px; box-shadow:var(--card-shadow); padding:20px 22px;
+    }
+    .modal-lite h3{ margin:0 0 8px; color:var(--ink-900) }
+    .modal-lite p{ margin:0 0 12px; color:var(--ink-600) }
+    .modal-lite__actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:12px }
+    .btn-lite{
+      background:#f8fafc; color:#334155; border:1px solid #e5e7eb; 
+      border-radius:10px; padding:8px 12px; font-weight:700; cursor:pointer;
+    }
+    .help-error{ color:#b42318; font-size:.875rem; margin-top:6px; }
+
+  </style>
+
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech(Sales Staff)</div>
+    <nav>
+      <a href="dashboard-sales.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="salesstaff-profile.html" class="active"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="bookings-sales.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="sales-transactions.html"><i class="fa-solid fa-receipt"></i> Sales Transactions</a>
+      <a href="reports-sales.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>My Profile</h1>
+
+    <div class="profile-container">
+      <!-- Profile Card -->
+      <div class="profile-card card">
+        <div class="file-row">
+          <label class="file-input">
+            <span class="btn-file"><i class="fa-solid fa-image"></i> Change Photo</span>
+            <input type="file" id="upload-img" name="profile_picture" accept="image/*">
+          </label>
+        </div>
+
+        <div class="avatar">
+          <img src="/Admin/img/default-user.png" alt="Profile Picture" id="preview-img">
+        </div>
+        <p class="hint">JPG/PNG, square works best</p>
+        <h2 id="user-name">John Doe</h2>
+        <p id="user-role">Role: Admin</p>
+      </div>
+
+      <!-- Profile Form -->
+      <div class="profile-form card">
+        <h3>Update Profile</h3>
+        <form action="update_profile.php" method="POST" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="fullname">Full Name</label>
+            <input type="text" id="fullname" name="fullname" value="John Doe" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" value="johndoe@email.com" required>
+          </div>
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" value="johndoe" readonly>
+          </div>
+
+          <div class="form-group">
+            <label for="password">New Password</label>
+            <input type="password" id="password" name="password" placeholder="Leave blank to keep current">
+            <p class="hint" style="margin-top:6px">
+              If you set a new password, we’ll ask you to confirm with your current password.
+            </p>
+
+          </div>
+
+          <button type="submit" class="btn-auth"><i class="fa-solid fa-save"></i> Save Changes</button>
+        </form>
+      </div>
+    </div>
+    <!-- Confirm Save modal -->
+    <div id="confirmModal" class="card modal-lite" style="display:none">
+      <div class="modal-lite__box">
+        <h3>Confirm changes</h3>
+        <p>Are you sure you want to save these profile changes?</p>
+        <div class="modal-lite__actions">
+          <button id="confirmNo"  class="btn-lite">Cancel</button>
+          <button id="confirmYes" class="btn-auth" style="width:auto;padding:8px 14px">Yes, save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Re-auth modal (only shown if “New Password” is filled) -->
+    <div id="reauthModal" class="card modal-lite" style="display:none">
+      <div class="modal-lite__box">
+        <h3>Re-authenticate</h3>
+        <p>Enter your password to confirm this change.</p>
+        <div class="form-group" style="margin-top:10px">
+          <label for="reauthPassword">Password</label>
+          <input type="password" id="reauthPassword" placeholder="Your current password">
+          <div id="reauthError" class="help-error" style="display:none">Current password is incorrect.</div>
+        </div>
+        <div class="modal-lite__actions">
+          <button id="reauthCancel" class="btn-lite">Cancel</button>
+          <button id="reauthConfirm" class="btn-auth" style="width:auto;padding:8px 14px">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module">
+  // ✅ correct path (same one that works on your dashboard)
+  import { authApi, getToken, clearToken, setLoginRedirect } from "/_shared/api.js";
+
+  setLoginRedirect("/Zhomepage/login.html"); // or wherever your login lives
+
+  const els = {
+    nameH2: document.getElementById("user-name"),
+    roleP: document.getElementById("user-role"),
+    img: document.getElementById("preview-img"),
+    file: document.getElementById("upload-img"),
+    form: document.querySelector(".profile-form form"),
+    fullName: document.getElementById("fullname"),
+    email: document.getElementById("email"),
+    username: document.getElementById("username"),
+    password: document.getElementById("password"),
+    logout: document.getElementById("logoutLink"),
+  };
+
+  function toast(msg){ alert(msg); }
+
+  async function loadMe() {
+    try {
+      const me = await authApi.me();  // GET /api/auth/me (via api.js)
+      els.nameH2.textContent = me.name || me.username || "User";
+      els.roleP.textContent = `Role: ${(me.role?.value || me.role || "").toString().toUpperCase()}`;
+      els.fullName.value = me.name || "";
+      els.email.value = me.email || "";
+      els.username.value = me.username || "";
+      if (me.profile_image_url) els.img.src = me.profile_image_url;
+    } catch (err) {
+      console.error("Failed to load /auth/me:", err);
+      toast("Unable to load your profile.");
+    }
+  }
+
+  // Local image preview (no upload yet)
+  els.file.addEventListener("change", () => {
+    const f = els.file.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = e => { els.img.src = e.target.result; };
+    reader.readAsDataURL(f);
+  });
+
+  // ---- Confirm + Re-auth flow on Save ----
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmYes   = document.getElementById("confirmYes");
+  const confirmNo    = document.getElementById("confirmNo");
+
+  const reauthModal  = document.getElementById("reauthModal");
+  const reauthPwd    = document.getElementById("reauthPassword");
+  const reauthErr    = document.getElementById("reauthError");
+  const reauthYes    = document.getElementById("reauthConfirm");
+  const reauthNo     = document.getElementById("reauthCancel");
+
+  function openLite(m){ m.style.display="grid"; }
+  function closeLite(m){ m.style.display="none"; }
+
+  els.form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    // open confirm first
+    openLite(confirmModal);
+  });
+
+  // Confirm → proceed
+  confirmYes.addEventListener("click", async () => {
+    closeLite(confirmModal);
+
+    const newPw = els.password.value.trim();
+    const payload = {
+      name:  els.fullName.value.trim(),
+      email: els.email.value.trim(),
+    };
+    if (!newPw) {
+      // no password change → update directly
+      try {
+        const updated = await authApi.updateMe(payload);
+        els.nameH2.textContent = updated.name || updated.username || "User";
+        els.fullName.value = updated.name || "";
+        els.email.value = updated.email || "";
+        toast("✅ Profile updated.");
+      } catch (err) {
+        console.error("Update failed:", err);
+        toast("❌ Could not update profile.");
+      }
+      return;
+    }
+
+    // password change → re-auth modal
+    reauthPwd.value = "";
+    reauthErr.style.display = "none";
+    openLite(reauthModal);
+
+    // one-time handler for confirm inside re-auth modal
+    const handler = async () => {
+      try {
+        // authenticate using the readonly username on the form, no token changes
+      await authApi.loginEphemeral(els.username.value.trim(), reauthPwd.value.trim());
+
+
+        reauthPwd.addEventListener("input", () => (reauthErr.style.display = "none"));
+
+        // if ok, update profile with new password
+        const updated = await authApi.updateMe({ ...payload, password: newPw });
+        els.nameH2.textContent = updated.name || updated.username || "User";
+        els.fullName.value = updated.name || "";
+        els.email.value = updated.email || "";
+        els.password.value = ""; // clear new password field
+        closeLite(reauthModal);
+        toast("✅ Profile updated.");
+      } catch (err) {
+        // show inline error under the password field
+        reauthErr.style.display = "block";
+      } finally {
+        // remove this exact handler after it fires once
+        reauthYes.removeEventListener("click", handler);
+      }
+    };
+    reauthYes.addEventListener("click", handler);
+  });
+
+  confirmNo.addEventListener("click", () => closeLite(confirmModal));
+  reauthNo.addEventListener("click",   () => closeLite(reauthModal));
+
+  // close modals if backdrop clicked
+  [confirmModal, reauthModal].forEach(m => {
+    m.addEventListener("click", (e) => { if (e.target === m) closeLite(m); });
+  });
+
+
+  els.logout?.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearToken();
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  if (!getToken()) {
+    window.location.href = "/Zhomepage/login.html";
+  } else {
+    loadMe();
+  }
+(function () {
+    var path = location.pathname.split('/').pop() || 'index.html';
+    var links = document.querySelectorAll('.sidebar nav a[href]');
+    links.forEach(function (a) {
+      var target = a.getAttribute('href').split('/').pop();
+      if (target === path) a.classList.add('active');
+    });
+  })();
+</script>
+</body>
+</html>

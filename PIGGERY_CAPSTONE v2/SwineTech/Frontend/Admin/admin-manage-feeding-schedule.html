@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Manage Feeding & Schedules</title>
+  <link rel="stylesheet" href="/Admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ===== Tabs (same as Pig Records) ===== */
+    .tabs{margin:20px 0;display:flex;flex-wrap:wrap;gap:8px}
+    .tab-btn{
+      background:#f3f4f6;border:1px solid #e5e7eb;padding:10px 14px;border-radius:10px;
+      cursor:pointer;font-weight:600;color:#374151
+    }
+    .tab-btn.active{background:#1a7f37;color:#fff;border-color:#1a7f37}
+
+    /* ===== Carded table wrapper (same shell) ===== */
+    .table-wrap{
+      background:#fff;border-radius:16px;border:1px solid #eef2f6;
+      box-shadow:0 10px 24px rgba(16,24,40,.06);overflow:hidden;margin-top:12px
+    }
+
+    /* ===== Modern table (identical rules) ===== */
+    .admin-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+    .admin-table thead th{
+      position:sticky;top:0;z-index:1;background:#f8fafb;color:#374151;font-weight:700;
+      padding:12px 14px;border-bottom:1px solid #e6ebf0;text-align:left;letter-spacing:.02em
+    }
+    .admin-table tbody td{padding:12px 14px;border-bottom:1px solid #eef2f6;color:#1f2937}
+    .admin-table tbody tr:nth-child(even) td{background:#fbfdfe}
+    .admin-table tbody tr:hover td{background:#f3f7fb}
+
+    /* ===== Buttons (match Pig Records) ===== */
+    .btn-add,.btn-edit,.btn-archive,.btn-restore{
+      padding:7px 12px;border-radius:10px;border:1px solid transparent;cursor:pointer;font-weight:600
+    }
+    .btn-add{background:#e8f5ff;color:#0b6bcb;border-color:#cde8ff}
+    .btn-edit{background:#fff3d6;color:#a36200;border-color:#ffe3a3}
+    .btn-archive{background:#ffe5e5;color:#b42318;border-color:#ffc9c9}
+    .btn-restore{background:#e8f7ee;color:#1e7b4f;border-color:#c3ecd7}
+
+    /* ===== Schedule strip (styled to same palette) ===== */
+    .schedule-strip{
+      background:#fff;border:1px solid #e8edf2;border-radius:16px;
+      box-shadow:0 10px 24px rgba(16,24,40,.06);
+      padding:14px 16px;margin:10px auto 14px;max-width:880px
+    }
+    .schedule-row{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+    .schedule-title{font-weight:700;color:#2E3B4E}
+    .schedule-chips{display:flex;gap:8px;flex-wrap:wrap}
+    .schedule-chip{
+      padding:6px 10px;border-radius:12px;font-weight:600;
+      background:#eef5ee;color:#2E7D32;border:1px solid #d7e8db
+    }
+    .schedule-chip.now{background:#2E7D32;color:#fff;border-color:#2E7D32}
+    .schedule-chip.next{background:#fff7e5;color:#92400e;border-color:#ffe3b3}
+    .schedule-next{color:#6b7a86;font-weight:600}
+    @media (max-width:700px){.schedule-next{display:none}}
+
+    /* ===== Badges (if you show caretaker dot) ===== */
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+          font-size:12px;font-weight:800;border:1px solid #e2e8f0;background:#f1f5f9;color:#475569}
+    .badge .dot{width:8px;height:8px;border-radius:50%;background:#16a34a}
+
+    /* ===== Modals (same as Pig Records) ===== */
+    .modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50}
+    .modal-content{
+      background:#fff;margin:5% auto;max-width:680px;width:92%;border-radius:16px;padding:20px 22px;
+      box-shadow:0 20px 40px rgba(16,24,40,.25);border:1px solid #eef2f6
+    }
+    .close{float:right;font-size:22px;cursor:pointer;color:#6b7280}
+    .close:hover{color:#ef4444}
+
+    /* ===== Forms (same as Pig Records) ===== */
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;margin-bottom:6px;font-weight:600;color:#374151}
+    .form-group input,.form-group select{
+      width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;outline:none
+    }
+    .form-group input:focus,.form-group select:focus{
+      border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.15)
+    }
+    .btn-auth{background:#1a7f37;color:#fff;border:none;padding:10px;border-radius:12px;cursor:pointer;font-weight:700}
+    .btn-auth:hover{background:#15652c}
+
+    /* ===== Responsive collapse (same) ===== */
+    @media (max-width:880px){
+      .admin-table thead{display:none}
+      .admin-table,.admin-table tbody,.admin-table tr,.admin-table td{display:block;width:100%}
+      .admin-table tr{background:#fff;border:1px solid #eef2f6;border-radius:12px;margin:10px 0;padding:10px}
+      .admin-table td{border:0;padding:8px 4px}
+      .admin-table td::before{
+        content:attr(data-label);display:block;font-size:12px;color:#6b7280;margin-bottom:2px;text-transform:uppercase
+      }
+      .table-wrap{box-shadow:none;border:0;background:transparent}
+    }
+  </style>
+
+
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html" class="active"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Feeding & Schedules</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('logs')">🍽 Feeding Logs</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Records</button>
+    </div>
+
+        <!-- Fixed Feeding Schedule (frontend-only) -->
+    <section id="schedule-strip" class="schedule-strip" aria-label="Feeding Schedule (Fixed)">
+      <div class="schedule-row">
+        <div class="schedule-title">Today's Feeding Schedule</div>
+        <div class="schedule-chips" id="scheduleChips">
+          <!-- chips rendered by JS -->
+        </div>
+        <div class="schedule-next" id="scheduleNext">
+          <!-- “Now” / “Next feeding in …” via JS -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Feeding Logs -->
+    <section id="logs" class="record-view active">
+      <h2>Feeding Logs</h2>
+      <button class="btn-add" onclick="openModal('addLogModal')">+ Log Feeding</button>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Log ID</th>
+              <th>Litter ID</th>
+              <th>Feed Type</th>
+              <th>Quantity (kg)</th>
+              <th>Feeding Time</th>
+              <th>Caretaker</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="logTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Archived -->
+    <section id="archived" class="record-view">
+      <h2>Archived Records</h2>
+      <div style="margin-bottom:14px;">
+        <label>Show: </label>
+        <select id="archiveFilter" onchange="filterArchived()">
+          <option value="all">All</option>
+          <option value="log">Feeding Logs</option>
+        </select>
+      </div>
+
+      <div class="archived-section" data-type="log" style="margin-bottom:18px;">
+        <h3>🍽 Archived Feeding Logs</h3>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Log ID</th>
+                <th>Litter ID</th>
+                <th>Feed Type</th>
+                <th>Quantity</th>
+                <th>Feeding Time</th>
+                <th>Caretaker</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="archivedLogs"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <!-- Add/Edit Feeding Log -->
+  <div id="addLogModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addLogModal')">&times;</span>
+    <h2>Add Feeding Log</h2>
+    <form onsubmit="return addRecord(event,'log')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="logLitter"></div>
+      <div class="form-group">
+        <label>Feed Type</label>
+        <select id="logFeed" required>
+          <option value="pre-starter">pre-starter</option>
+          <option value="starter">starter</option>
+          <option value="grower">grower</option>
+          <option value="finisher">finisher</option>
+        </select>
+      </div>
+
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="logQty"></div>
+      <div class="form-group"><label>Feeding Time</label><input type="datetime-local" id="logTime" step="1"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editLogModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editLogModal')">&times;</span>
+    <h2>Edit Feeding Log</h2>
+    <form onsubmit="return updateRecord(event,'log')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="editLogLitter"></div>
+      <div class="form-group">
+        <label>Feed Type</label>
+        <select id="editLogFeed" required>
+          <option value="pre-starter">pre-starter</option>
+          <option value="starter">starter</option>
+          <option value="grower">grower</option>
+          <option value="finisher">finisher</option>
+        </select>
+      </div>
+
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="editLogQty"></div>
+      <div class="form-group"><label>Feeding Time</label><input type="datetime-local" id="editLogTime" step="1"></div>
+      <div class="form-group"><label>Caretaker</label><input type="text" id="editLogCaretaker"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <div id="editScheduleModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editScheduleModal')">&times;</span>
+    <h2>Edit Feeding Schedule</h2>
+    <form onsubmit="return updateRecord(event,'schedule')">
+      <div class="form-group"><label>Litter ID</label><input type="number" id="editSchLitter"></div>
+      <div class="form-group"><label>Feed Type</label><input type="text" id="editSchFeed"></div>
+      <div class="form-group"><label>Quantity (kg)</label><input type="number" step="0.1" id="editSchQty"></div>
+      <div class="form-group"><label>Scheduled Time</label><input type="datetime-local" id="editSchTime"></div>
+      <div class="form-group"><label>Assigned Caretaker</label><input type="text" id="editSchCaretaker"></div>
+      <div class="form-group"><label>Status</label><select id="editSchStatus"><option>Pending</option><option>Completed</option></select></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Archive Confirmation -->
+  <div id="archiveModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Are you sure you want to archive this record?</h3>
+      <button onclick="archiveYes()">Yes, Archive</button>
+      <button onclick="archiveNo()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3>✅ Saved!</h3>
+    <button onclick="closeModal('successModal')">OK</button>
+  </div></div>
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3>❌ Invalid Input!</h3>
+    <button onclick="closeModal('errorModal')">OK</button>
+  </div></div>
+
+<script type="module">
+/* ===================== CONFIG ===================== */
+/* CHANGE THIS IF YOUR API LIVES ELSEWHERE */
+const API_BASE = "http://localhost:8000/api";
+
+/* ========= FIXED SCHEDULE (frontend-only) ========= */
+const FEED_TIMES_24 = ["07:00", "13:00", "17:30"];   // 24h fixed
+const NOTIFY_KEY = "schedule_notified_date";         // to notify once per time/day
+const NOW_WINDOW_MIN = 30;                           // ±30 minutes
+
+function to12h(hhmm){ // "13:00" -> "1:00 PM"
+  const [h,m] = hhmm.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${m.toString().padStart(2,"0")} ${ampm}`;
+}
+
+function todayDateAt(hhmm){
+  const [h,m] = hhmm.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+function minutesDiff(a,b){ return Math.round((a.getTime() - b.getTime())/60000); }
+
+function pickNowNext() {
+  const now = new Date();
+  const windows = FEED_TIMES_24.map(t => {
+    const at = todayDateAt(t);
+    return {
+      time: t,
+      at,
+      diffMin: minutesDiff(at, now),
+      isNow: Math.abs(minutesDiff(now, at)) <= NOW_WINDOW_MIN
+    };
+  });
+  const upcoming = windows.filter(w => w.at >= now).sort((a,b)=>a.at-b.at)[0] || null;
+  const current  = windows.find(w => Math.abs(minutesDiff(w.at, now)) <= NOW_WINDOW_MIN) || null;
+  return { windows, current, upcoming };
+}
+
+function renderScheduleChips() {
+  const chipsEl = document.getElementById("scheduleChips");
+  const nextEl  = document.getElementById("scheduleNext");
+  if (!chipsEl || !nextEl) return;
+
+  const { windows, current, upcoming } = pickNowNext();
+
+  chipsEl.innerHTML = "";
+  windows.forEach(w => {
+    const div = document.createElement("div");
+    div.className = "schedule-chip";
+    if (current && w.time === current.time) div.classList.add("now");
+    else if (!current && upcoming && w.time === upcoming.time) div.classList.add("next");
+    div.textContent = to12h(w.time);
+    chipsEl.appendChild(div);
+  });
+
+  // Right-side label
+  if (current){
+    nextEl.textContent = "Now: feeding window";
+  } else if (upcoming){
+    const mins = Math.max(0, minutesDiff(upcoming.at, new Date()));
+    nextEl.textContent = `Next feeding in ${mins} min`;
+  } else {
+    nextEl.textContent = "All feedings done for today";
+  }
+}
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = 880;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.02);
+    o.start();
+    setTimeout(()=>{ g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2); o.stop(ctx.currentTime + 0.25); }, 220);
+  } catch {}
+}
+
+function showToast(msg) {
+  let holder = document.getElementById("toastHolder");
+  if (!holder){
+    holder = document.createElement("div");
+    holder.id = "toastHolder";
+    Object.assign(holder.style, {
+      position:"fixed", right:"12px", bottom:"12px", zIndex: 9999, display:"grid", gap:"8px"
+    });
+    document.body.appendChild(holder);
+  }
+  const t = document.createElement("div");
+  t.textContent = msg;
+  Object.assign(t.style, {
+    background:"#2e7d32", color:"#fff", padding:"10px 14px", borderRadius:"8px",
+    boxShadow:"0 8px 20px rgba(0,0,0,.15)", fontWeight:"600"
+  });
+  holder.appendChild(t);
+  setTimeout(()=> t.remove(), 6000);
+}
+
+function maybeNotify() {
+  const now = new Date();
+  const dayKey = now.toISOString().slice(0,10);
+  const notified = JSON.parse(localStorage.getItem(NOTIFY_KEY) || "{}"); // { "2025-10-24": ["07:00","13:00"] }
+
+  FEED_TIMES_24.forEach(t => {
+    const at = todayDateAt(t);
+    const diff = Math.abs(minutesDiff(now, at));
+    if (diff <= 0) { // within the current minute
+      const already = notified[dayKey] || [];
+      if (!already.includes(t)) {
+        // fire
+        beep();
+        showToast(`It's ${to12h(t)} — feeding time!`);
+        notified[dayKey] = [...already, t];
+        localStorage.setItem(NOTIFY_KEY, JSON.stringify(notified));
+      }
+    }
+  });
+}
+
+function startScheduleTicker() {
+  renderScheduleChips();
+  // update every 30s to keep "Next in X min" fresh and check notifications
+  setInterval(() => { renderScheduleChips(); maybeNotify(); }, 30 * 1000);
+  // run an immediate notify check on load too
+  maybeNotify();
+}
+
+
+
+
+/* ===== token helpers from your app (already present) ===== */
+const TOKEN_KEY = "auth_token";
+function getToken(){
+  return localStorage.getItem("auth_token")
+      || localStorage.getItem("token")
+      || localStorage.getItem("access_token")
+      || "";
+}
+function clearToken(){ localStorage.removeItem(TOKEN_KEY); }
+
+/* ===== simple JSON fetch helper with bearer ===== */
+async function jreq(path, {method="GET", body=null, params=null, auth=true} = {}) {
+  const url = new URL(API_BASE + path);
+  if (params) {
+    Object.entries(params).forEach(([k,v])=>{
+      if (v==null) return;
+      Array.isArray(v) ? v.forEach(x=>url.searchParams.append(k,x))
+                       : url.searchParams.append(k,v);
+    });
+  }
+  const headers = { Accept: "application/json" };
+
+  // add Authorization only when wanted and present
+  if (auth) {
+    const t = getToken();
+    if (t) headers.Authorization = `Bearer ${t}`;
+  }
+  if (body !== null) { headers["Content-Type"]="application/json"; body = JSON.stringify(body); }
+
+  const res = await fetch(url, { method, headers, body });
+  if (!res.ok) {
+    // you can keep your 401 handler if you want, but we’re focusing on map creation
+    let text;
+    try { text = await res.text(); } catch { text = `HTTP ${res.status}`; }
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  const ct = res.headers.get("content-type") || "";
+  return ct.includes("application/json") ? res.json() : res.text();
+}
+
+/* ===================== API CLIENTS ===================== */
+const feedingLogsApi = {
+  list:      ()            => jreq("/feeding-logs"),
+  create:    (data)        => jreq("/feeding-logs",          { method:"POST", body:data }),
+  update:    (id, data)    => jreq(`/feeding-logs/${id}`,     { method:"PUT",  body:data }),
+  remove:    (id)          => jreq(`/feeding-logs/${id}`,     { method:"DELETE" }),
+};
+
+const usersApi = {
+  // Your route is /api/api/auth/admin/users, and it is now public (no admin required)
+  listCaretakers: () =>
+    jreq("/api/auth/admin/users", {
+      params: { active_only: true, role: "caretaker" },
+      auth: false,          // <-- do NOT send Authorization header
+    }),
+};
+
+/* -------- SUPPLIES (used to subtract feed stock) -------- */
+const suppliesApi = {
+  list:      (filters)       => jreq("/supplies", { params: filters }),
+  adjustQty: (id, quantity)  => jreq(`/supplies/${id}/adjust-qty`, {
+    method: "PATCH",
+    body:   { quantity }          // negative to subtract, positive to add
+  }),
+};
+/* ===================== FEED FIFO HELPERS ===================== */
+const FEED_TYPES = new Set(["pre-starter","starter","grower","finisher"]);
+const canonFeed  = s => String(s||"").trim().toLowerCase();  // keep hyphens as given
+
+function isFeedRow(row){
+  return String(row.category || "").toLowerCase() === "feed";
+}
+function matchesFeedName(row, wanted){
+  const name = String(row.item_name ?? row.name ?? "").trim().toLowerCase();
+  return name === wanted;
+}
+const safeTime = v => (v ? Date.parse(v) || Number.MAX_SAFE_INTEGER : Number.MAX_SAFE_INTEGER);
+
+/** Load all batches for a feed name (category='feed'), FIFO-sorted oldest first. */
+async function getFeedBatchesFIFO(feedName){
+  const wanted = canonFeed(feedName);
+  const raw = await suppliesApi.list();              // GET /supplies
+  const rows = Array.isArray(raw) ? raw : (raw?.items ?? raw?.data ?? []);
+
+  const batches = rows
+    .filter(isFeedRow)
+    .filter(r => matchesFeedName(r, wanted))
+    .map(r => ({
+      id:        Number(r.supply_id ?? r.id),
+      qty:       Number(r.quantity ?? 0),
+      unit:      String(r.unit ?? "").toLowerCase(),
+      updatedAt: r.updated_at || r.created_at || "",
+      createdAt: r.created_at || "",
+    }));
+
+  // FIFO: oldest first (updated_at -> created_at -> id)
+  batches.sort((a,b)=>{
+    const ua = safeTime(a.updatedAt), ub = safeTime(b.updatedAt);
+    if (ua !== ub) return ua - ub;
+    const ca = safeTime(a.createdAt), cb = safeTime(b.createdAt);
+    if (ca !== cb) return ca - cb;
+    return a.id - b.id;
+  });
+
+  return batches;
+}
+
+/**
+ * Subtract `amountKg` from all matching feed batches (FIFO).
+ * Throws an Error if:
+ *   - no batches exist
+ *   - any batch unit is not kg
+ *   - combined qty is insufficient
+ */
+async function consumeFeedFIFO(feedName, amountKg){
+  const wanted = canonFeed(feedName);
+  if (!FEED_TYPES.has(wanted)) throw new Error("Please choose a valid feed type.");
+
+  const batches = await getFeedBatchesFIFO(wanted);
+  if (batches.length === 0) throw new Error(`No "${wanted}" feed found in Supplies.`);
+
+  // enforce kg units (you store feed in kg)
+  if (batches.some(b => b.unit && b.unit !== "kg")) {
+    throw new Error(`"${wanted}" supply is not tracked in kg. Please align units.`);
+  }
+
+  const total = batches.reduce((s,b)=>s + b.qty, 0);
+  if (amountKg > total) {
+    throw new Error(`Insufficient ${wanted} stock. Need ${amountKg} kg, available ${total} kg.`);
+  }
+
+  // drain across batches
+  let remaining = amountKg;
+  for (const b of batches){
+    if (remaining <= 0) break;
+    const take = Math.min(b.qty, remaining);
+    if (take > 0){
+      await suppliesApi.adjustQty(b.id, -take); // PATCH /supplies/{id}/adjust-qty
+      remaining -= take;
+    }
+  }
+}
+
+
+
+/* ===================== UTILITIES ===================== */
+const $ = (sel) => document.querySelector(sel);
+function openModal(id){ document.getElementById(id).style.display="block"; }
+function closeModal(id){ document.getElementById(id).style.display="none"; }
+
+function showView(v){
+  document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+  document.getElementById(v).classList.add("active");
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.querySelector(`.tab-btn[onclick="showView('${v}')"]`).classList.add("active");
+}
+window.showView = showView;
+
+/* strict YYYY-MM-DDTHH:mm:ss */
+function toNaive(dt){
+  if (!dt) return null;
+  const d = new Date(dt);
+  const pad = (n)=>`${n}`.padStart(2,"0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* ===================== LOOKUP MAPS ===================== */
+// Map user_id -> display name
+let usersMap = new Map(); // user_id -> display name
+
+async function loadUsersMap() {
+  try {
+    // If you have a broader /users endpoint, use that.
+    // Otherwise this caretaker-only list is fine for now.
+    const raw = await usersApi.listCaretakers();
+    const arr =
+      Array.isArray(raw) ? raw :
+      raw?.users ?? raw?.items ?? raw?.results ?? raw?.data ?? [];
+
+    usersMap = new Map(arr.map(u => {
+      const id = Number(u.user_id ?? u.id);
+      const name =
+        u.name ||
+        u.full_name ||
+        [u.first_name, u.last_name].filter(Boolean).join(" ") ||
+        u.username ||
+        u.email ||
+        `#${id}`;
+      return [id, name];
+    }));
+  } catch (err) {
+    console.warn("Users fetch failed; names will show as #id", err);
+    usersMap = new Map();
+  }
+}
+
+function nameForUser(id) {
+  if (id == null || id === "") return "";
+  return usersMap.get(Number(id)) || `#${id}`;
+}
+
+
+
+/* ===================== FEEDING LOGS (BACKEND) ===================== */
+const logTbody = document.getElementById("logTable");
+let editing = { kind:null, id:null, tr:null }; // for edit modals
+let archiving = { tr:null, snapshot:null, kind:null };
+
+function renderLogRow(r){
+  const id           = r.feeding_log_id ?? r.id;
+  const litter_id    = r.litter_id ?? "";
+  const feed_type    = r.feed_type ?? "";
+  const quantity_kg  = r.quantity_kg ?? "";
+  const feeding_time = r.feeding_time ?? "";
+  const user_id      = r.user_id ?? r.caretaker_id ?? null;
+
+  const tr = document.createElement("tr");
+  tr.dataset.id = id;
+  tr.dataset.userId = user_id ?? "";
+
+  tr.innerHTML = `
+    <td>${id}</td>
+    <td>${litter_id}</td>
+    <td>${feed_type}</td>
+    <td>${quantity_kg}</td>
+    <td>${feeding_time}</td>
+    <td>${nameForUser(user_id)}</td>
+    <td>
+      <button class="btn-edit" data-kind="log">Edit</button>
+      <button class="btn-archive" data-kind="log">Archive</button>
+    </td>
+  `;
+  return tr;
+}
+
+
+
+function renderArchivedLogRow(snapshot) {
+  const tr = document.createElement("tr");
+  tr.dataset.userId = snapshot.user_id ?? "";
+  tr.innerHTML = `
+    <td>${snapshot.id}</td>
+    <td>${snapshot.litter_id ?? ""}</td>
+    <td>${snapshot.feed_type ?? ""}</td>
+    <td>${snapshot.quantity_kg ?? ""}</td>
+    <td>${snapshot.feeding_time ?? ""}</td>
+    <td>${snapshot.user_name ?? ""}</td>
+    <td><button class="btn-restore" data-kind="log">Restore</button></td>`;
+  return tr;
+}
+
+
+async function loadLogs(){
+  logTbody.innerHTML = "";
+  const rows = await feedingLogsApi.list();
+  rows.forEach(r => logTbody.appendChild(renderLogRow(r)));
+}
+
+/* Add Log (FIFO multi-row stock deduction BEFORE saving) */
+document.querySelector("#addLogModal form").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+
+  const feedType = document.getElementById("logFeed").value; // dropdown
+  const qtyKg    = Number(document.getElementById("logQty").value);
+  const payload  = {
+    litter_id:    Number(document.getElementById("logLitter").value),
+    feed_type:    canonFeed(feedType),
+    quantity_kg:  qtyKg,
+    feeding_time: toNaive(document.getElementById("logTime").value)
+  };
+
+  // basic guard
+  if (!payload.litter_id || !FEED_TYPES.has(payload.feed_type) ||
+      !Number.isFinite(qtyKg) || qtyKg <= 0 || !payload.feeding_time){
+    document.querySelector("#errorModal h3").textContent = "❌ Invalid Input!";
+    openModal("errorModal");
+    return false;
+  }
+
+  try {
+    // 1) Subtract from supplies across batches (FIFO). Throws if insufficient.
+    await consumeFeedFIFO(payload.feed_type, qtyKg);
+
+    // 2) Save the feeding log
+    const created = await feedingLogsApi.create(payload);
+
+    // 3) Paint the new row
+    logTbody.appendChild(renderLogRow(created));
+
+    closeModal("addLogModal");
+    openModal("successModal");
+  } catch (err) {
+    const msg = String(err?.message || err);
+    document.querySelector("#errorModal h3").textContent = `❌ ${msg}`;
+    openModal("errorModal");
+  }
+});
+
+
+
+/* Edit Log open */
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const tr = btn.closest("tr");
+  if (btn.classList.contains("btn-edit") && btn.dataset.kind==="log"){
+    editing = { kind:"log", id: tr.dataset.id, tr };
+    const c = tr.children;
+    $("#editLogLitter").value    = c[1].innerText;
+    $("#editLogFeed").value      = c[2].innerText;
+    $("#editLogQty").value       = c[3].innerText;
+    // convert "YYYY-MM-DDTHH:mm:ss" to input value (needs no change)
+    $("#editLogTime").value      = c[4].innerText;
+    $("#editLogCaretaker").value = c[5].innerText; // display only; backend sets caretaker
+    openModal("editLogModal");
+  }
+});
+
+/* Save Edit Log */
+document.querySelector("#editLogModal form").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  if (editing.kind!=="log") return;
+  const payload = {
+    litter_id:    Number($("#editLogLitter").value) || undefined,
+    feed_type:    $("#editLogFeed").value.trim() || undefined,
+    quantity_kg:  ($("#editLogQty").value===""? undefined : Number($("#editLogQty").value)),
+    feeding_time: $("#editLogTime").value ? toNaive($("#editLogTime").value) : undefined
+    // DO NOT send user_id; backend keeps original or re-derives from token if policy says so
+  };
+  const updated = await feedingLogsApi.update(editing.id, payload);
+  const fresh = renderLogRow(updated);
+  editing.tr.replaceWith(fresh);
+  editing = { kind:null, id:null, tr:null };
+  closeModal("editLogModal"); openModal("successModal");
+});
+
+
+document.addEventListener("click", (e)=>{
+  const btn = e.target.closest(".btn-archive");
+  if (!btn || btn.dataset.kind !== "log") return;
+
+  const tr = btn.closest("tr");
+  const c = tr.children;
+  archiving = {
+    tr,
+    kind: "log",
+    snapshot: {
+      id:             c[0].innerText,
+      litter_id:      c[1].innerText,
+      feed_type:      c[2].innerText,
+      quantity_kg:    c[3].innerText,
+      feeding_time:   c[4].innerText,
+      user_name:      c[5].innerText,
+      user_id:        tr.dataset.userId || ""
+    }
+  };
+  openModal("archiveModal");
+});
+
+
+window.archiveYes = async ()=>{
+  if (!archiving.tr) return closeModal("archiveModal");
+
+  if (archiving.kind === "log") {
+    const id = archiving.tr.dataset.id;
+    await feedingLogsApi.remove(id);
+
+    // build a proper archived row (no cloning)
+    const archivedRow = renderArchivedLogRow({
+      id:             archiving.snapshot.id,
+      litter_id:      archiving.snapshot.litter_id,
+      feed_type:      archiving.snapshot.feed_type,
+      quantity_kg:    archiving.snapshot.quantity_kg,
+      feeding_time:   archiving.snapshot.feeding_time,
+      caretaker_name: archiving.snapshot.caretaker_name,
+      caretaker_id:   archiving.snapshot.caretaker_id
+    });
+    document.getElementById("archivedLogs").appendChild(archivedRow);
+
+    // remove from live
+    archiving.tr.remove();
+  }
+
+  closeModal("archiveModal");
+};
+
+window.archiveNo = ()=> closeModal("archiveModal");
+
+/* Restore from Archive (re-create in backend from row text) */
+document.addEventListener("click", async (e)=>{
+  const btn = e.target.closest(".btn-restore");
+  if (!btn) return;
+  const row = btn.closest("tr");
+  const kind = btn.dataset.kind;
+  
+  if (kind === "log") {
+    const c = row.children;
+    const payload = {
+      litter_id:    Number(c[1].innerText),
+      feed_type:    c[2].innerText,
+      quantity_kg:  Number(c[3].innerText),
+      // ensure strict format even if someone edited text in archived table
+      feeding_time: toNaive(c[4].innerText),
+      // optional – only if backend permits:
+      caretaker_id: row.dataset.caretakerId ? Number(row.dataset.caretakerId) : undefined
+    };
+
+    const created = await feedingLogsApi.create(payload);
+    logTbody.appendChild(renderLogRow(created));
+    row.remove();
+  }
+
+});
+
+
+/* ===================== ARCHIVE FILTER ===================== */
+window.filterArchived = function(){
+  const v = document.getElementById("archiveFilter").value;
+  // only ".archived-section[data-type='log']" remains
+  document.querySelectorAll(".archived-section").forEach(sec=>{
+    const t = sec.getAttribute("data-type");
+    sec.style.display = (v==="all" || v===t) ? "" : "none";
+  });
+};
+
+// --- Logout binding: clears tokens and redirects to login ---
+document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  try {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+  } catch {}
+  window.location.href = "/Zhomepage/login.html";
+});
+
+/* ===================== INIT ===================== */
+(async function init(){
+  // load lookups first so caretaker names resolve
+  await loadUsersMap();
+  await loadLogs();
+  startScheduleTicker();   // render strip + tick/notify
+
+})();
+
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Register</title>
+
+  <!-- These CSS files are alongside this file in /Frontend/Zhomepage/ -->
+  <link rel="stylesheet" href="auth.css"/>
+  <link rel="stylesheet" href="index2.css"/>
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo">🐖 SwineTech</div>
+    <nav>
+      <a href="/Zhomepage/index2.html">Home</a>
+      <a href="/Zhomepage/index2.html#about">About</a>
+      <a href="/Zhomepage/index2.html#contact">Contact</a>
+      <a href="/Zhomepage/login.html">Login</a>
+      <a href="/Zhomepage/register.html" class="btn-register">Register</a>
+    </nav>
+  </header>
+
+  <div class="auth-body">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h2>Register</h2>
+
+        <!-- Inline message area -->
+        <div id="formMsg" style="display:none;margin:.75rem 0;"></div>
+
+        <form id="registerForm" action="#" method="POST" novalidate>
+          <div class="form-group">
+            <label for="fullname">Full Name</label>
+            <input type="text" id="fullname" name="fullname" placeholder="Enter your full name"/>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" placeholder="Enter your email" required/>
+          </div>
+          <!-- OTP block -->
+          <div class="form-group" id="otpWrap" style="margin-top:.5rem;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button type="button" id="btnSendCode" class="btn btn-auth" style="padding:.4rem .8rem;">Send code</button>
+              <span id="sendHint" class="mini" style="color:#666;"></span>
+              <a href="#" id="changeEmail" style="margin-left:auto; display:none;">Change email</a>
+            </div>
+
+            <div id="otpRow" style="display:none; margin-top:.5rem;">
+              <label for="otp">Enter 6-digit code</label>
+              <input type="text" id="otp" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="123456"/>
+              <button type="button" id="btnVerify" class="btn btn-auth" style="padding:.4rem .8rem;">Verify</button>
+            </div>
+          </div>
+
+
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Choose a username" required/>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Create a password" required/>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm">Confirm Password</label>
+            <input type="password" id="confirm" name="confirm" placeholder="Confirm your password" required/>
+          </div>
+
+          <!-- Show password toggle -->
+          <label style="display:flex;gap:.5rem;align-items:center;margin:.5rem 0;">
+            <input type="checkbox" id="togglePassword"/> Show password
+          </label>
+
+          <button type="submit" id="submitBtn" class="btn btn-auth">Register</button>
+
+          <p class="auth-switch" style="margin-top:12px;">
+            Already have an account? <a href="/Zhomepage/login.html">Login</a> |
+            <a href="/Zhomepage/guest.html">Continue as Guest</a>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <footer class="auth-footer">
+      <p>© 2025 SwineTech | Group 5 - Ruloma Farms Project</p>
+    </footer>
+  </div>
+
+  <!-- Register logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const isLocalFE = location.hostname === "localhost" && location.port === "5500";
+      const API_BASE = isLocalFE ? "http://localhost:8000/api" : "/api";
+
+      function showMsg(text, kind = "error") {
+        const box = document.getElementById("formMsg");
+        box.style.display = "block";
+        box.style.padding = "10px 12px";
+        box.style.borderRadius = "6px";
+        box.style.fontSize = ".95rem";
+        if (kind === "error") {
+          box.style.background = "#fdecea";
+          box.style.color = "#b71c1c";
+          box.style.border = "1px solid #f5c2c0";
+        } else {
+          box.style.background = "#e8f5e9";
+          box.style.color = "#1b5e20";
+          box.style.border = "1px solid #c8e6c9";
+        }
+        box.textContent = text;
+      }
+      function hideMsg() {
+        const box = document.getElementById("formMsg");
+        if (box) box.style.display = "none";
+      }
+      function isValidEmail(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      }
+
+      const form = document.getElementById("registerForm");
+      const nameEl = document.getElementById("fullname");
+      const emailEl = document.getElementById("email");
+      const userEl  = document.getElementById("username");
+      const passEl  = document.getElementById("password");
+      const confEl  = document.getElementById("confirm");
+      const submitBtn = document.getElementById("submitBtn");
+      const toggle = document.getElementById("togglePassword");
+
+      // OTP controls
+      const btnSend = document.getElementById("btnSendCode");
+      const btnVerify = document.getElementById("btnVerify");
+      const changeEmail = document.getElementById("changeEmail");
+      const otpRow = document.getElementById("otpRow");
+      const otpInput = document.getElementById("otp");
+      const sendHint = document.getElementById("sendHint");
+
+      // OTP state
+      let emailVerified = false;
+      let emailToken = null;
+      let resendIn = 0;
+      let resendTimer = null;
+
+      function startCooldown(sec) {
+        clearInterval(resendTimer);
+        resendIn = sec;
+        sendHint.textContent = `Resend in ${resendIn}s`;
+        resendTimer = setInterval(() => {
+          resendIn -= 1;
+          if (resendIn <= 0) {
+            clearInterval(resendTimer);
+            sendHint.textContent = "You can resend now.";
+            btnSend.disabled = false;
+          } else {
+            sendHint.textContent = `Resend in ${resendIn}s`;
+          }
+        }, 1000);
+      }
+
+      // show password toggle
+      if (toggle) {
+        toggle.addEventListener("change", () => {
+          const t = toggle.checked ? "text" : "password";
+          passEl.type = t;
+          confEl.type = t;
+        });
+      }
+
+      // --- Send OTP
+      btnSend?.addEventListener("click", async () => {
+        hideMsg();
+        const email = (emailEl.value || "").trim();
+        if (!isValidEmail(email)) return showMsg("Enter a valid email first.");
+        btnSend.disabled = true;
+        try {
+          const res = await fetch(`${API_BASE}/auth/otp/start`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, purpose: "register" })
+          });
+          if (!res.ok) {
+            const j = await res.json().catch(()=>({}));
+            throw new Error(j.detail || `Failed to send code (HTTP ${res.status})`);
+          }
+          const j = await res.json();
+          otpRow.style.display = "";
+          emailEl.readOnly = true;
+          changeEmail.style.display = "";
+          startCooldown(j.resend_in ?? 60);
+          showMsg("Code sent. Check your inbox.", "success");
+        } catch (e) {
+          showMsg(e.message || "Failed to send code");
+          btnSend.disabled = false;
+        }
+      });
+
+      // --- Verify OTP
+      btnVerify?.addEventListener("click", async () => {
+        hideMsg();
+        const email = (emailEl.value || "").trim();
+        const code = (otpInput.value || "").trim();
+        if (!/^\d{6}$/.test(code)) return showMsg("Enter the 6-digit code.");
+        btnVerify.disabled = true;
+        try {
+          const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, code, purpose: "register" })
+          });
+          const j = await res.json().catch(()=>({}));
+          if (!res.ok) throw new Error(j.detail || "Verification failed");
+          emailVerified = true;
+          emailToken = j.email_verification_token;
+          showMsg("Email verified. You can finish registration now.", "success");
+          otpInput.disabled = true;
+          submitBtn.disabled = false;
+        } catch (e) {
+          showMsg(e.message || "Verification failed");
+        } finally {
+          btnVerify.disabled = false;
+        }
+      });
+
+      // --- Change email
+      changeEmail?.addEventListener("click", (e) => {
+        e.preventDefault();
+        hideMsg();
+        clearInterval(resendTimer);
+        emailVerified = false;
+        emailToken = null;
+        emailEl.readOnly = false;
+        otpRow.style.display = "none";
+        changeEmail.style.display = "none";
+        btnSend.disabled = false;
+        sendHint.textContent = "";
+        otpInput.value = "";
+        submitBtn.disabled = true;
+      });
+
+      if (!form) return;
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideMsg();
+
+        // basic validations (unchanged)
+        const name = (nameEl.value || "").trim();
+        const email = (emailEl.value || "").trim();
+        const username = (userEl.value || "").trim();
+        const password = passEl.value || "";
+        const confirm  = confEl.value || "";
+
+        if (!username || username.length < 3 || username.length > 50) {
+          return showMsg("Username must be 3–50 characters.");
+        }
+        if (!isValidEmail(email)) {
+          return showMsg("Please enter a valid email address.");
+        }
+        if (!password || password.length < 8) {
+          return showMsg("Password must be at least 8 characters long.");
+        }
+        if (password !== confirm) {
+          return showMsg("Passwords do not match.");
+        }
+        // enforce verified email
+        if (!emailVerified || !emailToken) {
+          return showMsg("Please verify your email first.");
+        }
+
+        const payload = { name, email, username, password, email_verification_token: emailToken };
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Registering…";
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/register-client`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            let msg = `Registration failed (HTTP ${res.status})`;
+            try {
+              const j = await res.json();
+              if (typeof j?.detail === "string") msg = j.detail;
+              else if (Array.isArray(j?.detail)) {
+                msg = j.detail.map(d => d.msg || (Array.isArray(d.loc) ? d.loc.join(".") : "")).join(" • ");
+              }
+            } catch {}
+            showMsg(msg, "error");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Register";
+            return;
+          }
+
+          showMsg("Account created successfully! Redirecting to login…", "success");
+          setTimeout(() => { window.location.href = "/Zhomepage/login.html"; }, 1200);
+
+        } catch {
+          showMsg("Network error. Please check your connection and try again.");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Register";
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>

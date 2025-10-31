@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Login</title>
+
+  <!-- These CSS files are assumed to be alongside this file in /Frontend/Zhomepage/ -->
+  <link rel="stylesheet" href="auth.css" />
+  <link rel="stylesheet" href="index2.css" />
+
+  <style>
+    .form-error {
+      margin-top: 10px;
+      color: #c62828;
+      background: #ffebee;
+      border: 1px solid #ffcdd2;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: .92rem;
+      display: none;
+    }
+    .show-pass-row {
+      display:flex; align-items:center; gap:.5rem; margin-top:6px;
+      font-size:.9rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo">🐖 SwineTech</div>
+    <nav>
+      <a href="/Zhomepage/index2.html">Home</a>
+      <a href="/Zhomepage/index2.html#about">About</a>
+      <a href="/Zhomepage/index2.html#contact">Contact</a>
+      <a href="/Zhomepage/login.html" class="btn-login">Login</a>
+      <a href="/Zhomepage/register.html">Register</a>
+    </nav>
+  </header>
+
+  <div class="auth-body">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h2>Login</h2>
+
+        <form id="loginForm" novalidate>
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" placeholder="Enter your username" required />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Enter your password" required />
+            <label class="show-pass-row">
+              <input type="checkbox" id="togglePassword" />
+              Show password
+            </label>
+          </div>
+
+          <button type="submit" class="btn btn-auth">Login</button>
+
+          <div id="formError" class="form-error"></div>
+
+          <p class="auth-switch" style="margin-top: 12px;">
+            Don’t have an account?
+            <a href="/Zhomepage/register.html">Register</a> |
+            <a href="/Zhomepage/guest.html">Continue as Guest</a>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <footer class="auth-footer">
+      <p>© 2025 SwineTech | Group 5 - Ruloma Farms Project</p>
+    </footer>
+  </div>
+
+  <script>
+    // ---------- config ----------
+    const isLocalFE = location.hostname === "localhost" && location.port === "5500";
+    const API_BASE   = isLocalFE ? "http://localhost:8000/api" : "/api";
+    const TOKEN_KEY  = "token";
+
+    // One canonical role->route map (root-absolute paths)
+    const ROLE_ROUTES = {
+      CLIENT: "/Client/dashboard-client.html",
+      SALES: "/Sales-Staff/dashboard-sales.html",
+      PROCUREMENT: "/Procurement-Staff/dashboard-procurement.html",
+      CARETAKER: "/Caretaker/dashboard-caretaker.html",
+      ADMIN: "/Admin/dashboard-admin.html",
+    };
+
+    // ---------- if already logged in, send to dashboard ----------
+    (async function redirectIfLoggedIn() {
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) return;
+      try {
+        const me = await fetch(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then(r => r.ok ? r.json() : Promise.reject());
+
+        const role = String(me.role?.value || me.role || "").toUpperCase();
+        const target = ROLE_ROUTES[role] || ROLE_ROUTES.CLIENT;
+        if (location.pathname !== target) location.href = target;
+      } catch {
+        // ignore - token invalid, stay on login
+      }
+    })();
+
+    // ---------- show/hide password ----------
+    document.getElementById("togglePassword").addEventListener("change", (e) => {
+      const pwd = document.getElementById("password");
+      pwd.type = e.target.checked ? "text" : "password";
+    });
+
+    // ---------- login submit ----------
+    const form = document.getElementById("loginForm");
+    const errorBox = document.getElementById("formError");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideError();
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!username || !password) {
+        showError("Please enter both username and password.");
+        return;
+      }
+
+      try {
+        // POST form-encoded (FastAPI OAuth2PasswordRequestForm)
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ username, password })
+        });
+
+        if (!res.ok) {
+          let msg = "Invalid username or password.";
+          try {
+            const j = await res.json();
+            if (j?.detail) msg = typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
+          } catch {}
+          throw new Error(msg);
+        }
+
+        const data = await res.json();  // { access_token } or { token }
+        const token = data?.access_token || data?.token;
+        if (!token) throw new Error("Login response did not include a token.");
+        localStorage.setItem(TOKEN_KEY, token);
+
+        // Get user role and redirect
+        const me = await fetch(`${API_BASE}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }).then(r => r.ok ? r.json() : Promise.reject(new Error("Failed to get user info.")));
+
+        const role = String(me.role?.value || me.role || "").toUpperCase();
+        location.href = ROLE_ROUTES[role] || ROLE_ROUTES.CLIENT;
+
+      } catch (err) {
+        showError(err.message || "Login failed. Please try again.");
+      }
+    });
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.style.display = "block";
+    }
+    function hideError() {
+      errorBox.textContent = "";
+      errorBox.style.display = "none";
+    }
+  </script>
+</body>
+</html>

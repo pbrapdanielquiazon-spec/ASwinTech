@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Inquiries</title>
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    .status-pill{
+      display:inline-block;padding:4px 10px;border-radius:999px;font-size:.85rem;font-weight:600
+    }
+    .status-unread{background:#fdecea;color:#c62828}
+    .status-read{background:#e8f4fd;color:#1565c0}
+    .status-responded{background:#e8f5e9;color:#2e7d32}
+    .actions{display:flex;gap:6px;flex-wrap:wrap}
+    .btn-chip{
+      border:0; padding:6px 10px; border-radius:8px; cursor:pointer; font-size:.9rem; color:#fff
+    }
+    .btn-read{background:#29B6F6}
+    .btn-responded{background:#43A047}
+    .btn-refresh{background:#607D8B}
+    .muted{color:#666}
+    .searchbar{margin:10px 0 16px; display:flex; gap:10px; align-items:center}
+    .searchbar input{padding:8px 10px;border:1px solid #ddd;border-radius:8px;min-width:240px}
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Mange Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses, & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="inquiries.html" class="active"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Client Inquiries</h1>
+
+    <div class="searchbar">
+      <input id="q" type="text" placeholder="Search subject or message…" />
+      <button id="refresh" class="btn-chip btn-refresh"><i class="fa-solid fa-rotate"></i> Refresh</button>
+      <span id="count" class="muted"></span>
+    </div>
+
+    <table class="admin-table">
+      <thead>
+      <tr>
+        <th>Inquiry ID</th>
+        <th>Client ID</th>
+        <th>Subject</th>
+        <th>Message</th>
+        <th>Submitted</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody id="tbody">
+      <tr><td colspan="7" class="muted">Loading…</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    // Adjust path if needed:
+    import { setLoginRedirect, clearToken, authApi, inquiriesApi } from "/static/_shared/JS/api.js";
+
+    setLoginRedirect("/Frontend/login.html");
+
+    const tbody = document.getElementById("tbody");
+    const q = document.getElementById("q");
+    const count = document.getElementById("count");
+    const refreshBtn = document.getElementById("refresh");
+
+    let IS_ADMIN = false;
+    let RAW = [];
+
+    // Logout
+    document.getElementById("logout").addEventListener("click", (e)=>{
+      e.preventDefault();
+      clearToken();
+      window.location.href = "/Frontend/login.html";
+    });
+
+    const fmtDateTime = (iso) => {
+      if (!iso) return "—";
+      const d = new Date(iso);
+      // yyyy-mm-dd hh:mm
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} `+
+             `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+    };
+
+    const pill = (status) => {
+      const s = (status||"").toLowerCase();
+      const cls = s==="responded" ? "status-responded" : s==="read" ? "status-read" : "status-unread";
+      return `<span class="status-pill ${cls}">${s || "unread"}</span>`;
+    };
+
+    const render = () => {
+      const term = (q.value || "").trim().toLowerCase();
+      const filtered = term
+        ? RAW.filter(r => (r.subject||"").toLowerCase().includes(term) || (r.message||"").toLowerCase().includes(term))
+        : RAW;
+
+      count.textContent = filtered.length ? `${filtered.length} inquiries` : "";
+
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7" class="muted">No inquiries found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      for (const r of filtered) {
+        const actions = IS_ADMIN ? `
+          <div class="actions">
+            <button class="btn-chip btn-read" data-act="read" data-id="${r.inquiry_id}">
+              <i class="fa-solid fa-envelope-open-text"></i> Mark Read
+            </button>
+            <button class="btn-chip btn-responded" data-act="responded" data-id="${r.inquiry_id}">
+              <i class="fa-solid fa-check"></i> Mark Responded
+            </button>
+          </div>` : `<span class="muted">—</span>`;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.inquiry_id}</td>
+          <td>${r.client_id}</td>
+          <td>${r.subject}</td>
+          <td>${r.message}</td>
+          <td>${fmtDateTime(r.submitted_at)}</td>
+          <td>${pill(r.status)}</td>
+          <td>${actions}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    };
+
+    async function load() {
+      try {
+        const me = await authApi.me();
+        IS_ADMIN = String(me.role || "").toUpperCase() === "ADMIN";
+
+        const items = await inquiriesApi.list({});
+        // Expecting InquiryOut[] with inquiry_id alias in output
+        RAW = Array.isArray(items) ? items : [];
+        render();
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="7" class="muted">Failed to load inquiries.</td></tr>`;
+      }
+    }
+
+    // Respond (status change)
+    tbody.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-act]");
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      const status = btn.dataset.act; // "read" | "responded"
+      if (!IS_ADMIN) return;
+
+      try {
+        btn.disabled = true;
+        await inquiriesApi.respond(id, { status });  // calls PATCH /inquiries/{id}/respond
+        // Update local item
+        const idx = RAW.findIndex(x => x.inquiry_id === id);
+        if (idx >= 0) {
+          RAW[idx] = { ...RAW[idx], status: status.toUpperCase() }; // backend may echo enum in any case; we normalize
+        }
+        render();
+      } catch (err) {
+        console.error(err);
+        alert("Failed to update status.");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    q.addEventListener("input", render);
+    refreshBtn.addEventListener("click", load);
+
+    load();
+  </script>
+</body>
+</html>

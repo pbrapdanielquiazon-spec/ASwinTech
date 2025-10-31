@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Client Feedback</title>
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    :root{
+      --bg:#F7F8FA; --card:#fff; --ink:#0f172a; --muted:#64748b; --stroke:#eef2f6;
+      --shadow:0 10px 28px rgba(16,24,40,.08); --shadow-sm:0 6px 16px rgba(16,24,40,.06);
+      --accent:#0ea5e9; --accent-ink:#075985; --chip:#f1f5f9;
+      --green:#2E7D32; --green2:#1B5E20; --radius:16px;
+    }
+    main.dashboard{flex:1;padding:24px;box-sizing:border-box;background:var(--bg)}
+
+    /* Header */
+    .page-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:0 0 14px}
+    .h-title{margin:0;font-size:28px;font-weight:800;color:var(--ink)}
+    .h-sub{margin:6px 0 0;color:var(--muted)}
+    .legend{display:flex;gap:10px;flex-wrap:wrap}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--chip);
+      border:1px solid #e5e7eb;font-weight:800;font-size:.8rem;color:#0f172a}
+
+    /* Stats row */
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:12px;margin:6px 0 16px}
+    .stat{background:var(--card);border:1px solid var(--stroke);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:14px}
+    .stat-label{color:#334155;font-weight:700;margin-bottom:4px}
+    .stat-value{font-size:22px;font-weight:800;color:var(--ink)}
+
+    /* Card grid replaces table */
+    .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+    .fb-card{background:var(--card);border:1px solid var(--stroke);border-radius:14px;box-shadow:var(--shadow);padding:14px}
+    .fb-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+    .id-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#ecfeff;border:1px solid #bae6fd;color:#075985;font-weight:800}
+    .client-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:#fefce8;border:1px solid #fde68a;color:#854d0e;font-weight:800}
+    .fb-dates{display:flex;gap:10px;color:var(--muted);font-size:.85rem;flex-wrap:wrap}
+    .fb-comment{color:#0f172a;line-height:1.45;white-space:pre-wrap}
+    .fb-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+    .tiny{font-size:.82rem;color:var(--muted)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+    /* Card wrapper */
+    .card-wrap{border:1px solid var(--stroke);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow);padding:14px}
+
+    /* Empty state */
+    .empty{color:var(--muted);text-align:center;padding:20px 8px}
+
+    /* Modal shell (kept for future use) */
+    .modal{display:none;position:fixed;inset:0;background:rgba(2,6,23,.45);z-index:50}
+    .modal-content{background:#fff;margin:5% auto;max-width:680px;width:92%;border-radius:18px;padding:20px 22px;border:1px solid var(--stroke);box-shadow:0 24px 60px rgba(2,6,23,.25)}
+    .close{float:right;font-size:22px;cursor:pointer;color:#6b7280}
+    .close:hover{color:#ef4444}
+
+    @media (max-width:900px){
+      .stats{grid-template-columns:1fr}
+      .page-head{align-items:flex-start;flex-direction:column}
+    }
+
+    .page-head.centered{
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      gap:10px;
+    }
+    .page-head.centered .legend{ justify-content:center }
+    .h-title{ text-align:center }
+
+    .fb-comment{
+      font-size:1.05rem;
+      font-weight:800;
+      color:#0b1b31;
+      line-height:1.5;
+      white-space:pre-wrap;
+      background:linear-gradient(180deg,#ffffff 0%,#f9fbff 100%);
+      border:1px solid var(--stroke);
+      border-left:4px solid var(--green);
+      border-radius:12px;
+      padding:12px 14px;
+      box-shadow:var(--shadow-sm);
+      margin-bottom:10px;
+    }
+    .fb-comment::before{
+      content:"“";
+      font-size:22px;
+      color:#94a3b8;
+      margin-right:6px;
+      vertical-align:top;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar (unchanged) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html" class="active"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <!-- Header -->
+    <div class="page-head centered">
+      <div>
+        <h1 class="h-title">Client Feedback</h1>
+        <p class="h-sub">Review feedback submitted by clients. Clients edit their own in their dashboard.</p>
+      </div>
+      <div class="legend">
+        <span class="chip"><i class="fa-solid fa-hashtag"></i> Feedback ID</span>
+        <span class="chip"><i class="fa-solid fa-user"></i> Client</span>
+        <span class="chip"><i class="fa-regular fa-clock"></i> Dates</span>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <section class="stats">
+      <div class="stat"><div class="stat-label">Total Feedback</div><div class="stat-value" id="statTotal">—</div></div>
+      <div class="stat"><div class="stat-label">This Month</div><div class="stat-value" id="statMTD">—</div></div>
+      <div class="stat"><div class="stat-label">Last Updated</div><div class="stat-value" id="statLast">—</div></div>
+    </section>
+
+    <!-- Cards -->
+    <section class="card-wrap">
+      <div id="cards" class="cards"></div>
+      <div id="empty" class="empty" style="display:none;">No feedback yet.</div>
+    </section>
+  </main>
+
+  <!-- (Optional) Modal kept, not used by default -->
+  <div id="feedbackModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <span class="close" id="modal-close">&times;</span>
+      <h2>Edit Feedback</h2>
+      <!-- form would go here if enabled -->
+    </div>
+  </div>
+
+  <script type="module">
+    import { authApi, feedbackApi } from "../_shared/api.js";
+
+    // Auth gate
+    try { await authApi.me(); } catch { window.location.href = "/Zhomepage/login.html"; }
+
+    // Logout
+    document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "/Zhomepage/login.html";
+    });
+
+    // DOM refs
+    const wrap = document.getElementById("cards");
+    const empty = document.getElementById("empty");
+
+    // Utils
+    const pad = n => (n<10?"0":"")+n;
+    function fmt(iso){
+      if(!iso) return "—";
+      try{
+        const d=new Date(iso);
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      }catch{return iso}
+    }
+    function esc(s=""){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+    function isMTD(iso){
+      if(!iso) return false;
+      const d=new Date(iso), now=new Date();
+      return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+    }
+
+    function renderCards(rows){
+      wrap.innerHTML = "";
+      if(!rows?.length){ empty.style.display=""; return; }
+      empty.style.display="none";
+
+      rows
+        .slice()
+        .sort((a,b)=> new Date(b.updated_at ?? b.submitted_at ?? 0) - new Date(a.updated_at ?? a.submitted_at ?? 0))
+        .forEach(r=>{
+          const card = document.createElement("div");
+          card.className = "fb-card";
+          card.innerHTML = `
+            <div class="fb-comment">${esc(r.comment ?? "(no comment)")}</div>
+
+            <div class="fb-top">
+              <span class="id-chip"><i class="fa-solid fa-hashtag"></i> ${esc(r.id)}</span>
+              <div class="fb-dates">
+                <span title="Submitted" class="tiny"><i class="fa-regular fa-calendar-check"></i> ${esc(fmt(r.submitted_at))}</span>
+                <span title="Last updated" class="tiny"><i class="fa-regular fa-pen-to-square"></i> ${esc(fmt(r.updated_at))}</span>
+              </div>
+            </div>
+
+            <div class="fb-footer">
+              <span class="client-chip"><i class="fa-solid fa-user"></i> Client&nbsp;<span class="mono">#${esc(r.client_id ?? "-")}</span></span>
+              <span class="tiny">Feedback #${esc(r.id)}</span>
+            </div>
+          `;
+          wrap.appendChild(card);
+        });
+    }
+
+
+    // Stats
+    function updateStats(rows){
+      const total = rows.length;
+      const mtd   = rows.filter(r=> isMTD(r.updated_at || r.submitted_at)).length;
+      const last  = rows
+        .slice()
+        .sort((a,b)=> new Date(b.updated_at ?? b.submitted_at ?? 0) - new Date(a.updated_at ?? a.submitted_at ?? 0))[0];
+
+      document.getElementById("statTotal").textContent = total || 0;
+      document.getElementById("statMTD").textContent   = mtd || 0;
+      document.getElementById("statLast").textContent  = last ? fmt(last.updated_at || last.submitted_at) : "—";
+    }
+
+    // Load
+    async function load(){
+      try{
+        const rows = await feedbackApi.list();
+        const mapped = Array.isArray(rows) ? rows.map(r => ({
+          id: r.id ?? r.feedback_id,
+          client_id: r.client_id ?? "-",
+          comment: r.comment ?? r.message ?? "",
+          submitted_at: r.submitted_at ?? r.created_at ?? "",
+          updated_at: r.updated_at ?? r.modified_at ?? r.submitted_at ?? ""
+        })) : [];
+        renderCards(mapped);
+        updateStats(mapped);
+      }catch(err){
+        alert("Failed to load feedback: " + (err?.message || err));
+      }
+    }
+
+    await load();
+  </script>
+</body>
+</html>

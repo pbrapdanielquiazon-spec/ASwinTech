@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Client Dashboard</title>
+  <link rel="stylesheet" href="/Admin/admin.css">
+  <link rel="stylesheet" href="/Client/client.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .btn-primary { background: #43A047; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-primary:hover { background: #2E7D32; }
+    .btn-secondary { background: #29B6F6; color: white; padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn-secondary:hover { background: #0288D1; }
+    .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10; }
+    .modal-content { background:#fff; padding:20px; border-radius:8px; margin:5% auto; width:500px; max-width:90%; position:relative; }
+    .close { float:right; font-size:22px; cursor:pointer; color:#444; }
+    .close:hover { color:red; }
+    .pig-list { display:flex; flex-wrap:wrap; gap:20px; }
+    .pig-card { border:1px solid #ddd; padding:15px; border-radius:8px; text-align:center; width:220px; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+    .pig-card img { border-radius:8px; width:100%; height:140px; object-fit:cover; }
+    .admin-table { width:100%; border-collapse:collapse; margin-top:20px; }
+    .admin-table th, .admin-table td { border:1px solid #ddd; padding:8px; text-align:center; }
+    .admin-table th { background:#f2f2f2; }
+    .success-msg { color:green; font-weight:bold; }
+    @media print {
+    .sidebar, .btn-primary, .btn-secondary, .close, nav, header, footer { display: none !important; }
+    .modal-content { box-shadow: none !important; border: none !important; }
+    }
+    /* --- Inquiries: CARDS-ONLY layout --- */
+.inquiry-cards{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(340px,1fr));
+  gap:18px; margin-top:10px;
+}
+@media (max-width:1100px){ .inquiry-cards{ grid-template-columns:repeat(2,minmax(320px,1fr)); } }
+@media (max-width:720px){  .inquiry-cards{ grid-template-columns:1fr; } }
+
+.inquiry-card{
+  border:2px solid #e5e7eb; /* default; overridden by status below */
+  border-radius:16px; padding:18px; background:#fff;
+  box-shadow:0 8px 24px rgba(16,24,40,.08);
+  display:flex; flex-direction:column; gap:14px; min-height:280px;
+}
+
+/* Top row */
+.ic-top{ display:flex; align-items:center; gap:10px }
+.ic-subject{ font-weight:800; color:#111827; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+
+/* Status badge */
+.inq-badge{
+  background:#ecfdf3; color:#065f46; border:1px solid #bbf7d0;
+  font-size:.78rem; padding:4px 10px; border-radius:999px; font-weight:800; text-transform:capitalize;
+}
+.inq-badge.unread   { background:#eff6ff; color:#1e40af; border-color:#bfdbfe }
+.inq-badge.pending  { background:#fff7ed; color:#92400e; border-color:#fed7aa }
+.inq-badge.responded{ background:#ecfdf5; color:#065f46; border-color:#bbf7d0 }
+
+/* Border by status */
+.inquiry-card[data-status="unread"]   { border-color:#bfdbfe }
+.inquiry-card[data-status="pending"]  { border-color:#fecaa2 }
+.inquiry-card[data-status="responded"]{ border-color:#86efac }
+
+/* Centered emphasis blocks */
+.ic-block{
+  text-align:center; padding:10px 12px; border:1px dashed #e5e7eb; border-radius:12px;
+  background:#fafafa;
+}
+.ic-label{ display:block; font-size:.8rem; color:#6b7280; margin-bottom:6px }
+
+/* Response = main focus (bigger), Message = secondary (big) */
+.ic-response{ font-size:1.05rem; line-height:1.45; color:#0f172a }
+.ic-message { font-size:1rem;   line-height:1.45; color:#1f2937 }
+
+/* Clamp + expand/collapse */
+.clamp-6{ display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:6; overflow:hidden }
+.toggle-more{ margin-top:6px; font-size:.85rem; cursor:pointer; color:#2563eb; display:inline-block }
+
+/* Meta line */
+.ic-meta{ display:flex; flex-wrap:wrap; gap:8px; font-size:.8rem; color:#6b7280; justify-content:center }
+.meta-chip{ background:#f3f4f6; border:1px solid #e5e7eb; padding:2px 8px; border-radius:999px }
+
+
+  </style>
+</head>
+<body>
+
+ <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-client.html"><i class="fa-solid fa-house"></i> Dashboard</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#pigs" onclick="showSection('pigs')"><i class="fa-solid fa-piggy-bank"></i> Available Pigs</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#bookings" onclick="showSection('bookings')" class="active"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#inquiry" onclick="showSection('inquiry')"><i class="fa-solid fa-envelope"></i> Inquiries</a>
+      <a href="feedback-client.html"><i class="fa-solid fa-comment-dots"></i> Feedback</a>
+      <a href="availablepig-bookings-inquiry-receipts-client.html#receipts" onclick="showSection('receipts')"><i class="fa-solid fa-receipt"></i> Receipts</a>
+      <a href="client-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+  
+  <main class="dashboard">
+    <h1>SwineTech Client Dashboard</h1>
+
+    <!-- 🐖 Available Pigs -->
+    <section id="pigs" class="section active">
+      <h2>Available Pigs</h2>
+      <div style="margin: 10px 0;">
+        <label for="saleTypeFilter"><strong>Sale Type:</strong></label>
+        <select id="saleTypeFilter" style="margin-left:8px;">
+          <option value="all">All</option>
+          <option value="market">Market</option>
+          <option value="lechon">Lechon</option>
+        </select>
+      </div>
+      <div class="pig-list" id="pigList">
+        <!-- Pigs loaded dynamically -->
+      </div>
+      <div style="margin-top:20px;">
+        <button class="btn-secondary" onclick="openModal('inquiryModal')"><i class="fa-solid fa-envelope"></i> Inquiry</button>
+      </div>
+    </section>
+    <!-- 🗓 My Bookings -->
+    <section id="bookings" class="section">
+      <h2>My Bookings</h2>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Booking ID</th>
+            <th>Client ID</th>
+            <th>Type</th>
+            <th>Item Details</th>
+            <th>Status</th>
+            <th>Booking Date</th>
+            <th>Approved By</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTable">
+          <tr><td colspan="7">No bookings yet.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+  <!-- 💬 My Inquiries (CARDS ONLY) -->
+  <section id="inquiry" class="section">
+    <h2>My Inquiries</h2>
+    <div id="inquiryCards" class="inquiry-cards"></div>
+    <div id="inquiryEmpty" style="color:#6b7280; margin-top:8px; display:none;">No inquiries yet.</div>
+  </section>
+
+
+    <!-- 🧾 Receipts -->
+  <section id="receipts" class="section">
+    <h2>My Receipts</h2>
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Receipt ID</th>
+          <th>Booking ID</th>
+          <th>Receipt No</th>      <!-- change label from "Receipt Data" -->
+          <th>Generated At</th>
+          <th>Actions</th>         <!-- new -->
+        </tr>
+      </thead>
+      <tbody id="receiptTable">
+        <tr><td colspan="5">No receipts yet.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- RECEIPT VIEW MODAL -->
+  <div id="receiptViewModal" class="modal" aria-hidden="true">
+    <div class="modal-content" style="max-width: 720px;" role="dialog" aria-labelledby="receiptTitle">
+      <span class="close" onclick="closeModal('receiptViewModal')">&times;</span>
+      <div id="receiptPrintArea">
+        <h2 id="receiptTitle" style="text-align:center; margin-bottom: 6px;">OFFICIAL RESERVATION RECEIPT</h2>
+        <div style="text-align:center; margin-bottom: 16px; line-height:1.4;">
+          <div><strong>Ruloma Farms</strong></div>
+          <div>Panggangan, Bohol</div>
+          <div>09151383361</div>
+        </div>
+
+        <hr style="margin:12px 0;">
+
+        <div style="display:flex; justify-content:space-between; gap:10px; margin-bottom:10px;">
+          <div><strong>Receipt No:</strong> <span id="rcptNo">—</span></div>
+          <div><strong>Date:</strong> <span id="rcptDate">—</span></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div><strong>Booking ID:</strong> <span id="rcptBookingId">—</span></div>
+          <div><strong>Client ID:</strong> <span id="rcptClientId">—</span></div>
+          <div><strong>Type:</strong> <span id="rcptType">—</span></div>
+          <div><strong>Status:</strong> <span id="rcptStatus">—</span></div>
+          <div><strong>Booking Date:</strong> <span id="rcptBookingDate">—</span></div>
+          <div><strong>Approved By:</strong> <span id="rcptApprovedBy">—</span></div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <strong>Item Details:</strong>
+          <div id="rcptItemDetails" style="border:1px solid #ddd; border-radius:6px; padding:8px; min-height:48px;">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px;">
+        <button class="btn-secondary" onclick="printReceipt()">Print</button>
+        <button class="btn-primary" onclick="closeModal('receiptViewModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- BOOKING MODAL -->
+  <div id="bookingModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-labelledby="bookingTitle">
+      <span class="close" onclick="closeModal('bookingModal')">&times;</span>
+      <h2 id="bookingTitle">Book Order</h2>
+      <form id="bookingForm" onsubmit="return submitBooking(event)">
+        <div class="form-group">
+          <label for="bookType">Type</label>
+          <select id="bookType" required>
+            <option value="market">Market</option>
+            <option value="lechon">Lechon</option>
+          </select>
+        </div>
+
+                <!-- NEW: Pig ID selection (populated from /available-pigs) -->
+        <div class="form-group">
+          <label for="bookPigId">Pig ID</label>
+          <select id="bookPigId" multiple size="6" required>
+            <!-- options are injected by JS -->
+          </select>
+          <small style="display:block;margin-top:6px;opacity:.8;">
+            Tip: hold <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> to select multiple pigs.
+          </small>
+        </div>
+        <div class="form-group">
+          <label for="bookItem">Item Details</label>
+          <input id="bookItem" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="bookDate">Booking Date</label>
+          <input id="bookDate" type="date" required />
+        </div>
+        <div class="form-group">
+          <label for="bookNotes">Notes (optional)</label>
+          <textarea id="bookNotes" rows="3"></textarea>
+        </div>
+        <button class="btn-primary" type="submit">Submit Booking</button>
+        <p id="bookMsg" style="margin-top:10px"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- INQUIRY MODAL (global/general) -->
+  <div id="inquiryModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-labelledby="inquiryTitle">
+      <span class="close" onclick="closeModal('inquiryModal')">&times;</span>
+      <h2 id="inquiryTitle">Send Inquiry</h2>
+      <form id="inquiryForm" onsubmit="return submitInquiry(event)">
+        <div class="form-group">
+          <label for="inqSubject">Subject</label>
+          <input id="inqSubject" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="inqMessage">Message</label>
+          <textarea id="inqMessage" rows="4" required></textarea>
+        </div>
+        <button class="btn-primary" type="submit">Submit Inquiry</button>
+        <p id="inqMsg" style="margin-top:10px"></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+  /***********************
+   * API wiring (real data)
+   ***********************/
+  const API_BASE = "http://localhost:8000/api"; // adjust if your base differs
+
+  let bookings = [];
+  // Holds last fetched available pigs list for dropdown population
+  let availablePigsCache = [];
+  let inquiries = [];
+  let receipts = [];
+    // prevents duplicate POSTs while a submission is in flight
+  let bookingSubmitting = false;
+
+  // --- Render CARDS only ---
+function renderInquiryCards(){
+  const wrap  = document.getElementById('inquiryCards');
+  const empty = document.getElementById('inquiryEmpty');
+  wrap.innerHTML = '';
+
+  if (!Array.isArray(inquiries) || inquiries.length === 0){
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  wrap.innerHTML = inquiries.map(i => {
+    const status = String(i.status || 'unread').toLowerCase();
+    const subj = escapeHtml(i.subject || '(no subject)');
+    const msg  = escapeHtml(i.message || '(no message)');
+    const resp = escapeHtml(i.response || '(no response yet)');
+
+    return `
+      <div class="inquiry-card" data-status="${status}">
+        <div class="ic-top">
+          <div class="ic-subject" title="${subj}">${subj}</div>
+          <span class="inq-badge ${status}">${status}</span>
+        </div>
+
+        <!-- RESPONSE (main focus) -->
+        <div class="ic-block">
+          <span class="ic-label">Response</span>
+          <div class="ic-response clamp-6" data-clamp="response">${resp}</div>
+          <span class="toggle-more" data-toggle="response">Show more</span>
+        </div>
+
+        <!-- MESSAGE (secondary) -->
+        <div class="ic-block" style="background:#f8fafc;">
+          <span class="ic-label">Inquiry</span>
+          <div class="ic-message clamp-6" data-clamp="message">${msg}</div>
+          <span class="toggle-more" data-toggle="message">Show more</span>
+        </div>
+
+        <!-- Meta -->
+        <div class="ic-meta">
+          <span class="meta-chip">Submitted: ${escapeHtml(i.submitted_at || '-')}</span>
+          ${i.responded_by ? `<span class="meta-chip">Responded By: ${escapeHtml(i.responded_by)}</span>` : ''}
+          ${i.responded_at ? `<span class="meta-chip">Responded At: ${escapeHtml(i.responded_at)}</span>` : ''}
+          <span class="meta-chip">Inquiry #${escapeHtml(i.inquiry_id || '')}</span>
+          <span class="meta-chip">Client #${escapeHtml(i.client_id || '')}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Wire expand/collapse per block
+  wrap.querySelectorAll('.toggle-more').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const block = btn.previousElementSibling; // the text div
+      const isClamped = block.classList.contains('clamp-6');
+      block.classList.toggle('clamp-6', !isClamped);
+      btn.textContent = isClamped ? 'Show less' : 'Show more';
+    });
+  });
+}
+
+
+  function populatePigIdOptions(filterType = null) {
+    const sel = document.getElementById('bookPigId');
+    if (!sel) return;
+
+    // Clear all options
+    sel.innerHTML = "";
+
+    // Build an option list from cache, optionally filtered by sale type
+    const source = (filterType && filterType !== 'all')
+      ? availablePigsCache.filter(i => String(i.sale_type).toLowerCase() === String(filterType).toLowerCase())
+      : availablePigsCache;
+
+    if (!source.length) {
+      const opt = document.createElement('option');
+      opt.disabled = true;
+      opt.textContent = 'No pigs available for this type';
+      sel.appendChild(opt);
+      return;
+    }
+
+    source.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = String(item.pigs_id);
+      opt.textContent = `Pig ${item.pigs_id} – ${item.weight_kg} kg (${item.sale_type})`;
+      sel.appendChild(opt);
+    });
+  }
+  // cache of booking_id -> client_id so we don't re-fetch repeatedly
+  let bookingsMapCache = null;
+
+  async function getBookingsMap() {
+    if (bookingsMapCache) return bookingsMapCache;
+
+    // Admin pages may return all bookings; for a client this may still be scoped.
+    const rows = await authFetch(`${API_BASE}/bookings`).catch(() => []);
+    const map = new Map();
+
+    if (Array.isArray(rows)) {
+      rows.forEach(r => {
+        const bId = String(r.id ?? r.booking_id ?? "");
+        const cId = String(r.client_id ?? "");
+        if (bId) map.set(bId, cId);
+      });
+    }
+
+    bookingsMapCache = map;
+    return map;
+  }
+
+
+
+  async function authFetch(url, opts = {}) {
+    const token = getToken();
+    const headers = Object.assign(
+      { "Content-Type": "application/json" },
+      token ? { Authorization: `Bearer ${token}` } : {}
+    );
+    const res = await fetch(url, { ...opts, headers });
+    if (!res.ok) {
+      const msg = await res.text().catch(() => res.statusText);
+      throw new Error(`HTTP ${res.status}: ${msg}`);
+    }
+    return res.json();
+  }
+
+  async function fetchCurrentUser() {
+    // If you have /api/api/auth/me or similar, use that. Otherwise skip and rely on server to scope /mine routes.
+    try {
+      const me = await authFetch(`${API_BASE}/auth/me`); // <-- change if your auth me route is different
+      return me;
+    } catch {
+      return null;
+    }
+  }
+
+  // --- Bookings ---
+  async function loadBookingsForMe() {
+    try {
+      // 1) Who am I?
+      const me = await authFetch(`${API_BASE}/auth/me`);
+      const myId = String(me.user_id);
+
+      // 2) Get bookings (backend: for client role, this is already scoped to me)
+      const rows = await authFetch(`${API_BASE}/bookings`);
+
+      // 3) If somehow we're staff/admin on this page (or the API returned all), filter by client_id anyway.
+      const filtered = Array.isArray(rows)
+        ? rows.filter(r => r.client_id == null ? true : String(r.client_id) === myId)
+        : [];
+
+      // 4) Map API → table shape expected by updateBookingTable()
+      //    Your table uses: booking_id, client_id, type, item_details, status, booking_date, approved_by
+      bookings = filtered.map(r => ({
+        booking_id: r.id ?? r.booking_id ?? "-",          // API gives 'id'
+        client_id: r.client_id ?? "-",                    // present in your BookingOut
+        type: r.type ?? "-",
+        item_details: r.item_details ?? "",
+        status: r.status ?? "-",
+        booking_date: r.booking_date ?? "",
+        approved_by: r.approved_by ?? "-"                 // API might not return it; show "-" if absent
+      }));
+
+    } catch (e) {
+      console.error("loadBookingsForMe failed:", e);
+      bookings = [];
+    }
+    updateBookingTable();
+  }
+
+
+  // --- Receipts ---
+
+  async function loadReceiptsForMe() {
+    try {
+      // who am I?
+      const me = await authFetch(`${API_BASE}/auth/me`);
+      const myId = String(me.user_id);
+
+      // pull all receipts
+      const raw = await authFetch(`${API_BASE}/receipts`);
+      const list = Array.isArray(raw) ? raw : [];
+
+      // we may need a booking -> client map when client_id is not in receipt_data
+      const bookingMap = await getBookingsMap();
+
+      // normalize + filter to "mine"
+      const mine = [];
+
+      for (let i = 0; i < list.length; i++) {
+        const row = list[i] || {};
+        const rd  = (row && typeof row.receipt_data === "object") ? row.receipt_data : null;
+
+        // Try to determine client_id for this receipt
+        let clientId = null;
+        if (rd && rd.client_id != null) {
+          clientId = String(rd.client_id);
+        } else {
+          const bId = String(row.booking_id ?? rd?.booking_id ?? "");
+          if (bId) clientId = bookingMap.get(bId) || null;
+        }
+
+        // Keep only current user's receipts
+        if (clientId !== myId) continue;
+
+        // Build a unified record for the table and the modal
+        // (handles both single-row and two-row receipt styles)
+        const next = list[i + 1] || {};
+        const nextIsHeader = (!next.receipt_data && (next.id != null || next.receipt_id != null));
+
+        const normalized = {
+          receipt_id: row.id ?? row.receipt_id ?? (nextIsHeader ? (next.id ?? next.receipt_id) : "-"),
+          booking_id: row.booking_id ?? rd?.booking_id ?? "-",
+          receipt_no: rd?.receipt_no ?? row.receipt_no ?? "-",
+          generated_at: rd?.generated_at ?? next.generated_at ?? row.generated_at ?? "",
+          client_id: clientId ?? "-",
+          type: rd?.type ?? row.type ?? "-",
+          item_details: rd?.item_details ?? row.item_details ?? "-",
+          booking_date: rd?.booking_date ?? row.booking_date ?? "-",
+          status: rd?.status ?? row.status ?? "-",
+          approved_by: rd?.approved_by ?? row.approved_by ?? "-"
+        };
+
+        mine.push(normalized);
+
+        // if this receipt used the 2-row style, skip the next header row
+        if (nextIsHeader) i++;
+      }
+
+      receipts = mine;
+    } catch (e) {
+      console.error("loadReceiptsForMe failed:", e);
+      receipts = [];
+    }
+
+    updateReceiptTable();
+  }
+
+  // --- Inquiries ---
+async function loadInquiriesForMe() {
+  try {
+    const rows = await authFetch(`${API_BASE}/inquiries`);
+    inquiries = Array.isArray(rows) ? rows.map(r => ({
+      inquiry_id:  r.inquiry_id ?? r.id ?? '-',
+      client_id:   r.client_id ?? '-',
+      subject:     r.subject ?? '',
+      message:     r.message ?? '',
+      status:      r.status ?? 'unread',
+      submitted_at:r.submitted_at ?? '',
+      responded_by:r.responded_by ?? '-',
+      responded_at:r.responded_at ?? '-',
+      response:    r.response ?? r.response_message ?? ''
+    })) : [];
+  } catch (e) {
+    console.error('loadInquiriesForMe failed:', e);
+    inquiries = [];
+  }
+  renderInquiryCards();
+}
+
+
+
+// Call all loaders
+async function loadAllDataForMe() {
+  await loadBookingsForMe();
+  await loadReceiptsForMe();
+  await loadInquiriesForMe();
+}
+
+
+
+  /***********************
+   * Utility UI helpers
+   ***********************/
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    const el = document.getElementById(id);
+    if(el) el.classList.add('active');
+    // highlight sidebar links (simple)
+    document.querySelectorAll('.sidebar nav a').forEach(a=>a.classList.remove('active'));
+    const links = [...document.querySelectorAll('.sidebar nav a')];
+    const match = links.find(a => (a.getAttribute('onclick')||'').includes(`'${id}'`));
+    if(match) match.classList.add('active');
+  }
+
+  function openModal(id, contextValue) {
+    const modal = document.getElementById(id);
+    if(!modal) return;
+    // prefill some context when opening booking modal
+    if(id === 'bookingModal' && contextValue) {
+      document.getElementById('bookItem').value = contextValue;
+    }
+    modal.style.display = 'block';
+  }
+  function closeModal(id) {
+    const modal = document.getElementById(id);
+    if(modal) modal.style.display = 'none';
+  }
+
+  function formatDatePH(iso) {
+    if (!iso) return "-";
+    try {
+      // "YYYY-MM-DD HH:mm" in Asia/Manila
+      const d = new Date(iso);
+      const parts = d.toLocaleString('en-PH', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: false
+      });
+      // parts like "10/10/2025, 22:12" -> convert to "2025-10-10 22:12"
+      const [mmddyyyy, time] = parts.split(',').map(s => s.trim());
+      const [m, day, y] = mmddyyyy.split('/');
+      const yyyy = y;
+      const mm = m.padStart(2, '0');
+      const dd = day.padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${time}`;
+    } catch {
+      return iso;
+    }
+  }
+
+  function openReceiptModal(receiptId) {
+    const data = receipts.find(x => String(x.receipt_id) === String(receiptId));
+    if (!data) return;
+
+    document.getElementById('rcptNo').textContent           = data.receipt_no || "-";
+    document.getElementById('rcptDate').textContent         = formatDatePH(data.generated_at);
+    document.getElementById('rcptBookingId').textContent    = data.booking_id || "-";
+    document.getElementById('rcptClientId').textContent     = data.client_id || "-";
+    document.getElementById('rcptType').textContent         = data.type || "-";
+    document.getElementById('rcptStatus').textContent       = data.status || "-";
+    document.getElementById('rcptBookingDate').textContent  = data.booking_date || "-";
+    document.getElementById('rcptApprovedBy').textContent   = data.approved_by || "-";
+    document.getElementById('rcptItemDetails').textContent  = data.item_details || "-";
+
+    openModal('receiptViewModal');
+  }
+
+
+  function printReceipt() {
+    const area = document.getElementById('receiptPrintArea');
+    if (!area) return;
+
+    const html = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Receipt</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 18px; color:#111; }
+            .title { text-align:center; color:#2e7d32; font-size:22px; font-weight:700; margin:0 0 8px; }
+            .center { text-align:center; }
+            hr { margin: 12px 0; }
+            .row { display:flex; flex-wrap:wrap; margin:8px 0; }
+            .col { flex:1; min-width:220px; padding-right:18px; }
+            .label { font-weight:600; }
+            .box { border:1px solid #ccc; padding:10px; border-radius:6px; min-height:44px; }
+            @media print { @page { size: A4; margin: 12mm; } }
+          </style>
+        </head>
+        <body>
+          ${area.innerHTML}
+        </body>
+      </html>
+    `;
+
+    const w = window.open('', '_blank', 'noopener,noreferrer,width=800,height=900');
+    if (!w) { alert('Please allow pop-ups to print the receipt.'); return; }
+
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+
+    // Wait until the new document is fully parsed and laid out before printing
+    w.addEventListener('load', () => {
+      setTimeout(() => {
+        w.focus();
+        w.print();
+        // w.close(); // optional—close after printing
+      }, 150); // small delay avoids blank prints in some Chrome builds
+    });
+  }
+
+
+
+
+  // Close modal clicking outside
+  window.addEventListener('click', (e)=>{
+    document.querySelectorAll('.modal').forEach(m=>{
+      if(e.target === m) m.style.display='none';
+    });
+  });
+
+  // --- Logout (token-based) ---
+function getToken() {
+  // Whatever keys you use elsewhere; try all known keys
+  return localStorage.getItem("auth_token") || localStorage.getItem("token") || localStorage.getItem("access_token");
+}
+function clearToken() {
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("access_token");
+}
+
+document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  clearToken();
+  // redirect to your login page (adjust path if different)
+  window.location.href = "/Zhomepage/login.html";
+});
+
+ /***********************
+ * Available Pigs (backend)
+ * Public endpoint: GET /available-pigs?status=available[&sale_type=market|lechon]
+ * Response items include: { id, pigs_id, weight_kg, sale_type, status, created_at, updated_at, listed_by, ... }
+ ***********************/
+
+  async function loadAvailablePigs() {
+    const select = document.getElementById('saleTypeFilter');
+    const saleType = (select?.value || 'all').toLowerCase();
+
+    const url = new URL(`${API_BASE}/available-pigs`);
+    url.searchParams.set('status', 'available');
+    if (saleType !== 'all') url.searchParams.set('sale_type', saleType);
+
+    // Public endpoint (no auth)
+    const res = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+    if (!res.ok) throw new Error(`GET /available-pigs failed: ${res.status}`);
+
+    const list = await res.json(); // array
+    availablePigsCache = Array.isArray(list) ? list : [];
+    renderAvailablePigs(availablePigsCache);
+    populatePigIdOptions(document.getElementById('bookType')?.value || null);
+  }
+
+
+  function renderAvailablePigs(list) {
+    const container = document.getElementById('pigList');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (!Array.isArray(list) || list.length === 0) {
+      container.innerHTML = `<div style="opacity:.8;">No available pigs right now.</div>`;
+      return;
+    }
+
+    list.forEach(item => {
+      const pigsId   = item.pigs_id;
+      const weightKg = item.weight_kg;
+      const saleType = item.sale_type;
+      const status   = item.status;
+      const listedAt = item.created_at || item.listed_at;
+
+      const card = document.createElement('div');
+      card.className = 'pig-card';
+      card.innerHTML = `
+        <img src="/Client/img/pig-placeholder.jpg"
+            alt="Pig ${escapeHtml(pigsId)}"
+            onerror="this.src='https://placehold.co/220x140?text=Pig'">
+        <h4>Pig ${escapeHtml(pigsId)}</h4>
+        <p><strong>Weight:</strong> ${escapeHtml(weightKg)} kg</p>
+        <p><strong>Sale Type:</strong> ${escapeHtml(saleType)}</p>
+        <p><strong>Status:</strong> ${escapeHtml(status)}</p>
+        <p><strong>Listed At:</strong> ${escapeHtml(listedAt)}</p>
+        <div style="margin-top:8px">
+          <button class="btn-primary" onclick="openModal('bookingModal')">Book Order</button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+    document.getElementById('bookType')?.addEventListener('change', (e) => {
+    const t = e.target.value; // "market" | "lechon"
+    populatePigIdOptions(t);
+  });
+
+
+  // Wire the filter dropdown
+  document.getElementById('saleTypeFilter')?.addEventListener('change', () => {
+    // reload from backend (keeps cards and cache in sync)
+    loadAvailablePigs().catch(err => console.error(err));
+
+    // also update the Pig ID dropdown immediately using the filter value
+    const t = document.getElementById('saleTypeFilter').value;
+    populatePigIdOptions(t === 'all' ? null : t);
+  });
+
+
+
+
+    /***********************
+     * Booking logic
+     ***********************/
+    function normalizeBookingType(s) {
+      const t = String(s || '').trim().toLowerCase();
+      if (t === 'market') return 'pig';
+      if (t.includes('pig')) return 'pig';
+      if (t.includes('lechon')) return 'lechon';
+      if (t.includes('service')) return 'service';
+      return t || 'pig';  
+    }
+
+
+    async function submitBooking(e) {
+      e.preventDefault();
+
+      // guard: avoid duplicate submits
+      if (bookingSubmitting) return false;
+      bookingSubmitting = true;
+
+      // disable the submit button while we work
+      const submitBtn = document.querySelector('#bookingForm button[type="submit"]');
+      const originalBtnText = submitBtn ? submitBtn.textContent : null;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting…';
+      }
+
+      try {
+        const uiType    = document.getElementById('bookType').value; // "market" | "lechon"
+        const type    = normalizeBookingType(uiType);              // -> "pig" or "lechon"
+        const pigSel  = document.getElementById('bookPigId');
+        const pigsIds = Array.from(pigSel.selectedOptions).map(o => Number(o.value));
+        const item    = document.getElementById('bookItem').value.trim();
+        const date    = document.getElementById('bookDate').value;
+        const notes   = document.getElementById('bookNotes').value.trim();
+
+        // validations
+        if (!type || !pigsIds.length || !item || !date) {
+          setBookingMessage('Please pick at least one Pig ID and fill all required fields.', true);
+          return false;
+        }
+        const today = new Date();
+        const sel   = new Date(date + 'T00:00:00');
+        if (sel < new Date(today.toDateString())) {
+          setBookingMessage('Booking date cannot be in the past', true);
+          return false;
+        }
+
+        // Build payload for POST /bookings (no status field)
+        const payload = {
+          type, // "market" | "lechon"
+          item_details: notes ? `${item} - ${notes}` : item,
+          booking_date: date,
+          pigs_ids: pigsIds
+        };
+
+        await authFetch(`${API_BASE}/bookings`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        // SHOW the success message while the modal is still open
+        setBookingMessage('Booking submitted. Waiting for admin approval.', false);
+
+        // small delay so the user can actually read it, then close + reset
+        setTimeout(() => {
+          document.getElementById('bookingForm').reset();
+          closeModal('bookingModal');
+          // clear the message in case the modal opens again
+          setBookingMessage('', false);
+        }, 900);
+
+        // Refresh the "My Bookings" table
+        await loadBookingsForMe();
+
+        return true;
+      } catch (err) {
+        console.error(err);
+        setBookingMessage(`Failed to submit booking. ${err.message || 'Please try again.'}`, true);
+        return false;
+      } finally {
+        // re-enable button and clear the in-flight flag
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText;
+        }
+        bookingSubmitting = false;
+      }
+    }
+
+
+
+  function setBookingMessage(msg, isError){
+    const p = document.getElementById('bookMsg');
+    p.textContent = msg;
+    p.className = isError ? 'error' : 'success-msg';
+    if(!isError) setTimeout(()=>{ p.textContent = ''; }, 3000);
+  }
+
+  function updateBookingTable(){
+    const tbody = document.getElementById('bookingTable');
+    tbody.innerHTML = '';
+    if(bookings.length === 0){
+      tbody.innerHTML = "<tr><td colspan='7'>No bookings yet.</td></tr>";
+      return;
+    }
+    bookings.forEach(b=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${b.booking_id}</td>
+        <td>${b.client_id}</td>
+        <td>${escapeHtml(b.type)}</td>
+        <td>${escapeHtml(b.item_details)}</td>
+        <td>${escapeHtml(b.status)}</td>
+        <td>${escapeHtml(b.booking_date)}</td>
+        <td>${escapeHtml(b.approved_by)}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  /***********************
+   * Inquiry logic
+   ***********************/
+  async function submitInquiry(e) {
+    e.preventDefault();
+
+    const subject = document.getElementById('inqSubject').value.trim();
+    const message = document.getElementById('inqMessage').value.trim();
+
+    if (!subject || !message) {
+      setInquiryMessage('Please complete all fields', true);
+      return false;
+    }
+
+    try {
+      // POST /inquiries (no status in body; backend infers client_id & sets status=unread)
+      const created = await authFetch(`${API_BASE}/inquiries`, {
+        method: 'POST',
+        body: JSON.stringify({ subject, message })
+      });
+
+      setInquiryMessage('Inquiry submitted.', false);
+      document.getElementById('inquiryForm').reset();
+      closeModal('inquiryModal');
+
+      // Refresh table from backend to stay in sync
+      await loadInquiriesForMe();
+
+      return true;
+    } catch (err) {
+      console.error('submitInquiry failed:', err);
+      setInquiryMessage('Failed to submit inquiry. Please try again.', true);
+      return false;
+    }
+  }
+
+  function setInquiryMessage(msg, isError){
+    const p = document.getElementById('inqMsg');
+    p.textContent = msg;
+    p.className = isError ? 'error' : 'success-msg';
+    if(!isError) setTimeout(()=>{ p.textContent = ''; }, 3000);
+  }
+
+  function updateInquiryTable(){
+    const tbody = document.getElementById('inquiryTable');
+    tbody.innerHTML = '';
+    if(inquiries.length === 0){
+      tbody.innerHTML = "<tr><td colspan='8'>No inquiries yet.</td></tr>";
+      return;
+    }
+    inquiries.forEach(i=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i.inquiry_id}</td>
+        <td>${i.client_id}</td>
+        <td>${escapeHtml(i.subject)}</td>
+        <td>${escapeHtml(i.message)}</td>
+        <td>${escapeHtml(i.status)}</td>
+        <td>${escapeHtml(i.submitted_at)}</td>
+        <td>${escapeHtml(i.responded_by)}</td>
+        <td>${escapeHtml(i.responded_at)}</td>
+        <td>${escapeHtml(i.response ?? '')}</td> 
+        `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  
+  /***********************
+   * Receipts logic
+   ***********************/
+  function updateReceiptTable() {
+    const tbody = document.getElementById('receiptTable');
+    tbody.innerHTML = '';
+    if (!receipts.length) {
+      tbody.innerHTML = "<tr><td colspan='5'>No receipts yet.</td></tr>";
+      return;
+    }
+
+    receipts.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.receipt_id}</td>
+        <td>${r.booking_id}</td>
+        <td>${escapeHtml(r.receipt_no || '-')}</td>
+        <td>${escapeHtml(formatDatePH(r.generated_at || ''))}</td>
+        <td><button class="btn-secondary" onclick="openReceiptModal('${r.receipt_id}')">View</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+
+  function generateReceiptForBooking(booking){
+    const r = {
+      receipt_id: receiptCounter++,
+      booking_id: booking.booking_id,
+      receipt_data: `Receipt for booking ${booking.booking_id} - ${booking.item_details}`,
+      generated_at: new Date().toLocaleString()
+    };
+    receipts.push(r);
+    updateReceiptTable();
+  }
+
+  /***********************
+   * Simulated admin decision: approve / decline
+   ***********************/
+  function simulateAdminDecision(kind, id){
+    // small random delay then approve/decline
+    setTimeout(()=>{
+      const approve = Math.random() > 0.3; // 70% approve chance
+      if(kind === 'booking'){
+        const b = bookings.find(x=>x.booking_id === id);
+        if(!b) return;
+        if(approve){
+          b.status = 'Confirmed';
+          b.approved_by = 'Admin-01';
+          generateReceiptForBooking(b);
+          alert(`✅ Booking #${b.booking_id} confirmed. Receipt generated.`);
+        } else {
+          b.status = 'Declined';
+          b.approved_by = 'Admin-01';
+          alert(`❌ Booking #${b.booking_id} declined.`);
+        }
+        updateBookingTable();
+      } else if(kind === 'inquiry'){
+        const q = inquiries.find(x=>x.inquiry_id === id);
+        if(!q) return;
+        if(approve){
+          q.status = 'Responded';
+          q.responded_by = 'Admin-01';
+          q.responded_at = new Date().toLocaleString();
+          alert(`✅ Inquiry #${q.inquiry_id} responded to.`);
+        } else {
+          q.status = 'Declined';
+          q.responded_by = 'Admin-01';
+          q.responded_at = new Date().toLocaleString();
+          alert(`❌ Inquiry #${q.inquiry_id} declined.`);
+        }
+        updateInquiryTable();
+        if (window.rebuildInquiryCards) window.rebuildInquiryCards();
+
+      }
+    }, 2000 + Math.random()*2000);
+  }
+
+  /***********************
+   * Small safe escaping helpers
+   ***********************/
+  function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  // Used when embedding value into inline onclick string to avoid breaking quotes
+  function escapeJs(s){ return (''+s).replaceAll("'", "\\'").replaceAll('"','\\"'); }
+
+
+  /***********************
+ * Hash-aware section router
+ ***********************/
+  function routeByHash() {
+    const hash = (location.hash || "#pigs").replace("#", "");
+    // Valid section ids in this page:
+    const valid = new Set(["pigs", "bookings", "inquiry", "receipts"]);
+    showSection(valid.has(hash) ? hash : "pigs");
+  }
+
+  // When user navigates via hash (e.g., clicking sidebar or external link)
+  window.addEventListener("hashchange", routeByHash);
+
+
+
+
+  /***********************
+   * Initialize page
+   ***********************/
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    routeByHash();
+    await loadAvailablePigs().catch(err => console.error(err)); // <- fetch & render real listings
+    await loadBookingsForMe();
+    await loadInquiriesForMe?.();
+    await loadReceiptsForMe?.();
+  });
+
+
+
+
+
+  </script>
+</body>
+</html>

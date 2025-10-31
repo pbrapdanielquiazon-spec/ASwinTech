@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Manage Pig Records</title>
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* ========== Tabs ========== */
+    .tabs{margin:20px 0;display:flex;flex-wrap:wrap;gap:8px}
+    .tab-btn{background:#f3f4f6;border:1px solid #e5e7eb;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600;color:#374151}
+    .tab-btn.active{background:#1a7f37;color:#fff;border-color:#1a7f37}
+
+    /* ========== Carded table wrapper ========== */
+    .table-wrap{
+      background:#fff;border-radius:16px;border:1px solid #eef2f6;
+      box-shadow:0 10px 24px rgba(16,24,40,.06);overflow:hidden;margin-top:12px
+    }
+
+    /* ========== Modern table ========== */
+    .admin-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+    .admin-table thead th{
+      position:sticky;top:0;z-index:1;background:#f8fafb;color:#374151;font-weight:700;
+      padding:12px 14px;border-bottom:1px solid #e6ebf0;text-align:left;letter-spacing:.02em
+    }
+    .admin-table tbody td{padding:12px 14px;border-bottom:1px solid #eef2f6;color:#1f2937}
+    .admin-table tbody tr:nth-child(even) td{background:#fbfdfe}
+    .admin-table tbody tr:hover td{background:#f3f7fb}
+
+    /* Empty state row */
+    .table-empty{padding:22px;text-align:center;color:#6b7280}
+
+    /* ========== Buttons (keep your class names) ========== */
+    .btn-add,.btn-edit,.btn-archive,.btn-restore{
+      padding:7px 12px;border-radius:10px;border:1px solid transparent;cursor:pointer;font-weight:600
+    }
+    .btn-add{background:#e8f5ff;color:#0b6bcb;border-color:#cde8ff}
+    .btn-edit{background:#fff3d6;color:#a36200;border-color:#ffe3a3}
+    .btn-archive{background:#ffe5e5;color:#b42318;border-color:#ffc9c9}
+    .btn-restore{background:#e8f7ee;color:#1e7b4f;border-color:#c3ecd7}
+
+    /* ========== Pills / badges ========== */
+    .chip{
+      display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;
+      background:#eef2ff;color:#2730c2;font-weight:700;font-size:12px;border:1px solid #dfe4ff
+    }
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+      font-size:12px;font-weight:800;border:1px solid transparent
+    }
+    .badge .dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+    .badge--ok{color:#166534;background:#e9f7ef;border-color:#bfead4}
+    .badge--warn{color:#92400e;background:#fff4e5;border-color:#ffe6bf}
+    .badge--danger{color:#991b1b;background:#fee2e2;border-color:#ffc7c7}
+    .badge--muted{color:#475569;background:#f1f5f9;border-color:#e2e8f0}
+
+    /* ========== Modals (keep structure) ========== */
+    .modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50}
+    .modal-content{background:#fff;margin:5% auto;max-width:680px;width:92%;border-radius:16px;padding:20px 22px;
+      box-shadow:0 20px 40px rgba(16,24,40,.25);border:1px solid #eef2f6}
+    .close{float:right;font-size:22px;cursor:pointer;color:#6b7280}
+    .close:hover{color:#ef4444}
+
+    /* ========== Forms ========== */
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;margin-bottom:6px;font-weight:600;color:#374151}
+    .form-group input,.form-group select,.form-group textarea{
+      width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;outline:none
+    }
+    .form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+      border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.15)
+    }
+    .btn-auth{background:#1a7f37;color:#fff;border:none;padding:10px;border-radius:12px;cursor:pointer;font-weight:700}
+    .btn-auth:hover{background:#15652c}
+
+    /* ========== Filters row ========== */
+    .filter-box{display:flex;align-items:center;gap:10px;margin:10px 0}
+    .filter-box select{padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb}
+
+    /* ========== Responsive collapse ========== */
+    @media (max-width: 880px){
+      .admin-table thead{display:none}
+      .admin-table,.admin-table tbody,.admin-table tr,.admin-table td{display:block;width:100%}
+      .admin-table tr{background:#fff;border:1px solid #eef2f6;border-radius:12px;margin:10px 0;padding:10px}
+      .admin-table td{border:0;padding:8px 4px}
+      .admin-table td::before{content:attr(data-label);display:block;font-size:12px;color:#6b7280;margin-bottom:2px;text-transform:uppercase}
+      .table-wrap{box-shadow:none;border:0;background:transparent}
+    }
+
+    /* --- Mini toast badge --- */
+    #toastHolder{position:fixed;right:12px;top:12px;z-index:9999;display:grid;gap:8px}
+    .toast-pill{
+      background:#065f46;color:#fff;border:1px solid #99f6e4;
+      padding:8px 12px;border-radius:999px;font-weight:800;
+      box-shadow:0 10px 24px rgba(2,6,23,.15)
+    }
+
+  </style>
+
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-caretaker.html"><i class="fa-solid fa-clipboard-list"></i> User Dashboard</a>
+      <a href="caretaker-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="caretaker-manage-pig-records.html" class="active" ><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="caretaker-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedules</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Manage Pig Records</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('litter')">🐖 Litter Records</button>
+      <button class="tab-btn" onclick="showView('individual')">🐷 Individual Pigs</button>
+      <button class="tab-btn" onclick="showView('health')">❤️ Health Records</button>
+      <button class="tab-btn" onclick="showView('breeding')">🧬 Breeding Records</button>
+      <button class="tab-btn" onclick="showView('available')">🐽 Available Pigs</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Records</button>
+    </div>
+
+    <!-- LITTERS -->
+    <section id="litter" class="record-view active">
+      <h2>Litter Records</h2>
+      <button type="button" class="btn-add" onclick="openModal('addLitterModal')">+ Add New Litter</button>
+      <div class="table-wrap">  
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Litter ID</th><th>Sow Identifier</th><th>Birth Date</th><th>Litter Size</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="litterTable"></tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- PIGS -->
+    <section id="individual" class="record-view">
+      <h2>Individual Pig Records</h2>
+      <button type="button" class="btn-add" onclick="openModal('addPigModal')">+ Add New Pig</button>
+      <div class="table-wrap">  
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Pigs ID</th><th>Litter ID</th><th>Sow Identifier</th><th>Birth Date</th><th>Status</th><th>Notes</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="pigTable"></tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- HEALTH -->
+    <section id="health" class="record-view">
+      <h2>Pig Health Records</h2>
+      <button type="button" class="btn-add" onclick="openModal('addHealthModal')">+ Add Health Record</button>
+      <div class="table-wrap">  
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Health Record ID</th><th>Pig ID</th><th>Diagnosis</th><th>Treatment</th><th>Recorded At</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="healthTable"></tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- BREEDING (placeholder until endpoints exist) -->
+    <section id="breeding" class="record-view">
+      <h2>Breeding Records</h2>
+      <button type="button" class="btn-add" onclick="openModal('addBreedingModal')">+ Add Breeding Record</button>
+      <div class="table-wrap">  
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Sow Identifier</th>
+            <th>Status</th>
+            <th>Mating Date</th>
+            <th>Expected Birth</th>
+            <th>Last Birth Date</th>
+            <th>Caretaker ID</th>
+            <th>Overdue?</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="breedingTable"></tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- AVAILABLE PIGS -->
+    <section id="available" class="record-view">
+      <h2>Available Pigs</h2>
+
+      <div class="filter-box">
+        <label for="availableFilter">Filter:</label>
+        <select id="availableFilter">
+          <option value="available" selected>Available</option>
+          <option value="reserved">Reserved</option>
+          <option value="sold">Sold</option>
+          <option value="all">All</option>
+        </select>
+        <button type="button" class="btn-add" style="margin-left:10px" onclick="openModal('addAvailableModal')">+ Add Available Pig</button>
+      </div>
+
+      <div class="table-wrap">  
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Available Pigs ID</th>
+            <th>Pigs ID</th>
+            <th>Weight kg</th>
+            <th>Sale Type</th>
+            <th>Status</th>
+            <th>Created At</th>
+            <th>Updated At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="availableTable"></tbody>
+      </table>
+      </div>
+    </section>
+
+    <!-- ARCHIVED UI (client-side display only) -->
+    <section id="archived" class="record-view">
+      <h2>Archived Records</h2>
+      <div class="filter-box">
+        <label>Show:</label>
+        <select id="archiveFilter" onchange="filterArchived()">
+          <option value="all">All</option>
+          <option value="litter">Litter</option>
+          <option value="pig">Pig</option>
+          <option value="health">Health</option>
+          <option value="breeding">Breeding</option>
+        </select>
+      </div>
+
+      <div class="archived-section" data-type="litter">
+        <h3>🐖 Archived Litter</h3>
+        <div class="table-wrap">  
+        <table class="admin-table">
+          <thead><tr><th>Litter ID</th><th>Sow Identifier</th><th>Birth Date</th><th>Size</th><th>Actions</th></tr></thead>
+          <tbody id="archivedLitter"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="archived-section" data-type="pig">
+        <h3>🐷 Archived Pigs</h3>
+        <div class="table-wrap">  
+        <table class="admin-table">
+          <thead><tr><th>Pigs ID</th><th>Litter ID</th><th>Sow Identifier</th><th>Birth Date</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+          <tbody id="archivedPig"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="archived-section" data-type="health">
+        <h3>❤️ Archived Health</h3>
+        <div class="table-wrap">  
+        <table class="admin-table">
+          <thead><tr><th>Health Record ID</th><th>Pig ID</th><th>Diagnosis</th><th>Treatment</th><th>Recorded At</th><th>Actions</th></tr></thead>
+          <tbody id="archivedHealth"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="archived-section" data-type="breeding">
+        <h3>🧬 Archived Breeding</h3>
+        <div class="table-wrap">  
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Sow Identifier</th>
+              <th>Status</th>
+              <th>Mating Date</th>
+              <th>Expected Birth</th>
+              <th>Last Birth Date</th>
+              <th>Caretaker ID</th>
+              <th>Overdue?</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="archivedBreeding"></tbody>
+        </table>
+        </div>
+      </div>
+
+
+      <div class="archived-section" data-type="available">
+        <h3>🐽 Archived Available Pigs</h3>
+        <div class="table-wrap">  
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Available Pigs ID</th>
+              <th>Pigs ID</th>
+              <th>Weight kg</th>
+              <th>Sale Type</th>
+              <th>Status</th>
+              <th>Created At</th>
+              <th>Updated At</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="archivedAvailable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODALS -->
+  <!-- Add/Edit Litter -->
+  <div id="addLitterModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addLitterModal')">&times;</span>
+    <h2>Add Litter</h2>
+    <form onsubmit="return addRecord(event,'litter')">
+      <div class="form-group">
+        <label>Sow Identifier</label>
+        <select id="litterSow" required>
+          <option value="" disabled selected>Loading…</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Birth Date</label><input type="date" id="litterBirth" required></div>
+      <div class="form-group"><label>Litter Size</label><input type="number" id="litterSize" min="0" required></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editLitterModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editLitterModal')">&times;</span>
+    <h2>Edit Litter</h2>
+    <form onsubmit="return updateRecord(event,'litter')">
+      <div class="form-group">
+        <label>Sow Identifier</label>
+        <select id="editLitterSow" required>
+          <option value="" disabled selected>Loading…</option>
+        </select>
+      </div>
+
+      <div class="form-group"><label>Birth Date</label><input type="date" id="editLitterBirth" required></div>
+      <div class="form-group"><label>Litter Size</label><input type="number" id="editLitterSize" min="0" required></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+<!-- Add Pig (no manual sow input) -->
+<div id="addPigModal" class="modal"><div class="modal-content">
+  <span class="close" onclick="closeModal('addPigModal')">&times;</span>
+  <h2>Add Pig</h2>
+  <form onsubmit="return addRecord(event,'pig')">
+    <div class="form-group">
+      <label>Litter</label>
+      <select id="pigLitterSelect" required>
+        <option value="" disabled selected>Loading litters…</option>
+      </select>
+    </div>
+    <div class="form-group">
+  <label>Birth Date</label>
+    <div id="pigBirthText" style="padding:10px 12px;border:1px dashed #e5e7eb;border-radius:10px;background:#fafafa">
+        (auto from litter)
+      </div>
+    </div>
+
+    <div class="form-group"><label>Status</label>
+      <select id="pigStatus">
+        <option value="healthy">Healthy</option>
+        <option value="sick">Sick</option>
+        <option value="sold">Sold</option>
+        <option value="deceased">Deceased</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="pigNotes"></textarea></div>
+    <button type="submit" class="btn-auth">Save</button>
+  </form>
+</div></div>
+
+
+<!-- Edit Pig (status + notes only) -->
+<div id="editPigModal" class="modal"><div class="modal-content">
+  <span class="close" onclick="closeModal('editPigModal')">&times;</span>
+  <h2>Edit Pig</h2>
+  <form onsubmit="return updateRecord(event,'pig')">
+    <div class="form-group"><label>Status</label>
+      <select id="editPigStatus">
+        <option value="healthy">Healthy</option>
+        <option value="sick">Sick</option>
+        <option value="sold">Sold</option>
+        <option value="deceased">Deceased</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Notes</label><textarea id="editPigNotes"></textarea></div>
+    <button type="submit" class="btn-auth">Update</button>
+  </form>
+</div></div>
+
+
+
+<!-- ADD AVAILABLE PIG -->
+<div id="addAvailableModal" class="modal"><div class="modal-content">
+  <span class="close" onclick="closeModal('addAvailableModal')">&times;</span>
+  <h2>Add Available Pig</h2>
+  <form id="addAvailableForm">
+    <div class="form-group">
+      <label>Pigs ID</label>
+      <select id="avPigId" required></select>
+    </div>
+    <div class="form-group">
+      <label>Weight (kg)</label>
+      <input type="number" id="avWeight" min="0.01" step="0.01" required />
+    </div>
+    <div class="form-group">
+      <label>Sale Type</label>
+      <select id="avSaleType" required>
+        <option value="market">market</option>
+        <option value="lechon">lechon</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="avNotes"></textarea>
+    </div>
+    <button class="btn-auth" type="submit">Save</button>
+  </form>
+</div></div>
+
+<!-- EDIT AVAILABLE PIG -->
+<div id="editAvailableModal" class="modal"><div class="modal-content">
+  <span class="close" onclick="closeModal('editAvailableModal')">&times;</span>
+  <h2>Edit Available Pig</h2>
+  <form id="editAvailableForm">
+    <div class="form-group">
+      <label>Weight (kg)</label>
+      <input type="number" id="editAvWeight" min="0.01" step="0.01" required />
+    </div>
+    <div class="form-group">
+      <label>Sale Type</label>
+      <select id="editAvSaleType" required>
+        <option value="market">market</option>
+        <option value="lechon">lechon</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Notes (optional)</label>
+      <textarea id="editAvNotes"></textarea>
+    </div>
+    <button class="btn-auth" type="submit">Update</button>
+  </form>
+</div></div>
+
+
+  <!-- Add/Edit Health -->
+  <div id="addHealthModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addHealthModal')">&times;</span>
+    <h2>Add Health</h2>
+    <form onsubmit="return addRecord(event,'health')">
+      <div class="form-group"><label>Pig ID</label><input type="number" id="healthPig" required></div>
+      <div class="form-group"><label>Diagnosis</label><input type="text" id="healthDiagnosis" required></div>
+      <div class="form-group"><label>Treatment</label><input type="text" id="healthTreatment"></div>
+      <div class="form-group"><label>Recorded At</label><input type="date" id="healthDate"></div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <div id="editHealthModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editHealthModal')">&times;</span>
+    <h2>Edit Health</h2>
+    <form onsubmit="return updateRecord(event,'health')">
+      <div class="form-group"><label>Pig ID</label><input type="number" id="editHealthPig" required></div>
+      <div class="form-group"><label>Diagnosis</label><input type="text" id="editHealthDiagnosis" required></div>
+      <div class="form-group"><label>Treatment</label><input type="text" id="editHealthTreatment"></div>
+      <div class="form-group"><label>Recorded At</label><input type="date" id="editHealthDate"></div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+  <!-- Add/Edit Breeding -->
+  <!-- CREATE SOW -->
+  <div id="addBreedingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addBreedingModal')">&times;</span>
+    <h2>Create Sow</h2>
+    <form id="createSowForm" onsubmit="return addRecord(event,'breeding')">
+      <div class="form-group"><label>Sow Identifier</label>
+        <input type="text" id="sowCreate_identifier" required />
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="sowCreate_status" required>
+          <option value="nonpregnant">nonpregnant</option>
+          <option value="pregnant">pregnant</option>
+          <option value="miscarriage">miscarriage</option>
+          <option value="gave_birth">gave_birth</option>
+          <option value="nursing">nursing</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Mating Date (optional)</label>
+        <input type="date" id="sowCreate_mating_date" />
+      </div>
+      <button type="submit" class="btn-auth">Save</button>
+    </form>
+  </div></div>
+
+  <!-- Confirm Add Pig -->
+<div id="addPigConfirmModal" class="modal"><div class="modal-content">
+  <h3>Are you sure? Once submitted, you cannot change the Litter ID.</h3>
+  <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn-archive" onclick="cancelAddPigConfirm()">Cancel</button>
+    <button class="btn-auth" onclick="confirmAddPig()">Confirm</button>
+  </div>
+</div></div>
+
+
+
+  <!-- EDIT SOW -->
+  <div id="editBreedingModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editBreedingModal')">&times;</span>
+    <h2>Edit Sow</h2>
+    <form id="editSowForm">
+      <div class="form-group"><label>Sow Identifier</label>
+        <input type="text" id="sowEdit_identifier" required />
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="sowEdit_status" required>
+          <option value="nonpregnant">nonpregnant</option>
+          <option value="pregnant">pregnant</option>
+          <option value="miscarriage">miscarriage</option>
+          <option value="gave_birth">gave_birth</option>
+          <option value="nursing">nursing</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Mating Date (optional)</label>
+        <input type="date" id="sowEdit_mating_date" />
+      </div>
+      <button type="submit" class="btn-auth">Update</button>
+    </form>
+  </div></div>
+
+
+  <!-- Archive/Success/Error -->
+  <div id="archiveModal" class="modal"><div class="modal-content">
+    <h3>⚠️ Are you sure you want to archive this record?</h3>
+    <button onclick="archiveYes()">Yes, Archive</button>
+    <button onclick="archiveNo()">Cancel</button>
+  </div></div>
+
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3>✅ Saved!</h3>
+    <button onclick="closeModal('successModal')">OK</button>
+  </div></div>
+
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3>❌ Invalid Input!</h3>
+    <button onclick="closeModal('errorModal')">OK</button>
+  </div></div>
+
+  <!-- Logic -->
+  <script type="module">
+import { authApi, getToken, clearToken, littersApi, pigsApi, healthApi, availApi } from "/_shared/api.js";
+/* ===== Small JSON helper (Bearer) for Sows only ===== */
+  async function sreq(path, { method="GET", body=null, params=null } = {}) {
+    const API_BASE = "http://localhost:8000/api/api";                           // your app already mounted APIs at /api/...
+    const url = new URL(API_BASE + path, window.location.origin);
+    if (params) {
+      Object.entries(params).forEach(([k,v])=>{
+        if (v==null) return;
+        Array.isArray(v) ? v.forEach(x=>url.searchParams.append(k,x))
+                        : url.searchParams.append(k,v);
+      });
+    }
+    const headers = { Accept: "application/json" };
+    const token = getToken?.();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    if (body !== null) { headers["Content-Type"] = "application/json"; body = JSON.stringify(body); }
+
+    const res = await fetch(url, { method, headers, body });
+    const text = await res.text();
+    const isJson = (res.headers.get("content-type")||"").includes("application/json");
+    if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+    return isJson ? JSON.parse(text) : text;
+  }
+
+  const sowsApi = {
+    list:   (q)           => sreq("/sows", { params: q }),
+    create: (data)        => sreq("/sows", { method:"POST", body:data }),
+    get:    (id)          => sreq(`/sows/${id}`),
+    update: (id, data)    => sreq(`/sows/${id}`, { method:"PUT", body:data }),
+  };
+
+  // ---- Sow list cache + helpers ----
+let _sowsCache = null;
+
+async function getSowsOnce() {
+  if (_sowsCache) return _sowsCache;
+  try {
+    _sowsCache = await sowsApi.list();          // GET /api/sows
+  } catch (e) {
+    _sowsCache = [];
+    console.error("Failed to load sows:", e);
+  }
+  return _sowsCache;
+}
+// Cache litters once per page load
+let _littersCache = null;
+async function getLittersOnce() {
+  if (_littersCache) return _littersCache;
+  const rows = await littersApi.list();
+  _littersCache = Array.isArray(rows) ? rows : [];
+  return _littersCache;
+}
+/** Return litter.birth_date (YYYY-MM-DD) for a litter_id, or "" if not found. */
+async function getLitterBirthDate(litter_id){
+  const list = await getLittersOnce();
+  const hit = list.find(l => Number(l.litter_id ?? l.id) === Number(litter_id));
+  if (!hit) return "";
+  // normalize to YYYY-MM-DD
+  const iso = String(hit.birth_date || "");
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  try { return new Date(iso).toISOString().slice(0,10); } catch { return ""; }
+}
+
+/** Update the visible birth-date text element for a given select + target div */
+async function reflectBirthFromSelect(selectEl, targetDivId){
+  const val = selectEl?.value;
+  const out = document.getElementById(targetDivId);
+  if (!out) return;
+  if (!val){
+    out.textContent = "(auto from litter)";
+    return;
+  }
+  const d = await getLitterBirthDate(Number(val));
+  out.textContent = d || "(auto from litter)";
+}
+
+let _pendingAddPigPayload = null;
+
+function openAddPigConfirm(payload){
+  _pendingAddPigPayload = payload;
+  openModal("addPigConfirmModal");
+}
+function cancelAddPigConfirm(){
+  _pendingAddPigPayload = null;
+  closeModal("addPigConfirmModal");
+}
+async function confirmAddPig(){
+  try{
+    if (!_pendingAddPigPayload) return closeModal("addPigConfirmModal");
+
+    const { litterId, status, notes } = _pendingAddPigPayload;
+
+    // capacity guard (kept as requested)
+    await ensureLitterCapacity(litterId, 1);
+
+    // derive from litter (as before)
+    const birth = await getLitterBirthDate(litterId);
+    if (!birth) { cancelAddPigConfirm(); return openModal("errorModal"); }
+    const sow_identifier = await getSowFromLitter(litterId);
+
+    const payload = { litter_id: litterId, sow_identifier, birth_date: birth, status, notes };
+
+    const created = await pigsApi.create(payload);
+
+    // refresh table + close modals
+    if (typeof loadAll === "function") await loadAll();
+    document.getElementById("addPigModal") && closeModal("addPigModal");
+    closeModal("addPigConfirmModal");
+    openModal("successModal");
+  } catch (err){
+    console.error("Add Pig failed:", err);
+    closeModal("addPigConfirmModal");
+    openModal("errorModal");
+  } finally {
+    _pendingAddPigPayload = null;
+  }
+}
+
+// make confirm modal handlers callable from inline onclick=""
+window.openAddPigConfirm   = openAddPigConfirm;
+window.cancelAddPigConfirm = cancelAddPigConfirm;
+window.confirmAddPig       = confirmAddPig;
+
+/**
+ * Fill a <select> with litters.
+ * option.value = litter_id
+ * option.label = "litter_id — sow_identifier"
+ * preselectId: number|string litter_id to pre-select
+ */
+async function buildLitterSelect(selectEl, preselectId = null) {
+  if (!selectEl) return;
+  selectEl.innerHTML = `<option value="" disabled selected>Loading litters…</option>`;
+  const list = await getLittersOnce();
+  if (!list.length) {
+    selectEl.innerHTML = `<option value="" disabled selected>No litters found</option>`;
+    return;
+  }
+  const options = list
+    .map(l => {
+      const id = Number(l.litter_id ?? l.id);
+      const sow = l.sow_identifier ?? l.sow_tag ?? "";
+      return `<option value="${id}">${id} — ${sow}</option>`;
+    })
+    .join("");
+  selectEl.innerHTML = `<option value="" disabled ${preselectId?"" :"selected"}>Select litter…</option>${options}`;
+  if (preselectId != null) selectEl.value = String(preselectId);
+}
+
+/** Given a litter_id, return its sow_identifier (assumed always present). */
+async function getSowFromLitter(litter_id) {
+  const list = await getLittersOnce();
+  const hit = list.find(l => Number(l.litter_id ?? l.id) === Number(litter_id));
+  return hit?.sow_identifier ?? hit?.sow_tag ?? "";
+}
+
+
+/**
+ * Populate a <select> with sow options.
+ * value = numeric sow_id, label = sow_identifier.
+ * If preselect is provided (id or identifier string), it will be selected.
+ */
+async function populateSowSelect(selectEl, { preselect } = {}) {
+  if (!selectEl) return;
+  selectEl.innerHTML = `<option disabled selected>Loading...</option>`;
+
+  const list = await getSowsOnce();
+
+  selectEl.innerHTML =
+   `<option value="" disabled>Select sow…</option>` +
+   list
+     .map(s => {
+       const label = s.sow_identifier ?? s.identifier ?? s.tag ?? "";
+       return label ? `<option value="${label}">${label}</option>` : "";
+     })
+     .join("");
+
+   if (preselect != null && preselect !== "") {
+    // we store the identifier string as the <option> value
+    selectEl.value = String(preselect);
+    }
+  }
+
+
+
+  // Build Sow Identifier options for the "Add Litter" modal
+  async function buildSowOptionsForLitter() {
+    const sel = document.getElementById("litterSow");
+    if (!sel) return;
+
+    // show a single loading placeholder
+    sel.innerHTML = `<option value="" disabled selected>Loading…</option>`;
+
+    try {
+      const rows = await sowsApi.list(); // GET /sows
+      const list = Array.isArray(rows) ? rows : (rows?.data ?? rows?.items ?? []);
+
+      if (!list || list.length === 0) {
+        sel.innerHTML = `<option value="" disabled selected>No sows found</option>`;
+        return;
+      }
+
+      sel.innerHTML =
+        `<option value="" disabled selected>Select sow…</option>` +
+        list
+          .map(s => {
+            const id = s.sow_identifier || s.identifier || s.tag || "";
+            return id ? `<option value="${id}">${id}</option>` : "";
+          })
+          .join("");
+    } catch (err) {
+      console.error("Failed to load sows:", err);
+      sel.innerHTML = `<option value="" disabled selected>Failed to load sows</option>`;
+    }
+  }
+
+  /* ------- SOW DROPDOWNS (used by Add/Edit Litter) ------- */
+  async function buildSowOptions(selectEl, preselect = "") {
+    try {
+      const sows = await sowsApi.list();
+      const opts = (sows || [])
+        .map(s => String(s.sow_identifier || "").trim())
+        .filter(Boolean)
+        .sort((a,b) => a.localeCompare(b));
+
+      selectEl.innerHTML =
+        `<option value="" disabled ${preselect ? "" : "selected"}>Select Sow Identifier</option>` +
+        opts.map(v => `<option value="${v}" ${v===preselect?"selected":""}>${v}</option>`).join("");
+    } catch {
+      selectEl.innerHTML = `<option value="" disabled selected>Failed to load sows</option>`;
+    }
+  }
+
+  /* Open litter modals with fresh sow list */
+  const _openModalOrig = window.openModal;
+  window.openModal = (id) => {
+    if (id === "addLitterModal") {
+      buildSowOptions(document.getElementById("litterSow"));
+    }
+    if (id === "editLitterModal" && window._editRow) {
+      const current = window._editRow?.children?.[1]?.innerText?.trim() || "";
+      buildSowOptions(document.getElementById("editLitterSow"), current);
+    }
+    _openModalOrig(id);
+  };
+
+  
+
+/* ---------------- Auth guards ---------------- */
+async function requireRoles(allowed = []) {
+  const token = getToken();
+  if (!token) { window.location.href = "/Zhomepage/login.html"; throw new Error("No token"); }
+
+  let me;
+  try { me = await authApi.me(); }
+  catch (e) { clearToken(); window.location.href = "/Zhomepage/login.html"; throw e; }
+
+  if (allowed.length) {
+    const role = String(me.role?.value || me.role || "").toUpperCase();
+    const ok = allowed.map(r => String(r).toUpperCase()).includes(role);
+    if (!ok) {
+      alert("You do not have access to this page.");
+      window.location.href = "/Frontend/dashboard-admin.html";
+      throw new Error("Forbidden");
+    }
+  }
+  return me;
+}
+function logout(){ clearToken(); window.location.href = "/Zhomepage/login.html"; }
+
+/* ---------------- Utils ---------------- */
+const $ = (id) => document.getElementById(id);
+const toISO = (d) => d ? new Date(d).toISOString() : null;
+const fromISO = (iso) => {
+  if (!iso) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;
+  try { return new Date(iso).toISOString().slice(0, 10); } catch { return ""; }
+};
+
+  /* ------- LITTER CAPACITY GUARD ------- */
+  async function getLitterById(litter_id) {
+    const litters = await littersApi.list();
+    return (litters || []).find(l => Number(l.litter_id ?? l.id) === Number(litter_id)) || null;
+  }
+
+  async function countPigsInLitter(litter_id) {
+    const pigs = await pigsApi.list();
+    return (pigs || []).filter(p => Number(p.litter_id) === Number(litter_id)).length;
+  }
+
+  /** Ensure adding +delta pigs won’t exceed litter_size. Throws Error if not allowed. */
+  async function ensureLitterCapacity(litter_id, delta = 1) {
+    const litter = await getLitterById(litter_id);
+    if (!litter) throw new Error(`Litter ${litter_id} not found`);
+    const size = Number(litter.litter_size ?? 0);
+    const current = await countPigsInLitter(litter_id);
+    if (current + delta > size) {
+      throw new Error(
+        `Litter ${litter_id} has size ${size}. ` +
+        `You already have ${current} individual pig(s). This would exceed the limit.`
+      );
+    }
+  }
+
+
+/* ---------------- Tabs & Modals ---------------- */
+// Tabs & Modals — define ONCE, not wrapped, not redefined later
+window.showView = (id) => {
+  // switch visible section
+  document.querySelectorAll(".record-view").forEach(s => s.classList.remove("active"));
+  document.getElementById(id)?.classList.add("active");
+
+  // highlight tab button
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector(`.tab-btn[onclick="showView('${id}')"]`)?.classList.add("active");
+
+  // tab-specific refreshes
+  if (id === "available") {
+    const status = document.getElementById("availableFilter")?.value || "available";
+    loadAvailable(status);
+  }
+  if (id === "litter") {
+    // (optional) reload litters if you want
+    // loadLitters();
+  }
+  if (id === "individual") {
+    // load pigs, etc., if you want
+    flushPigArchiveNotices();
+  }
+  if (id === "health") {
+    // load health, etc., if you want
+  }
+  if (id === "breeding") {
+    loadSows();
+  }
+};
+
+window.openModal  = (id) => $(id).style.display = "block";
+window.closeModal = (id) => $(id).style.display = "none";
+window.filterArchived = () => {
+  const v = $("archiveFilter").value;
+  document.querySelectorAll(".archived-section").forEach(sec => {
+    const t = sec.getAttribute("data-type");
+    sec.style.display = (v==="all" || v===t) ? "" : "none";
+  });
+};
+
+/* ---------------- DOM refs ---------------- */
+const litterTable  = $("litterTable");
+const pigTable     = $("pigTable");
+const healthTable  = $("healthTable");
+const availableT   = $("availableTable");
+const breedingTable = $("breedingTable"); 
+
+const archivedLitter     = $("archivedLitter");
+const archivedPig        = $("archivedPig");
+const archivedHealth     = $("archivedHealth");
+const archivedAvailable  = $("archivedAvailable");
+
+
+const availableFilter = $("availableFilter");
+
+function showError(msg) {
+  // keep it quiet if you want; console only
+  console.error(msg);
+  // or show a toast/modal if you prefer:
+  // alert(typeof msg === "string" ? msg : JSON.stringify(msg));
+}
+
+/* ------------ Toast badge + archive notice queue ------------ */
+function toastBadge(msg){
+  let holder = document.getElementById("toastHolder");
+  if (!holder){
+    holder = document.createElement("div");
+    holder.id = "toastHolder";
+    document.body.appendChild(holder);
+  }
+  const n = document.createElement("div");
+  n.className = "toast-pill";
+  n.textContent = msg;
+  holder.appendChild(n);
+  setTimeout(()=> n.remove(), 4000);
+}
+
+// Keep a session-only queue of pig IDs that were auto-archived
+const ARCHIVE_QUEUE_KEY = "archived_pigs_notice_queue";
+function _getArchiveQueue(){
+  try { return JSON.parse(sessionStorage.getItem(ARCHIVE_QUEUE_KEY) || "[]"); } catch { return []; }
+}
+function _setArchiveQueue(arr){
+  sessionStorage.setItem(ARCHIVE_QUEUE_KEY, JSON.stringify(arr || []));
+}
+function queuePigArchiveNotice(pigId){
+  const arr = _getArchiveQueue();
+  if (!arr.includes(String(pigId))) { arr.push(String(pigId)); _setArchiveQueue(arr); }
+}
+function flushPigArchiveNotices(){
+  const arr = _getArchiveQueue();
+  if (!arr.length) return;
+  arr.forEach(id => toastBadge(`Pig ${id} archived (sold)`));
+  _setArchiveQueue([]); // consume once
+}
+
+function prettySowIdentifier(val) {
+  const s = (_sowsCache || []).find(x =>
+    String(x.sow_id ?? x.id) === String(val)
+  );
+  return s ? (s.sow_identifier ?? val) : val;
+}
+
+
+/* ---------------- Row factories ---------------- */
+const tr = (html) => { const el = document.createElement("tr"); el.innerHTML = html; return el; };
+/* --------- UI helpers (badges/pills) --------- */
+function chip(value){
+  if(!value) return "";
+  return `<span class="chip">${String(value)}</span>`;
+}
+function statusBadge(value){
+  const v = String(value||"").toLowerCase();
+  const cls =
+    v.match(/^(healthy|available|pregnant|nursing|gave_birth)$/) ? "badge--ok" :
+    v.match(/^(reserved|sick|nonpregnant)$/)                     ? "badge--warn" :
+    v.match(/^(deceased|miscarriage)$/)                          ? "badge--danger" :
+                                                                   "badge--muted";
+  return `<span class="badge ${cls}"><span class="dot"></span>${v.toUpperCase()}</span>`;
+}
+
+function renderLitterRow(r) {
+  const id    = r.litter_id ?? r.id;
+  const sowRaw = r.sow_identifier ?? r.sow_tag ?? r.sow_id ?? "";
+  const sow    = prettySowIdentifier(sowRaw);
+  const birth = fromISO?.(r.birth_date) ?? r.birth_date ?? "";
+  const size  = r.litter_size ?? r.size ?? "";
+  const row = tr(`
+    <td data-label="Litter ID">${id}</td>
+    <td data-label="Sow Identifier">${sow}</td>
+    <td data-label="Birth Date">${birth}</td>
+    <td data-label="Litter Size">${size}</td>
+    <td data-label="Actions">
+      <button class="btn-edit"    data-action="edit"    data-type="litter">Edit</button>
+      <button class="btn-archive" data-action="archive" data-type="litter">Archive</button>
+    </td>
+  `);
+  row.dataset.id = id;
+  return row;
+}
+
+function renderSowRow(r) {
+  const id   = r.sow_id ?? r.id;
+  const fmt  = (v) => (v ? fromISO(v) : "");
+  const overdue = r.is_overdue ? "Yes" : "No";
+  const row  = document.createElement("tr");
+  row.dataset.id = id;
+
+  row.innerHTML = `
+    <td data-label="Sow ID">${id}</td>
+    <td data-label="Identifier">${r.sow_identifier ?? ""}</td>
+    <td data-label="Status">${statusBadge(r.status ?? "")}</td>
+    <td data-label="Mating Date">${fmt(r.mating_date)}</td>
+    <td data-label="Expected Birth">${fmt(r.expected_birth)}</td>
+    <td data-label="Last Birth">${fmt(r.last_birth_date)}</td>
+    <td data-label="Caretaker">${r.caretaker_id ?? ""}</td>
+    <td data-label="Overdue?">${overdue}</td>
+    <td data-label="Actions">
+      <button class="btn-edit" data-action="edit" data-type="breeding">Edit</button>
+      <button class="btn-archive" data-action="archive" data-type="breeding">Archive</button>
+    </td>
+  `;
+  return row;
+}
+
+
+function renderPigRow(r) {
+  const pigId  = r.pig_id ?? r.pigs_id ?? r.id;
+  const litter = r.litter_id ?? "";
+  const sow    = r.sow_identifier ?? r.sow_tag ?? "";
+  const birth  = fromISO(r.birth_date);
+  const status = r.status ?? "";
+  const notes  = r.notes ?? "";
+  const row = tr(`
+    <td data-label="Pig ID">${pigId}</td>
+    <td data-label="Litter ID">${litter}</td>
+    <td data-label="Sow">${sow}</td>
+    <td data-label="Birth Date">${birth}</td>
+    <td data-label="Status">${statusBadge(status)}</td>
+    <td data-label="Notes">${notes}</td>
+    <td data-label="Actions">
+      <button class="btn-edit"    data-action="edit"    data-type="pig">Edit</button>
+      <button class="btn-archive" data-action="archive" data-type="pig">Archive</button>
+    </td>
+  `);
+  row.dataset.id = pigId;
+  return row;
+}
+
+
+function renderHealthRow(r) {
+  const id = r.health_record_id ?? r.id ?? "";
+  const pigId = r.pig_id ?? r.pigs_id ?? "";
+  const row = tr(`
+    <td data-label="Record ID">${id}</td>
+    <td data-label="Pig ID">${pigId}</td>
+    <td data-label="Diagnosis">${r.diagnosis ?? ""}</td>
+    <td data-label="Treatment">${r.treatment ?? ""}</td>
+    <td data-label="Recorded At">${fromISO(r.recorded_at)}</td>
+    <td data-label="Actions">
+      <button class="btn-edit"    data-action="edit"    data-type="health">Edit</button>
+      <button class="btn-archive" data-action="archive" data-type="health">Archive</button>
+    </td>
+  `);
+  row.dataset.id = id;
+  return row;
+}
+
+
+/* ===== Available Pigs: renderer & loader ===== */
+function availableRow(r) {
+  const saleType = r.sale_type ?? "-";
+  const status   = r.status ?? "-";
+  const row = tr(`
+    <td data-label="Avail ID">${r.id ?? "-"}</td>
+    <td data-label="Pig ID">${r.pigs_id ?? "-"}</td>
+    <td data-label="Weight (kg)">${r.weight_kg ?? "-"}</td>
+    <td data-label="Sale Type">${chip(saleType)}</td>
+    <td data-label="Status">${statusBadge(status)}</td>
+    <td data-label="Created">${(r.created_at ?? "").toString().slice(0,19).replace("T"," ")}</td>
+    <td data-label="Updated">${(r.updated_at ?? "").toString().slice(0,19).replace("T"," ")}</td>
+    <td data-label="Actions">
+      <button class="btn-edit"    data-action="edit"    data-type="available">Edit</button>
+      <button class="btn-archive" data-action="archive" data-type="available">Archive</button>
+    </td>
+  `);
+  row.dataset.id = r.id ?? "";
+  return row;
+}
+
+
+async function loadSows() {
+  if (!breedingTable) return;
+  breedingTable.innerHTML = "";
+  const rows = await sowsApi.list();                   // GET /api/sows
+  (rows || []).forEach(s => breedingTable.appendChild(renderSowRow(s)));
+}
+
+
+async function loadAvailable(status = "available") {
+  if (!availableT) return;
+  availableT.innerHTML = "";
+
+  // normalize from UI ("All", "Available", etc.) to lowercase tokens
+  const normalized = String(status || "available").toLowerCase();
+
+  // Build params for GET /available-pigs
+  // If your backend accepts "all", pass it; otherwise omit status completely.
+  const params = normalized === "all" ? { status: "all" } : { status: normalized };
+
+  try {
+    const rows = await availApi.list(params); // GET /available-pigs?status=...
+    if (!rows || rows.length === 0) {
+      availableT.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#777;">No records</td></tr>`;
+      return;
+    }
+    rows.forEach(r => availableT.appendChild(availableRow(r)));
+  } catch (e) {
+    showError("Load available pigs failed: " + (e?.message ?? e));
+  }
+   await sweepSoldAvailableToArchive();
+}
+
+availableFilter?.addEventListener("change", () => {
+  loadAvailable(availableFilter.value || "available");
+});
+
+/* Build dropdown for Add Available Pig */
+async function buildAvailablePigOptions() {
+  const sel = $("avPigId");
+  if (!sel) return;
+
+  sel.innerHTML = `<option value="" disabled selected>Loading...</option>`;
+
+  const [allPigs, listings] = await Promise.all([
+    pigsApi.list(),
+    availApi.list({ status: "all" })
+  ]);
+
+  const excluded = new Set(
+    (listings || [])
+      .filter(x => x.status !== "removed") // keep removed selectable
+      .map(x => String(x.pigs_id))
+  );
+
+  const choices = (allPigs || [])
+    .map(p => p.pig_id ?? p.pigs_id ?? p.id)
+    .filter(id => id != null && !excluded.has(String(id)));
+
+  sel.innerHTML = `<option value="" disabled selected>Select Pigs ID</option>` +
+    choices.map(id => `<option value="${id}">${id}</option>`).join("");
+}
+
+/* Open Add: build choices each time */
+// Extend existing openModal wrapper if you already wrapped it; otherwise wrap fresh:
+window.openModal = ((orig) => async (id) => {
+  if (id === "addAvailableModal") buildAvailablePigOptions();
+  if (id === "addLitterModal") {
+    const sel = document.getElementById("litterSow");
+    populateSowSelect(sel); // already in your code
+  }
+
+  // NEW: build litter selects for Pig modals
+    if (id === "addPigModal") {
+      const sel = document.getElementById("pigLitterSelect");
+      await buildLitterSelect(sel);
+      await reflectBirthFromSelect(sel, "pigBirthText");
+      sel?.addEventListener("change", () => reflectBirthFromSelect(sel, "pigBirthText"));
+    }
+
+  return orig(id);
+})(window.openModal);
+
+
+
+/* Add & Edit submit handlers (Available) */
+$("addAvailableForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const payload = {
+    pigs_id:  Number($("avPigId").value),
+    weight_kg: Number($("avWeight").value),
+    sale_type: $("avSaleType").value,
+    notes:     ($("avNotes").value || undefined)
+  };
+  if (!payload.pigs_id || !payload.weight_kg) return openModal("errorModal");
+  await availApi.create(payload);
+  closeModal("addAvailableModal");
+  await loadAvailable(availableFilter?.value || "available");
+});
+
+let _editAvailId = null;
+function openEditAvailable(row) {
+  _editAvailId = row?.dataset?.id;
+  if (!_editAvailId) return;
+  $("editAvWeight").value   = row.cells[2].innerText.replace(/,/g,"");
+  $("editAvSaleType").value = row.cells[3].innerText.trim();
+  $("editAvNotes").value    = "";
+  openModal("editAvailableModal");
+}
+$("editAvailableForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!_editAvailId) return closeModal("editAvailableModal");
+  const body = {
+    weight_kg: Number($("editAvWeight").value),
+    sale_type: $("editAvSaleType").value,
+    notes:     ($("editAvNotes").value || undefined)
+  };
+  await availApi.update(_editAvailId, body);
+  closeModal("editAvailableModal");
+  _editAvailId = null;
+  await loadAvailable(availableFilter?.value || "available");
+});
+
+/* ---------------- Load all (other tabs) ---------------- */
+async function loadAll() {
+  // Litters
+  litterTable.innerHTML = "";
+  const litters = await littersApi.list();
+  (litters || []).forEach(l => litterTable.appendChild(renderLitterRow(l)));
+
+  // Pigs
+  pigTable.innerHTML = "";
+
+  const pigs = await pigsApi.list();
+  const archivedPigIds = new Set(getArchived("pig").map(o => String(o._id)));
+
+  for (const p of (pigs || [])) {
+    const pid = String(p.pig_id ?? p.pigs_id ?? p.id);
+
+    // If already archived client-side, do not render in live table
+    if (archivedPigIds.has(pid)) continue;
+
+    // If backend pig status is sold, auto-archive (idempotent) and skip rendering
+    if (String(p.status || "").toLowerCase() === "sold") {
+      await archivePigById(pid);   // your helper already guards against dupes
+      continue;
+    }
+
+    pigTable.appendChild(renderPigRow(p));
+  }
+
+
+  // Health
+  healthTable.innerHTML = "";
+  const hs = await healthApi.listPigRecords();
+  (hs || []).forEach(h => healthTable.appendChild(renderHealthRow(h)));
+}
+
+/* ---------------- Delegated click actions ---------------- */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+
+  const action = btn.dataset.action;    // edit | archive | restore
+  const type   = btn.dataset.type;      // litter | pig | health | available
+  const row    = btn.closest("tr");
+
+  if (action === "edit" && type === "available") return openEditAvailable(row);
+  if (action === "edit" && type === "breeding") return openEditSow(row);
+  if (action === "edit")    return openEdit(type, row);
+  if (action === "archive") return openArchive(row, type);
+  if (action === "restore") return restoreRecord(row, type);
+});
+
+/* ---------------- Generic edit openers (other tabs) ---------------- */
+function openEdit(type, row) {
+  window._editRow = row; window._editType = type;
+  const c = row.cells;
+
+  if (type === "litter") {
+    (async () => {
+      const c = row.cells;
+
+      // Read current table values
+      const currentSowLabel = c[1].innerText;   // this is the label you’re displaying in the table now
+      const birth           = c[2].innerText;
+      const size            = c[3].innerText;
+
+      // Populate the select and preselect the current sow by label (or id if your table shows id)
+      const sel = document.getElementById("editLitterSow");
+      await populateSowSelect(sel, { preselect: currentSowLabel });
+
+      // Fill the other fields
+      document.getElementById("editLitterBirth").value = birth;
+      document.getElementById("editLitterSize").value  = size;
+
+      // Open after everything is ready so the user doesn’t see “Loading…”
+      openModal("editLitterModal");
+    })();
+    return;
+  }
+
+if (type === "pig") {
+  const c = row.cells;
+
+  // Let the modal’s open handler rebuild the litter dropdown.
+  // We only set status & notes here.
+  const statusRaw = (c[4].innerText || "").trim().toLowerCase();
+  const status = ["healthy","sick","sold","deceased"]
+                   .find(s => statusRaw.includes(s)) || "healthy";
+  document.getElementById("editPigStatus").value = status;
+  document.getElementById("editPigNotes").value  = c[5].innerText;
+
+  // DO NOT touch editPigBirth (no such input). The birth text is derived from litter.
+  openModal("editPigModal");
+}
+
+
+  if (type === "health") {
+    $("editHealthPig").value        = c[1].innerText;
+    $("editHealthDiagnosis").value  = c[2].innerText;
+    $("editHealthTreatment").value  = c[3].innerText;
+    $("editHealthDate").value       = c[4].innerText;
+    openModal("editHealthModal");
+  }
+  }
+  function openEditSow(row) {
+    const c = row.children;
+    document.getElementById("sowEdit_identifier").value = c[1].innerText;
+    document.getElementById("sowEdit_status").value     = (c[2].innerText || "").toLowerCase();
+    document.getElementById("sowEdit_mating_date").value= c[3].innerText || "";
+    window._editRow = row; window._editType = "breeding";
+    openModal("editBreedingModal");
+  }
+
+
+/* ---------------- Generic Update (other tabs) ---------------- */
+window.updateRecord = async (e, type) => {
+  e.preventDefault();
+  const row = window._editRow; if (!row) return false;
+  const id = row.dataset.id;
+
+  try {
+    if (type === "litter") {
+      const payload = {
+        sow_identifier: $("editLitterSow").value.trim(),
+        birth_date:     $("editLitterBirth").value,
+        litter_size:    Number($("editLitterSize").value || 0)
+      };
+      const updated = await littersApi.update(id, payload);
+      row.replaceWith(renderLitterRow(updated));
+      closeModal("editLitterModal"); openModal("successModal");
+    }
+
+    if (type === "pig") {
+      const row = window._editRow;
+      const id = row.dataset.id;
+
+      const status = document.getElementById("editPigStatus").value.toLowerCase();
+      const notes  = (document.getElementById("editPigNotes").value || "").trim() || null;
+
+      // server only accepts status + notes
+      await pigsApi.update(id, { status, notes });
+
+      // refresh the whole pigs list to reflect derived/normalized fields
+      if (typeof loadAll === "function") await loadAll();
+
+      closeModal("editPigModal");
+      openModal("successModal");
+      return false;
+    }
+
+
+
+    if (type === "health") {
+      const payload = {
+        pig_id:       Number($("editHealthPig").value),
+        diagnosis:    $("editHealthDiagnosis").value.trim(),
+        treatment:    $("editHealthTreatment").value.trim() || null,
+        recorded_at:  $("editHealthDate").value ? toISO($("editHealthDate").value) : null
+      };
+      const updated = await healthApi.updatePigRecord(id, payload);
+      row.replaceWith(renderHealthRow(updated));
+      closeModal("editHealthModal"); openModal("successModal");
+    }
+  } catch (err) {
+    alert("Update failed: " + err.message);
+  }
+  return false;
+};
+
+/* ---------------- Front-end Archive (localStorage) ---------------- */
+/* ---------------- Create (Add) for each tab ---------------- */
+window.addRecord = async (e, type) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  try {
+    if (type === "litter") {
+      const payload = {
+        sow_identifier: $("litterSow").value.trim(),
+        birth_date: $("litterBirth").value,
+        litter_size: Number($("litterSize").value || 0)
+      };
+      if (!payload.sow_identifier || !payload.birth_date) return openModal("errorModal");
+
+      const created = await littersApi.create(payload);
+      litterTable.appendChild(renderLitterRow(created));
+      closeModal("addLitterModal");
+      openModal("successModal");
+      return false;
+    }
+
+    if (type === "pig") {
+      const litterId = Number(document.getElementById("pigLitterSelect").value);
+      const status   = document.getElementById("pigStatus").value;
+      const notes    = (document.getElementById("pigNotes").value || "").trim() || null;
+
+      if (!litterId) return openModal("errorModal");
+
+      // Don’t create yet — show confirm first
+      openAddPigConfirm({ litterId, status, notes });
+      return false;
+    }
+
+
+
+    if (type === "health") {
+      const payload = {
+        pig_id: Number($("healthPig").value),
+        diagnosis: $("healthDiagnosis").value.trim(),
+        treatment: $("healthTreatment").value.trim() || null,
+        recorded_at: $("healthDate").value ? toISO($("healthDate").value) : null
+      };
+      if (!payload.pig_id || !payload.diagnosis) return openModal("errorModal");
+
+      const created = await healthApi.createPigRecord(payload);
+      healthTable.appendChild(renderHealthRow(created));
+      closeModal("addHealthModal");
+      openModal("successModal");
+      return false;
+    }
+
+    if (type === "breeding") {
+      // Create Sow
+      const payload = {
+        sow_identifier: document.getElementById("sowCreate_identifier").value.trim(),
+        status: document.getElementById("sowCreate_status").value,
+        // optional
+        mating_date: document.getElementById("sowCreate_mating_date").value || null,
+      };
+      if (!payload.sow_identifier || !payload.status) return openModal("errorModal");
+
+      const created = await sowsApi.create(payload);
+      breedingTable.appendChild(renderSowRow(created));
+      closeModal("addBreedingModal");
+      openModal("successModal");
+      return false;
+    }
+
+  } catch (err) {
+    console.error("Add failed:", err);
+    openModal("errorModal");
+  }
+  return false;
+};
+
+  document.getElementById("editSowForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const row = window._editRow; if (!row) return;
+    const id = row.dataset.id;
+
+    const payload = {
+      sow_identifier: document.getElementById("sowEdit_identifier").value.trim(),
+      status: document.getElementById("sowEdit_status").value,
+      mating_date: document.getElementById("sowEdit_mating_date").value || null,
+    };
+
+    const updated = await sowsApi.update(id, payload);
+    row.replaceWith(renderSowRow(updated));
+    closeModal("editBreedingModal");
+    openModal("successModal");
+  });
+
+
+const ARCHIVE_KEYS = {
+  litter: "arch_litters",
+  pig: "arch_pigs",
+  health: "arch_health",
+  available: "arch_available",
+  breeding: "arch_breeding"
+};
+
+
+function getArchived(kind){
+  try { const raw = localStorage.getItem(ARCHIVE_KEYS[kind]); const arr = JSON.parse(raw || "[]"); return Array.isArray(arr) ? arr : []; }
+  catch { return []; }
+}
+function setArchived(kind, rows){ localStorage.setItem(ARCHIVE_KEYS[kind], JSON.stringify(Array.isArray(rows) ? rows : [])); }
+
+function rowToObj(kind, tr) {
+  const c = tr.cells;
+  if (kind === "litter")  return { _id:c[0].innerText.trim(), litter_id:c[0].innerText.trim(), sow_identifier:c[1].innerText.trim(), birth_date:c[2].innerText.trim(), litter_size:c[3].innerText.trim() };
+  if (kind === "pig")     return { _id:c[0].innerText.trim(), id:c[0].innerText.trim(), litter_id:c[1].innerText.trim(), sow_identifier:c[2].innerText.trim(), birth_date:c[3].innerText.trim(), status:c[4].innerText.trim(), notes:c[5].innerText.trim() };
+  if (kind === "available") return { _id:c[0].innerText.trim(), id:c[0].innerText.trim(), pigs_id:c[1].innerText.trim(), weight_kg:c[2].innerText.trim(), sale_type:c[3].innerText.trim(), status:c[4].innerText.trim(), created_at:c[5].innerText.trim(), updated_at:c[6].innerText.trim() };
+  if (kind === "breeding") {
+    // live breeding columns: 0 id, 1 sow_identifier, 2 status, 3 mating_date,
+    // 4 expected_birth, 5 last_birth_date, 6 caretaker_id, 7 overdue, 8 actions
+    const overTxt = (c[7]?.innerText || "").trim().toLowerCase();
+    return {
+      _id: c[0].innerText.trim(),
+      sow_id: c[0].innerText.trim(),
+      sow_identifier: c[1].innerText.trim(),
+      status: c[2].innerText.trim(),
+      mating_date: c[3].innerText.trim(),
+      expected_birth: c[4].innerText.trim(),
+      last_birth_date: c[5].innerText.trim(),
+      caretaker_id: c[6].innerText.trim(),
+      is_overdue: overTxt === "yes"
+    };
+  }
+
+  // health
+  return { _id:c[0].innerText.trim(), health_record_id:c[0].innerText.trim(), pig_id:c[1].innerText.trim(), diagnosis:c[2].innerText.trim(), treatment:c[3].innerText.trim(), recorded_at:c[4].innerText.trim() };
+}
+
+function objToRow(kind, obj, { live }){
+  const el = document.createElement("tr");
+  if (kind === "litter") {
+    const sow = obj.sow_identifier ?? obj.sow_id ?? obj.sow_tag ?? "";
+    el.innerHTML = live ? `
+      <td>${obj.litter_id}</td><td>${sow}</td><td>${obj.birth_date||""}</td><td>${obj.litter_size||""}</td>
+      <td><button class="btn-edit" data-action="edit" data-type="litter">Edit</button>
+          <button class="btn-archive" data-action="archive" data-type="litter">Archive</button></td>`
+    : `
+      <td>${obj.litter_id}</td><td>${sow}</td><td>${obj.birth_date||""}</td><td>${obj.litter_size||""}</td>
+      <td><button class="btn-restore" data-action="restore" data-type="litter">Restore</button></td>`;
+    return el;
+  }
+  if (kind === "pig") {
+    el.innerHTML = live ? `
+      <td>${obj.id}</td><td>${obj.litter_id||""}</td><td>${obj.sow_identifier||""}</td><td>${obj.birth_date||""}</td><td>${obj.status||""}</td><td>${obj.notes||""}</td>
+      <td><button class="btn-edit" data-action="edit" data-type="pig">Edit</button>
+          <button class="btn-archive" data-action="archive" data-type="pig">Archive</button></td>`
+    : `
+      <td>${obj.id}</td><td>${obj.litter_id||""}</td><td>${obj.sow_identifier||""}</td><td>${obj.birth_date||""}</td><td>${obj.status||""}</td><td>${obj.notes||""}</td>
+      <td><button class="btn-restore" data-action="restore" data-type="pig">Restore</button></td>`;
+    return el;
+  }
+  if (kind === "available") {
+    const content = `
+      <td>${obj.id}</td><td>${obj.pigs_id ?? ""}</td><td>${Number(obj.weight_kg ?? 0).toFixed(2)}</td>
+      <td>${obj.sale_type ?? ""}</td><td>${obj.status ?? ""}</td><td>${obj.created_at ?? ""}</td><td>${obj.updated_at ?? ""}</td>`;
+    el.innerHTML = live
+      ? content + `<td><button class="btn-edit" data-action="edit" data-type="available">Edit</button>
+                      <button class="btn-archive" data-action="archive" data-type="available">Archive</button></td>`
+      : content + `<td><button class="btn-restore" data-action="restore" data-type="available">Restore</button></td>`;
+    return el;
+  }
+  if (kind === "breeding") {
+    const over = obj.is_overdue ? "Yes" : "No";
+    const content = `
+      <td>${obj.sow_id ?? obj._id}</td>
+      <td>${obj.sow_identifier ?? ""}</td>
+      <td>${obj.status ?? ""}</td>
+      <td>${obj.mating_date ?? ""}</td>
+      <td>${obj.expected_birth ?? ""}</td>
+      <td>${obj.last_birth_date ?? ""}</td>
+      <td>${obj.caretaker_id ?? ""}</td>
+      <td>${over}</td>`;
+    const el = document.createElement("tr");
+    el.innerHTML = live
+      ? content + `<td><button class="btn-edit" data-action="edit" data-type="breeding">Edit</button>
+                      <button class="btn-archive" data-action="archive" data-type="breeding">Archive</button></td>`
+      : content + `<td><button class="btn-restore" data-action="restore" data-type="breeding">Restore</button></td>`;
+    return el;
+  }
+  el.innerHTML = live ? `
+    <td>${obj.health_record_id}</td><td>${obj.pig_id ?? ""}</td><td>${obj.diagnosis ?? ""}</td><td>${obj.treatment ?? ""}</td><td>${obj.recorded_at ?? ""}</td>
+    <td><button class="btn-edit" data-action="edit" data-type="health">Edit</button>
+        <button class="btn-archive" data-action="archive" data-type="health">Archive</button></td>`
+  : `
+    <td>${obj.health_record_id}</td><td>${obj.pig_id ?? ""}</td><td>${obj.diagnosis ?? ""}</td><td>${obj.treatment ?? ""}</td><td>${obj.recorded_at ?? ""}</td>
+    <td><button class="btn-restore" data-action="restore" data-type="health">Restore</button></td>`;
+  return el;
+    
+}
+
+/* ------- AUTO-ARCHIVE PIG WHEN SOLD IN AVAILABLE ------- */
+
+// Archive a single pig by id (uses table row if present, otherwise fetch list)
+async function archivePigById(pigId) {
+  pigId = String(pigId);
+  const key = "pig";
+  const already = getArchived(key).some(o => String(o._id) === pigId);
+  if (already) return;
+
+  // If pig exists in current live table, move that row
+  const liveRow = [...document.querySelectorAll("#pigTable tr")]
+    .find(tr => String(tr.cells?.[0]?.innerText?.trim()) === pigId);
+
+  if (liveRow) {
+    const obj = rowToObj("pig", liveRow);
+    const arr = getArchived(key); arr.push(obj); setArchived(key, arr);
+    document.getElementById("archivedPig").appendChild(objToRow("pig", obj, { live:false }));
+    liveRow.remove();
+    queuePigArchiveNotice(pigId);
+    return;
+  }
+
+  // Else fetch from API, synthesize row object and archive
+  const pigs = await pigsApi.list();
+  const p = (pigs || []).find(x => String(x.pig_id ?? x.pigs_id ?? x.id) === pigId);
+  if (!p) return; // nothing to do
+
+  const obj = {
+    _id: pigId,
+    id: pigId,
+    litter_id: p.litter_id ?? "",
+    sow_identifier: p.sow_identifier ?? "",
+    birth_date: fromISO(p.birth_date),
+    status: p.status ?? "",
+    notes: p.notes ?? ""
+  };
+  const arr = getArchived(key); arr.push(obj); setArchived(key, arr);
+  document.getElementById("archivedPig").appendChild(objToRow("pig", obj, { live:false }));
+  queuePigArchiveNotice(pigId);
+}
+
+// Sweep available listings; archive pigs for any sold rows
+async function sweepSoldAvailableToArchive() {
+  try {
+    // pull all; if your API supports ?status=sold this can be narrowed
+    const listings = await availApi.list({ status: "all" });
+    for (const a of (listings || [])) {
+      if (String(a.status || "").toLowerCase() === "sold" && a.pigs_id != null) {
+        await archivePigById(a.pigs_id);
+      }
+    }
+  } catch (e) {
+    console.warn("sweepSoldAvailableToArchive() failed", e);
+  }
+}
+
+/** Force all pigs.birth_date to match their litter.birth_date once. */
+async function sweepPigBirthsToLitters(){
+  try{
+    const [pigs, litters] = await Promise.all([pigsApi.list(), getLittersOnce()]);
+    const litMap = new Map(
+      (litters || []).map(l => [String(l.litter_id ?? l.id), (function norm(d){
+        const s = String(d || "");
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        try { return new Date(s).toISOString().slice(0,10); } catch { return ""; }
+      })(l.birth_date)])
+    );
+
+    let fixes = 0;
+    for (const p of (pigs || [])){
+      const pid   = String(p.pig_id ?? p.pigs_id ?? p.id);
+      const lid   = String(p.litter_id ?? "");
+      const want  = litMap.get(lid) || "";
+      const have  = (function norm(d){
+        const s = String(d || "");
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        try { return new Date(s).toISOString().slice(0,10); } catch { return ""; }
+      })(p.birth_date);
+
+      if (want && have && want === have) continue;
+      if (!want) continue; // skip if litter unknown
+
+      // minimal patch: only birth_date (server should allow partial update)
+      await pigsApi.update(pid, { birth_date: want });
+      fixes++;
+    }
+    if (fixes) toastBadge(`Synced ${fixes} pig birth date${fixes>1?"s":""} to litter dates`);
+  } catch (e){
+    console.warn("sweepPigBirthsToLitters failed:", e);
+  }
+}
+
+
+function renderArchivedOnLoad(){
+  const mapping = [
+    ["litter","archivedLitter"],
+    ["pig","archivedPig"],
+    ["health","archivedHealth"],
+    ["available","archivedAvailable"],
+    ["breeding","archivedBreeding"],
+  ];
+
+  for (const [kind, tbodyId] of mapping) {
+    const tbody = $(tbodyId);
+    if (!tbody) continue;
+    tbody.innerHTML = "";
+    getArchived(kind).forEach(o => tbody.appendChild(objToRow(kind, o, { live:false })));
+  }
+}
+function pruneLiveTablesUsingStorage(){
+    const map = [
+      ["litter","litterTable"],
+      ["pig","pigTable"],
+      ["health","healthTable"],
+      ["available","availableTable"],
+      ["breeding","breedingTable"],
+    ];
+
+  for (const [kind, tbodyId] of map) {
+    const tbody = $(tbodyId); if (!tbody) continue;
+    const archivedIds = new Set(getArchived(kind).map(o => String(o._id)));
+    [...tbody.querySelectorAll("tr")].forEach(tr => {
+      const first = tr.cells?.[0]?.innerText?.trim();
+      if (archivedIds.has(String(first))) tr.remove();
+    });
+  }
+}
+
+window.archiveYes = () => {
+  const row = window._archiveRow;
+  const type = window._archiveType;
+  if (!row) return closeModal("archiveModal");
+
+  const obj = rowToObj(type, row);
+  const arr = getArchived(type);
+  if (!arr.some(x => String(x._id) === String(obj._id))) { arr.push(obj); setArchived(type, arr); }
+
+const target = type === "litter"   ? "archivedLitter"   :
+               type === "pig"      ? "archivedPig"      :
+               type === "health"   ? "archivedHealth"   :
+               type === "available"? "archivedAvailable":
+               /* breeding */        "archivedBreeding";
+
+  $(target).appendChild(objToRow(type, obj, { live:false }));
+
+  row.remove();
+  closeModal("archiveModal");
+};
+window.archiveNo = () => closeModal("archiveModal");
+
+function openArchive(row, type){
+  window._archiveRow = row;
+  window._archiveType = type;
+  openModal("archiveModal");
+}
+
+function restoreRecord(row, type){
+  const obj = rowToObj(type, row);
+  const left = getArchived(type).filter(x => String(x._id) !== String(obj._id));
+  setArchived(type, left);
+
+const target = type === "litter"   ? "litterTable"   :
+               type === "pig"      ? "pigTable"      :
+               type === "health"   ? "healthTable"   :
+               type === "available"? "availableTable":
+               /* breeding */        "breedingTable";
+
+  const tbody = $(target);
+  const exists = [...tbody.querySelectorAll("tr")].some(tr =>
+    String(tr.cells?.[0]?.innerText?.trim()) === String(obj._id)
+  );
+  if (!exists) tbody.appendChild(objToRow(type, obj, { live:true }));
+
+  row.remove();
+}
+window.restoreRecord = restoreRecord;
+
+/* ---------------- Modal backdrop close ---------------- */
+window.addEventListener("click", (e) => {
+  document.querySelectorAll(".modal").forEach(m => { if (e.target === m) m.style.display = "none"; });
+});
+window.addEventListener("keydown", (e) => { if (e.key === "Escape") document.querySelectorAll(".modal").forEach(m => m.style.display = "none"); });
+
+/* ---------------- Init ---------------- */
+(async function init(){
+  try{
+    await requireRoles(["ADMIN", "CARETAKER"]);
+    document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      logout(); // calls clearToken() and redirects to /Zhomepage/login.html
+    });
+
+
+    await loadAll();
+    await loadAvailable(availableFilter?.value || "available");
+    await sweepSoldAvailableToArchive();    
+    await sweepPigBirthsToLitters();
+    await loadSows();
+
+
+    renderArchivedOnLoad();
+    pruneLiveTablesUsingStorage();
+
+    setInterval(sweepSoldAvailableToArchive, 20 * 1000);
+  }catch(err){
+    console.error("Init failed:", err);
+  }
+})();
+</script>
+</body>
+</html>
