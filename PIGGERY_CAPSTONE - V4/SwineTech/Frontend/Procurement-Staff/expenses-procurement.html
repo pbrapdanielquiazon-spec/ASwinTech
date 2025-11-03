@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>SwineTech | Manage Expenses</title>
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    main.dashboard{flex:1;padding:24px;box-sizing:border-box;overflow:auto}
+
+    .tabs{display:flex;gap:12px;margin:8px 0 18px}
+    .tab-btn{background:#f2f5f7;border:none;border-radius:8px;padding:8px 14px;cursor:pointer}
+    .tab-btn.active{background:#43A047;color:#fff}
+
+    .record-view{display:none}
+    .record-view.active{display:block}
+
+    .admin-table{width:100%;border-collapse:collapse;margin-top:12px}
+    .admin-table th,.admin-table td{border:1px solid #e5e7eb;padding:10px;text-align:center}
+    .admin-table th{background:#f7f7f7}
+    .admin-table td.actions-cell{display:flex;justify-content:center;align-items:center;gap:8px}
+
+    .btn-add,.btn-edit,.btn-archive,.btn-restore,.btn-history{border:none;border-radius:6px;padding:6px 10px;cursor:pointer}
+    .btn-add{background:#29B6F6;color:#fff}
+    .btn-edit{background:#FFA726;color:#fff}
+    .btn-archive{background:#EF5350;color:#fff}
+    .btn-restore{background:#29B6F6;color:#fff}
+    .btn-history{background:#ede9fe;color:#a2c5f6;border:1px solid #ddd6fe}
+
+    /* ---- Modals ---- */
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5)}
+    .modal .modal-content{background:#fff;margin:5% auto;padding:20px;border-radius:8px;width:520px;max-width:94%}
+
+    /* ---- Modal stacking (match Admin) ---- */
+    .modal{ z-index:1000; }
+    #historyModal{ z-index:1500; }
+    #confirmModal{ z-index:2000; }
+    #successModal,#errorModal{ z-index:2100; }
+
+    .close{float:right;font-size:22px;cursor:pointer}
+    .form-group{margin-bottom:12px;text-align:left}
+    .form-group label{display:block;margin-bottom:6px}
+    .form-group input,.form-group select,.form-group textarea{width:100%;padding:8px;border:1px solid #ddd;border-radius:6px}
+    .btn-auth{background:#43A047;color:#fff;border:none;padding:10px 12px;border-radius:6px;cursor:pointer}
+    .btn-auth:hover{filter:brightness(.95)}
+
+    /* === Compare modal layout + scrolling (Admin parity) === */
+    .compare-modal .modal-content{ width:900px; max-width:96%; max-height:85vh; overflow:auto; }
+    .compare-wrap{ display:grid; grid-template-columns: 1.7fr 1fr; gap:16px; }
+    .compare-controls{ position:sticky; top:0; background:#fff; padding-bottom:8px; border-bottom:1px solid #eee; display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+    .compare-controls input[type="search"]{ flex:1; min-width:180px; }
+    .compare-pane{ border:1px solid #e5e7eb; border-radius:8px; padding:12px; background:#fff; max-height:70vh; overflow:auto; }
+    .compare-list{ width:100%; border-collapse:collapse; }
+    .compare-list th,.compare-list td{ border-bottom:1px solid #f1f3f5; padding:8px; text-align:left; }
+    .compare-row{ cursor:pointer; }
+    .compare-row.low td{ background:#fff7ed; }
+    .badge-low{ background:#fff3cd; border:1px solid #ffe69c; padding:2px 6px; border-radius:999px; font-size:.75rem; }
+    .row-expander{ font-size:.9rem; color:#555; }
+    .expenses-mini{ background:#fafafa; border:1px dashed #e5e7eb; border-radius:8px; padding:8px; margin-top:8px; }
+    .expenses-mini table{ width:100%; border-collapse:collapse; font-size:.92rem; }
+    .expenses-mini td,.expenses-mini th{ border-bottom:1px solid #eee; padding:6px; text-align:left; }
+    .compare-card{ border:1px solid #e5e7eb; border-radius:10px; padding:12px; margin-bottom:10px; background:#fff; }
+    .compare-card h4{ margin:0 0 6px; }
+    .compare-stats{ color:#666; font-size:.9rem; display:flex; gap:12px; flex-wrap:wrap; }
+    .compare-actions{ margin-top:8px; display:flex; gap:8px; }
+    .btn-ghost{ background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:6px 10px; cursor:pointer; }
+    .btn-primary{ background:#43A047; color:#fff; border:1px solid #43A047; border-radius:6px; padding:6px 10px; cursor:pointer; }
+    .limit-hint{ color:#888; font-size:.85rem; margin-left:auto; }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-procurement.html"><i class="fa-solid fa-boxes-stacked"></i> Dashboard</a>
+      <a href="procurement-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="supplies-procurement.html"><i class="fa-solid fa-warehouse"></i> Manage Supplies</a>
+      <a href="expenses-procurement.html" class="active"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Expenses</a>
+      <a href="reports-procurement.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <main class="dashboard">
+    <h1 style="text-align:center; letter-spacing:.06em;">MANAGE EXPENSES</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('live')">
+        <i class="fa-solid fa-receipt"></i> <span>Expenses</span>
+      </button>
+      <button class="tab-btn" onclick="showView('arch')">
+        <i class="fa-solid fa-folder-open"></i> <span>Archived Expenses</span>
+      </button>
+
+      <div style="margin-left:auto; display:flex; gap:8px;">
+        <button id="compareBtn" class="tab-btn" title="Compare Supplies">
+          <i class="fa-solid fa-scale-balanced"></i> Compare
+        </button>
+        <button class="btn-add" onclick="openModal('addExpenseModal')">+ Add Expense</button>
+      </div>
+    </div>
+
+    <!-- LIVE -->
+    <section id="live" class="record-view active">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Expense_ID</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Date_Spent</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="expensesTable"></tbody>
+      </table>
+    </section>
+
+    <!-- ARCHIVED -->
+    <section id="arch" class="record-view">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Expense_ID</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Date_Spent</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="archivedExpenses"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add Expense -->
+  <div id="addExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('addExpenseModal')">&times;</span>
+    <h2>Add Expense</h2>
+    <form id="expenseForm">
+      <div class="form-group"><label>Description</label><input type="text" id="expenseDesc" required></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="expenseAmount" step="0.01" required></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="expenseCategory" required>
+          <option value="" disabled selected>-- Select category --</option>
+          <option value="tools">Tools</option>
+          <option value="vaccines">Vaccines</option>
+          <option value="medicine">Medicine</option>
+          <option value="feed">Feed</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="expenseDate" required></div>
+      <button class="btn-auth" type="submit">Save</button>
+    </form>
+  </div></div>
+
+  <!-- Edit Expense -->
+  <div id="editExpenseModal" class="modal"><div class="modal-content">
+    <span class="close" onclick="closeModal('editExpenseModal')">&times;</span>
+    <h2>Edit Expense</h2>
+    <form id="editExpenseForm">
+      <div class="form-group"><label>Description</label><input type="text" id="editExpenseDesc" required></div>
+      <div class="form-group"><label>Amount</label><input type="number" id="editExpenseAmount" step="0.01" required></div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="editExpenseCategory" required>
+          <option value="" disabled>-- Select category --</option>
+          <option value="tools">Tools</option>
+          <option value="vaccines">Vaccines</option>
+          <option value="medicine">Medicine</option>
+          <option value="feed">Feed</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Date_Spent</label><input type="date" id="editExpenseDate" required></div>
+      <button class="btn-auth" type="submit">Update</button>
+    </form>
+  </div></div>
+
+  <!-- View History (shared with Admin style) -->
+  <div id="historyModal" class="modal">
+    <div class="modal-content" style="max-width:560px">
+      <span class="close" onclick="closeModal('historyModal')">&times;</span>
+      <h2>Record History</h2>
+      <div id="historyBody" style="margin-top:10px;line-height:1.5"></div>
+      <div style="text-align:right;margin-top:14px">
+        <button class="btn-auth" onclick="closeModal('historyModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Generic Confirm (Admin parity) -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('confirmModal')">&times;</span>
+      <h3 id="confirmTitle" style="margin-top:0;">Confirm</h3>
+      <div id="confirmBody" style="margin:10px 0 16px; font-size:14px;"></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end">
+        <button id="confirmNo"  class="btn-archive">Cancel</button>
+        <button id="confirmYes" class="btn-auth">Yes, proceed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Archive / Success / Error -->
+  <div id="archiveModal" class="modal"><div class="modal-content">
+    <h3>⚠️ Archive this expense?</h3>
+    <div style="margin-top:14px;">
+      <button class="btn-auth" onclick="archiveYes()">Yes, Archive</button>
+      <button class="btn-auth" onclick="archiveNo()" style="background:#ccc;color:#111;margin-left:8px;">Cancel</button>
+    </div>
+  </div></div>
+
+  <div id="successModal" class="modal"><div class="modal-content">
+    <h3 id="successText">✅ Success</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('successModal')">OK</button></div>
+  </div></div>
+
+  <div id="errorModal" class="modal"><div class="modal-content">
+    <h3 id="errorText">❌ Error</h3>
+    <div style="margin-top:12px;"><button class="btn-auth" onclick="closeModal('errorModal')">OK</button></div>
+  </div></div>
+
+  <!-- Compare Supplies Modal -->
+  <div id="compareModal" class="modal compare-modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('compareModal')">&times;</span>
+      <h2 style="margin-top:0;">Compare Supplies</h2>
+
+      <div class="compare-wrap">
+        <!-- LEFT: supplies + recent expenses -->
+        <div>
+          <div class="compare-controls">
+            <input id="cmpSearch" type="search" placeholder="Search item name…" />
+            <select id="cmpCategory">
+              <option value="">All categories</option>
+              <option value="feed">feed</option>
+              <option value="tools">tools</option>
+              <option value="vaccines">vaccines</option>
+              <option value="medicine">medicine</option>
+              <option value="other">other</option>
+            </select>
+            <select id="cmpRange">
+              <option value="90">Last 90 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="180">Last 180 days</option>
+              <option value="365">Last 12 months</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:6px;">
+              <input id="cmpLowToggle" type="checkbox" />
+              Low-stock only
+            </label>
+            <span class="limit-hint">Select up to 3 items</span>
+          </div>
+
+          <div class="compare-pane">
+            <table class="compare-list" id="cmpTable">
+              <thead>
+                <tr>
+                  <th style="width:34px;"></th>
+                  <th>Item</th>
+                  <th>Category</th>
+                  <th>On hand</th>
+                </tr>
+              </thead>
+              <tbody id="cmpBody"><!-- rows via JS --></tbody>
+            </table>
+            <div id="cmpEmpty" class="note" style="display:none;margin-top:8px;">No supplies match your filters.</div>
+          </div>
+        </div>
+
+        <!-- RIGHT: selected compare panel -->
+        <div class="compare-pane">
+          <h3 style="margin-top:0;">Selected</h3>
+          <div id="cmpSelected"><!-- cards via JS --></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { expensesApi, authApi, clearToken } from "/_shared/api.js";
+
+    /* ---------- Auth gate ---------- */
+    async function gate(){
+      try{ await authApi.me(); }
+      catch{ window.location.href="/Zhomepage/login.html"; throw new Error("unauth"); }
+    }
+    await gate();
+    document.getElementById("logout")?.addEventListener("click",(e)=>{
+      e.preventDefault(); clearToken?.(); window.location.href="/Zhomepage/login.html";
+    });
+
+    /* ---------- Small helpers ---------- */
+    const $ = (id)=>document.getElementById(id);
+    const money = v => "₱" + Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+    const tr = html => { const el=document.createElement("tr"); el.innerHTML=html; return el; };
+    function escapeHtml(s){ return (""+s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+    function openModal(id){ $(id).style.display="block"; }
+    function closeModal(id){ $(id).style.display="none"; }
+    function showSuccess(t="Saved!"){ $("successText").innerText="✅ "+t; openModal("successModal"); }
+    function showError(t="Something went wrong"){ $("errorText").innerText="❌ "+t; openModal("errorModal"); }
+
+    /* ---------- Tabs ---------- */
+    window.showView = function(id){
+      document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+      document.querySelector(`.tab-btn[onclick="showView('${id}')"]`)?.classList.add("active");
+    };
+
+    /* ---------- History (Admin parity) ---------- */
+    const API_BASE = "http://localhost:8000/api";
+    async function fetchMetaExpense(id){
+      const r = await fetch(`${API_BASE}/api/expenses/${id}/meta`, { headers:{ Accept:"application/json" } });
+      if(!r.ok) throw new Error(`Meta fetch failed: ${r.status}`);
+      return r.json();
+    }
+    function fmtLocal(iso){
+      if(!iso) return "—";
+      const d = new Date(iso); const pad=n=>String(n).padStart(2,"0");
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    function renderHistory(meta){
+      $("historyBody").innerHTML = `
+        <div>
+          <div><strong>Created At:</strong> ${fmtLocal(meta?.created_at)}</div>
+          <div><strong>Created By:</strong> ${escapeHtml(meta?.created_by ?? "—")}</div>
+          <div style="height:8px"></div>
+          <div><strong>Last Updated:</strong> ${fmtLocal(meta?.updated_at)}</div>
+          <div><strong>Updated By:</strong> ${escapeHtml(meta?.updated_by ?? "—")}</div>
+        </div>`;
+    }
+    async function openHistoryExpense(id){
+      try{
+        const meta = await fetchMetaExpense(id);
+        renderHistory(meta||{});
+        openModal("historyModal");
+      }catch(e){ showError(e.message||"Failed to load history"); }
+    }
+
+    /* ---------- Generic Confirm (Admin parity) ---------- */
+    function openConfirm({title="Confirm", html="", onYes}){
+      $("confirmTitle").textContent = title;
+      $("confirmBody").innerHTML = html;
+      const yes = $("confirmYes"); const no = $("confirmNo");
+      const cleanup = ()=>{ yes.onclick=null; no.onclick=null; closeModal("confirmModal"); };
+      yes.onclick = async ()=>{ try{ await onYes?.(); } finally { cleanup(); } };
+      no.onclick  = cleanup;
+      openModal("confirmModal");
+    }
+
+    /* ---------- Tables ---------- */
+    const liveT = $("expensesTable");
+    const archT = $("archivedExpenses");
+
+    function expenseRow(r){
+      const id = r.id ?? r.expense_id ?? "";
+      const row = tr(`
+        <td>${id}</td>
+        <td>${escapeHtml(r.description ?? "")}</td>
+        <td>${money(r.amount ?? 0)}</td>
+        <td>${escapeHtml(r.category ?? "")}</td>
+        <td>${(r.date_spent ?? "").toString().slice(0,10)}</td>
+        <td class="actions-cell">
+          <button class="btn-edit" data-id="${id}" onclick="editRow(event)">Edit</button>
+          <button class="btn-archive" onclick="confirmArchive(event)">Archive</button>
+          <button class="btn-history" onclick="viewHistory(event)">View History</button>
+        </td>
+      `);
+      return row;
+    }
+
+    function archivedRow(o){
+      const row = tr(`
+        <td>${o.id}</td>
+        <td>${escapeHtml(o.description||"")}</td>
+        <td>${money(o.amount)}</td>
+        <td>${escapeHtml(o.category||"")}</td>
+        <td>${o.date_spent||""}</td>
+        <td><button class="btn-restore" onclick="restoreRow(event)">Restore</button></td>
+      `);
+      return row;
+    }
+
+    /* ---------- Load ---------- */
+    async function loadExpenses(){
+      liveT.innerHTML="";
+      const rows = await expensesApi.list();
+      (rows||[]).forEach(r=>liveT.appendChild(expenseRow(r)));
+      renderArchivedFromStorage();
+    }
+
+    /* ---------- Create with Confirm ---------- */
+    $("expenseForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const payload = {
+        description: $("expenseDesc").value.trim(),
+        amount: Number($("expenseAmount").value||0),
+        category: $("expenseCategory").value,
+        date_spent: $("expenseDate").value,
+      };
+      if(!payload.description||!payload.amount||!payload.date_spent) return showError("Fill all fields.");
+
+      const html = `
+        <div><strong>Add Expense</strong></div>
+        <div>Description: ${escapeHtml(payload.description)}</div>
+        <div>Amount: ${money(payload.amount)}</div>
+        <div>Category: ${escapeHtml(payload.category||'-')}</div>
+        <div>Date: ${escapeHtml(payload.date_spent)}</div>
+      `;
+      openConfirm({
+        title:"Confirm Add Expense",
+        html,
+        onYes: async ()=>{
+          const created = await expensesApi.create(payload);
+          liveT.prepend(expenseRow(created));
+          closeModal("addExpenseModal"); $("expenseForm").reset(); showSuccess("Expense added");
+        }
+      });
+    });
+
+    /* ---------- Edit with Confirm ---------- */
+    window.editRow = (ev)=>{
+      const row = ev.target.closest("tr");
+      row.classList.add("editing");
+      $("editExpenseDesc").value   = row.cells[1].innerText;
+      $("editExpenseAmount").value = row.cells[2].innerText.replace(/[₱,]/g,"");
+      $("editExpenseCategory").value = row.cells[3].innerText;
+      $("editExpenseDate").value   = row.cells[4].innerText;
+      openModal("editExpenseModal");
+    };
+
+    $("editExpenseForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const row = document.querySelector("#expensesTable tr.editing") || document.querySelector("#archivedExpenses tr.editing");
+      if(!row) return closeModal("editExpenseModal");
+      const id = row.cells[0].innerText;
+      const payload = {
+        description: $("editExpenseDesc").value.trim(),
+        amount: Number($("editExpenseAmount").value||0),
+        category: $("editExpenseCategory").value,
+        date_spent: $("editExpenseDate").value,
+      };
+
+      const html = `
+        <div><strong>Expense #${escapeHtml(id)}</strong></div>
+        <div>Description: ${escapeHtml(payload.description)}</div>
+        <div>Amount: ${money(payload.amount)}</div>
+        <div>Category: ${escapeHtml(payload.category||'-')}</div>
+        <div>Date: ${escapeHtml(payload.date_spent)}</div>
+      `;
+      openConfirm({
+        title:"Confirm Update Expense",
+        html,
+        onYes: async ()=>{
+          const updated = await expensesApi.update(id, payload);
+          const fresh = expenseRow(updated);
+          row.replaceWith(fresh);
+          closeModal("editExpenseModal"); showSuccess("Expense updated");
+        }
+      });
+    });
+
+    /* ---------- History button wiring ---------- */
+    window.viewHistory = (ev)=>{
+      const row = ev.target.closest("tr");
+      const id = row?.cells?.[0]?.innerText;
+      if(!id) return;
+      openHistoryExpense(id);
+    };
+
+    /* ---------- Archive / Restore (client-side UI) ---------- */
+    const ARCH_KEY = "arch_expenses";
+    const getArch = ()=>{ try{return JSON.parse(localStorage.getItem(ARCH_KEY)||"[]")}catch{return[]} };
+    const setArch = (arr)=>localStorage.setItem(ARCH_KEY, JSON.stringify(arr));
+
+    let _archiveCtx=null;
+    window.confirmArchive = (ev)=>{
+      _archiveCtx = ev.target.closest("tr");
+      openModal("archiveModal");
+    };
+    window.archiveNo = ()=>{ _archiveCtx=null; closeModal("archiveModal"); };
+    window.archiveYes = ()=>{
+      if(!_archiveCtx) return closeModal("archiveModal");
+      const o = {
+        id: _archiveCtx.cells[0].innerText,
+        description: _archiveCtx.cells[1].innerText,
+        amount: Number(_archiveCtx.cells[2].innerText.replace(/[₱,]/g,"")||0),
+        category: _archiveCtx.cells[3].innerText,
+        date_spent: _archiveCtx.cells[4].innerText
+      };
+      const arr = getArch(); arr.unshift(o); setArch(arr);
+      archT.prepend(archivedRow(o));
+      _archiveCtx.remove();
+      closeModal("archiveModal"); _archiveCtx=null; showSuccess("Archived");
+    };
+
+    function renderArchivedFromStorage(){
+      archT.innerHTML="";
+      getArch().forEach(o=>archT.appendChild(archivedRow(o)));
+    }
+
+    window.restoreRow = (ev)=>{
+      const row = ev.target.closest("tr");
+      const id  = row.cells[0].innerText;
+      const left = getArch().filter(x => String(x.id)!==String(id));
+      setArch(left);
+      const obj = {
+        id,
+        description: row.cells[1].innerText,
+        amount: Number(row.cells[2].innerText.replace(/[₱,]/g,"")||0),
+        category: row.cells[3].innerText,
+        date_spent: row.cells[4].innerText
+      };
+      liveT.prepend(expenseRow(obj));
+      row.remove();
+      showSuccess("Restored");
+    };
+
+    /* ================== Compare Supplies (parity + scroll) ================== */
+    const cmp = { supplies: [], expenses: [], filtered: [], selected: [], loaded:false };
+    const lowThreshold = (cat, qty)=> (String(cat).toLowerCase()==="feed" ? 10 : 3) >= Number(qty||0);
+
+    async function fetchSuppliesRaw(){
+      const r = await fetch(`${API_BASE}/supplies`, { headers: { Accept:"application/json" }});
+      if(!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+    async function fetchExpensesRaw(){
+      try { return await expensesApi.list(); }
+      catch {
+        const r = await fetch(`${API_BASE}/expenses`, { headers: { Accept:"application/json" }});
+        if(!r.ok) throw new Error(await r.text());
+        return r.json();
+      }
+    }
+
+    const daysAgo = (n)=>{ const d=new Date(); d.setDate(d.getDate()-n); return d; };
+    const inRange = (dateStr, days=90)=>{ const dt=new Date(dateStr); return !Number.isNaN(dt) && dt>=daysAgo(days); };
+
+    function parseQtyFromDesc(desc){
+      const m = String(desc||"").match(/(\d+(?:\.\d+)?)\s*(pcs?|pieces?|kg|bags?)/i);
+      return m ? { qty:Number(m[1]), unit:m[2].toLowerCase() } : null;
+    }
+    function expensesForItem(itemName, days=90){
+      const name = String(itemName||"").trim().toLowerCase();
+      return (cmp.expenses||[])
+        .filter(e => String(e.description||"").toLowerCase().includes(name) && inRange(e.date_spent, days))
+        .map(e=>{
+          const p = parseQtyFromDesc(e.description);
+          return { ...e, _parsed:p, _unitPrice: (p && p.qty>0) ? Number(e.amount||0)/p.qty : null };
+        });
+    }
+
+    const cmpBtn         = $("compareBtn");
+    const cmpSearch      = $("cmpSearch");
+    const cmpCategory    = $("cmpCategory");
+    const cmpRange       = $("cmpRange");
+    const cmpLowToggle   = $("cmpLowToggle");
+    const cmpBody        = $("cmpBody");
+    const cmpEmpty       = $("cmpEmpty");
+    const cmpSelectedBox = $("cmpSelected");
+
+    cmpBtn?.addEventListener("click", async ()=>{
+      openModal("compareModal");
+      if(!cmp.loaded){
+        const [supplies, expenses] = await Promise.all([fetchSuppliesRaw(), fetchExpensesRaw()]);
+        cmp.supplies = Array.isArray(supplies) ? supplies : [];
+        cmp.expenses = Array.isArray(expenses) ? expenses : [];
+        cmp.loaded   = true;
+      }
+      cmp.selected = [];
+      applyCmpFiltersAndRender();
+    });
+
+    [cmpSearch, cmpCategory, cmpRange, cmpLowToggle].forEach(el=>{
+      el?.addEventListener("input", applyCmpFiltersAndRender);
+    });
+
+    function applyCmpFiltersAndRender(){
+      const q  = (cmpSearch?.value||"").toLowerCase().trim();
+      const cat = (cmpCategory?.value||"").toLowerCase();
+      const lowOnly = !!cmpLowToggle?.checked;
+
+      cmp.filtered = (cmp.supplies||[]).filter(s=>{
+        const nameOk = !q || String(s.item_name||"").toLowerCase().includes(q);
+        const catOk  = !cat || String(s.category||"").toLowerCase()===cat;
+        const lowOk  = !lowOnly || lowThreshold(s.category, s.quantity);
+        return nameOk && catOk && lowOk;
+      });
+
+      renderCmpTable();
+      renderCmpSelected();
+    }
+
+    function renderCmpTable(){
+      cmpBody.innerHTML = "";
+      if(!cmp.filtered.length){ cmpEmpty.style.display="block"; return; }
+      cmpEmpty.style.display="none";
+
+      const days = Number(cmpRange?.value||90);
+
+      cmp.filtered.forEach((s, idx)=>{
+        const isLow = lowThreshold(s.category, s.quantity);
+        const checked = cmp.selected.includes(String(s.item_name));
+        const r = document.createElement("tr");
+        r.className = "compare-row"+(isLow?" low":"");
+        r.innerHTML = `
+          <td><input type="checkbox" data-cmp-sel="${s.item_name}" ${checked?"checked":""}></td>
+          <td>
+            <strong>${escapeHtml(s.item_name||"-")}</strong>
+            <div class="row-expander" data-expand="${idx}" style="margin-top:2px;">
+              <i class="fa-regular fa-square-caret-down"></i> Recent expenses
+            </div>
+          </td>
+          <td>${escapeHtml(s.category||"-")}${isLow?` &nbsp;<span class="badge-low">Low</span>`:""}</td>
+          <td>${Number(s.quantity||0)} ${escapeHtml(s.unit||"")}</td>
+        `;
+
+        const r2 = document.createElement("tr");
+        r2.style.display = "none";
+        r2.innerHTML = `<td></td><td colspan="3">
+          <div class="expenses-mini" id="exp-${idx}">
+            <div class="muted">Loading...</div>
+          </div>
+        </td>`;
+
+        r.querySelector(`[data-expand="${idx}"]`)?.addEventListener("click", ()=>{
+          const box = document.getElementById(`exp-${idx}`);
+          if(r2.style.display==="none"){
+            r2.style.display = "";
+            const list = expensesForItem(s.item_name, days);
+            if(!list.length){ box.innerHTML = `<div class="muted">No expense records in range.</div>`; }
+            else{
+              const rows = list
+                .sort((a,b)=> new Date(b.date_spent)-new Date(a.date_spent))
+                .slice(0,8)
+                .map(e=>{
+                  const unit = (e._unitPrice!=null) ? ` • Unit ≈ ₱${(e._unitPrice).toFixed(2)}${e._parsed?.unit?"/"+e._parsed.unit:""}` : "";
+                  return `<tr>
+                    <td>${(e.date_spent||"").toString().slice(0,10)}</td>
+                    <td>${escapeHtml(e.description||"")}</td>
+                    <td>₱${Number(e.amount||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}${unit}</td>
+                  </tr>`;
+                }).join("");
+              const prices = list.map(e=> e._unitPrice).filter(v=> v!=null);
+              const stats = prices.length
+                ? `Avg ≈ ₱${(prices.reduce((a,b)=>a+b,0)/prices.length).toFixed(2)} · Min ≈ ₱${Math.min(...prices).toFixed(2)} · Max ≈ ₱${Math.max(...prices).toFixed(2)}`
+                : `No unit-price data`;
+              box.innerHTML = `
+                <table>
+                  <thead><tr><th>Date</th><th>Description</th><th>Amount</th></tr></thead>
+                  <tbody>${rows}</tbody>
+                </table>
+                <div class="muted" style="margin-top:6px;">${stats}</div>
+              `;
+            }
+          } else {
+            r2.style.display = "none";
+          }
+        });
+
+        r.querySelector(`[data-cmp-sel="${s.item_name}"]`)?.addEventListener("change",(ev)=>{
+          const name = String(s.item_name);
+          if(ev.target.checked){
+            if(cmp.selected.length>=3){ ev.target.checked=false; return; }
+            if(!cmp.selected.includes(name)) cmp.selected.push(name);
+          }else{
+            cmp.selected = cmp.selected.filter(x=>x!==name);
+          }
+          renderCmpSelected();
+        });
+
+        cmpBody.appendChild(r);
+        cmpBody.appendChild(r2);
+      });
+    }
+
+    function renderCmpSelected(){
+      cmpSelectedBox.innerHTML = "";
+      if(!cmp.selected.length){
+        cmpSelectedBox.innerHTML = `<div class="muted">No items selected.</div>`;
+        return;
+      }
+      const days = Number(cmpRange?.value||90);
+
+      cmp.selected.forEach(name=>{
+        const s = cmp.supplies.find(x => String(x.item_name)===name);
+        if(!s) return;
+
+        const exp = expensesForItem(name, days);
+        const prices = exp.map(e=> e._unitPrice).filter(v=> v!=null);
+        const stats = prices.length ? {
+          avg: prices.reduce((a,b)=>a+b,0)/prices.length,
+          min: Math.min(...prices),
+          max: Math.max(...prices)
+        } : null;
+        const last = exp.slice().sort((a,b)=> new Date(b.date_spent)-new Date(a.date_spent))[0];
+
+        const card = document.createElement("div");
+        card.className = "compare-card";
+        card.innerHTML = `
+          <h4>${escapeHtml(s.item_name||"-")} <small class="muted">(${escapeHtml(s.category||"-")})</small></h4>
+          <div class="compare-stats">
+            <span><strong>On hand:</strong> ${Number(s.quantity||0)} ${escapeHtml(s.unit||"")}</span>
+            ${stats ? `<span><strong>Avg unit:</strong> ₱${stats.avg.toFixed(2)}</span>
+                       <span><strong>Min:</strong> ₱${stats.min.toFixed(2)}</span>
+                       <span><strong>Max:</strong> ₱${stats.max.toFixed(2)}</span>` : `<span class="muted">No unit-price data</span>`}
+          </div>
+          <div class="compare-stats">
+            <span><strong>Last expense:</strong> ${last ? (last.date_spent||"").toString().slice(0,10) : "—"}</span>
+            <span>${last ? escapeHtml(last.description||"") : ""}</span>
+          </div>
+          <div class="compare-actions">
+            <button class="btn-primary" data-draft="${escapeHtml(s.item_name)}">Add to Expense Draft</button>
+            <button class="btn-ghost" data-remove="${escapeHtml(s.item_name)}">Remove</button>
+          </div>
+        `;
+
+        card.querySelector(`[data-draft="${s.item_name}"]`)?.addEventListener("click", ()=>{
+          const amountPrefill = last?.amount ?? "";
+          document.getElementById("expenseDesc").value = `${s.item_name} `;
+          document.getElementById("expenseAmount").value = amountPrefill;
+          document.getElementById("expenseCategory").value = s.category || "";
+          document.getElementById("expenseDate").value = new Date().toISOString().slice(0,10);
+          closeModal("compareModal");
+          openModal("addExpenseModal");
+        });
+        card.querySelector(`[data-remove="${s.item_name}"]`)?.addEventListener("click", ()=>{
+          cmp.selected = cmp.selected.filter(x=> x!==s.item_name);
+          const cb = document.querySelector(`[data-cmp-sel="${CSS.escape(s.item_name)}"]`);
+          if(cb) cb.checked = false;
+          renderCmpSelected();
+        });
+
+        cmpSelectedBox.appendChild(card);
+      });
+    }
+
+    /* ---------- Init ---------- */
+    await loadExpenses();
+
+    // global close handlers
+    window.addEventListener("click",(e)=>{ document.querySelectorAll(".modal").forEach(m=>{ if(e.target===m) m.style.display="none"; }); });
+    window.addEventListener("keydown",(e)=>{ if(e.key==="Escape") document.querySelectorAll(".modal").forEach(m=>m.style.display="none"); });
+
+    // expose for inline handlers
+    Object.assign(window,{
+      openModal, closeModal, showView,
+      editRow, viewHistory,
+      confirmArchive, archiveYes, archiveNo
+    });
+  </script>
+</body>
+</html>

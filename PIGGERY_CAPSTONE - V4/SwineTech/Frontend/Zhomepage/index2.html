@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>SwineTech | Piggery Management System</title>
+  <meta name="description" content="SwineTech helps farmers manage pigs, feeding schedules, supplies, sales, and reports efficiently through a centralized online platform." />
+  <meta name="robots" content="index,follow" />
+
+  <!-- Open Graph (for shares/previews) -->
+  <meta property="og:title" content="SwineTech | Piggery Management System" />
+  <meta property="og:description" content="A Web-Based Piggery Management and Monitoring System for Ruloma Farms." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/Zhomepage/img/pig-placeholder.jpg" />
+  <meta property="og:url" content="/" />
+
+  <!-- Favicon (keeps emoji feel but lets browsers cache an icon) -->
+  <link rel="icon" href="/Zhomepage/img/pig-placeholder.jpg" />
+
+  <!-- CSS & Icons -->
+  <link rel="stylesheet" href="index2.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Accessibility: visible focus rings for keyboard users -->
+  <style>
+    :root {
+      --brand: #2e7d32;      /* keep your green family */
+      --brand-2: #1b5e20;
+      --ink: #233543;
+      --muted: #6b7a86;
+      --card: #ffffff;
+      --ring: #2e7d32;
+    }
+    /* Strong focus outline without changing your brand */
+    :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Header -->
+  <header class="navbar" role="banner">
+    <div class="logo" aria-label="SwineTech logo">🐖 SwineTech</div>
+    <nav aria-label="Primary">
+      <a href="/Zhomepage/index2.html#index" aria-current="page" class="active">Home</a>
+      <a href="/Zhomepage/index2.html#about">About</a>
+      <a href="/Zhomepage/index2.html#contact">Contact</a>
+      <a href="/Zhomepage/login.html" class="btn-login">Login</a>
+      <a href="/Zhomepage/register.html">Register</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- Hero Section -->
+    <section class="hero" id="index" role="region" aria-label="Welcome">
+      <h1>Welcome to SwineTech</h1>
+      <p>A Web-Based Piggery Management and Monitoring System for Ruloma Farms.</p>
+
+      <!-- Optional hero image (lazy + skeleton). Keep or remove safely. -->
+      <figure class="hero-figure">
+        <img
+          src="/Zhomepage/"
+          alt="Healthy pigs and farm caretaker—SwineTech in action"
+          loading="lazy"
+          decoding="async"
+          class="skeleton"
+          onload="this.classList.add('loaded')"
+        />
+      </figure>
+
+      <!-- Keep CTAs as-is -->
+      <div class="actions">
+        <a href="/Zhomepage/login.html" class="btn btn-primary">Login</a>
+        <a href="/Zhomepage/register.html" class="btn btn-accent">Register</a>
+        <a href="/Zhomepage/guest.html" class="btn btn-outline">Continue as Guest</a>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section id="about" class="section" role="region" aria-label="About the System">
+      <h2>About the System</h2>
+      <p>
+        SwineTech helps farmers manage pigs, feeding schedules, supplies, sales, and reports efficiently
+        through a centralized online platform.
+      </p>
+    </section>
+
+    <!-- Pilot Note / Testimonial -->
+    <section id="pilot" class="section pilot" role="region" aria-label="Pilot Note">
+      <div class="pilot-card">
+        <div class="pilot-quote">
+          <i class="fa-solid fa-quote-left" aria-hidden="true"></i>
+          <p>
+            “SwineTech streamlined our daily routines—from feeding to sales.
+            We spend less time on paperwork and more time caring for our pigs.”
+          </p>
+        </div>
+        <div class="pilot-meta">
+          <strong>John Gregory Ruloma</strong>
+          <span>Farm Owner • Calape, Bohol</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ (accessible details/summary, SEO-friendly) -->
+    <section id="faq" class="section faq" role="region" aria-label="Frequently Asked Questions">
+      <h2>FAQ</h2>
+
+      <details>
+        <summary>Do I need internet to use SwineTech?</summary>
+        <p>For now, yes. An offline-first mode is on our roadmap for field use with spotty connectivity.</p>
+      </details>
+
+      <details>
+        <summary>Who can use the system?</summary>
+        <p>Admin, Staff, and Caretakers (internal), plus a Guest view for buyers to browse available pigs.</p>
+      </details>
+
+      <details>
+        <summary>Is my farm data secure?</summary>
+        <p>Accounts are protected with tokens, and sensitive operations require authentication. OTP-based email verification is enabled.</p>
+      </details>
+
+      <details>
+        <summary>What features are available for customers?</summary>
+        <p>Viewing available pigs, manage bookings, manage receipts, and guest listings.</p>
+      </details>
+
+      <details>
+        <summary>Can I book or reserve pigs as a guest?</summary>
+        <p>Guests can only browse available pigs, booking and checkout require registration and login.</p>
+      </details>
+    </section>
+
+    <!-- Contact (placeholder) -->
+    <section id="contact" class="section" role="region" aria-label="Contact">
+      <h2>Contact</h2>
+      <p>Email us via the Contact form (coming soon).</p>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer role="contentinfo">
+    <p>© 2025 SwineTech | Developed by Group 5 - Ruloma Farms Project</p>
+  </footer>
+
+  <!-- Minimal helper for skeleton image fade-in (no framework) -->
+  <script>
+    // Add 'js' class for progressive enhancement hooks if needed
+    document.documentElement.classList.add('js');
+  </script>
+
+  <!-- If you actually have an index.js in this same folder, keep this. Otherwise remove it. -->
+  <script src="index.js" defer></script>
+</body>
+</html>

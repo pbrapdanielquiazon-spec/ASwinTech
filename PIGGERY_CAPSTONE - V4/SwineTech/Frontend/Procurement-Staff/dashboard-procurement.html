@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Procurement Dashboard</title>
+  <link rel="stylesheet" href="/Procurement-Staff/procurement.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    /* ====== Layout & tokens (dashboard only) ====== */
+    .hero{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:10px}
+    .hero h1{margin:0;font-size:1.6rem}
+    .hero .sub{margin:2px 0 0;color:#6b7280}
+    .qactions{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{background:#1a7f37;color:#fff;border:1px solid #1a7f37;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer}
+    .btn.ghost{background:#fff;color:#1a7f37}
+
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:14px;margin:14px 0 6px}
+    .kpi{background:#fff;border:1px solid #eef2f6;border-radius:14px;padding:14px;box-shadow:0 6px 16px rgba(16,24,40,.06)}
+    .kpi-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+    .kpi .label{font-weight:800;color:#111827}
+    .kpi .num{font-size:1.8rem;font-weight:800;line-height:1;margin:4px 0}
+    .chip{border:1px solid #e5e7eb;background:#f9fafb;padding:2px 8px;border-radius:999px;font-weight:800;font-size:.75rem}
+    .chip.info{background:#eff6ff;border-color:#bfdbfe;color:#1e40af}
+    .chip.success{background:#ecfdf3;border-color:#bbf7d0;color:#065f46}
+    .chip.warn{background:#fff7ed;border-color:#fed7aa;color:#92400e}
+
+    .block{background:#fff;border:1px solid #eef2f6;border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 6px 16px rgba(16,24,40,.06)}
+    .block-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .block-head h2{font-size:1.05rem;margin:0;display:flex;gap:8px;align-items:center}
+    .muted{color:#6b7280}
+    .divider{height:1px;background:#eef2f6;margin:10px 0}
+
+    /* Inventory Health */
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .toolbar .search{flex:1 1 240px}
+    .queue{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .qcard{border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff;box-shadow:0 6px 16px rgba(16,24,40,.05);display:flex;flex-direction:column;gap:6px}
+    .qcard.warn{border-color:#fed7aa}
+    .qcard.crit{border-color:#fecaca}
+    .qhead{display:flex;justify-content:space-between;gap:8px}
+    .qtitle{font-weight:800}
+    .pills{display:flex;gap:6px;flex-wrap:wrap}
+    .pill{background:#f3f4f6;border:1px solid #e5e7eb;padding:2px 8px;border-radius:999px;font-size:.85rem}
+    .pill.warn{background:#fff7ed;border-color:#fed7aa;color:#92400e}
+    .pill.crit{background:#fee2e2;border-color:#fecaca;color:#991b1b}
+    .actions{display:flex;gap:6px;margin-top:6px}
+    .btn-sm{border:1px solid #e5e7eb;background:#fff;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer}
+    .btn-sm.primary{background:#1a7f37;color:#fff;border-color:#1a7f37}
+
+    .cats{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:10px;margin-top:10px}
+    .cat{border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+    .cat .big{display:block;font-size:1.3rem;font-weight:800}
+
+    /* Spend */
+    .spend-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}
+    .chart{width:100%;height:160px;border:1px dashed #e5e7eb;border-radius:10px;display:flex;align-items:flex-end;padding:10px;gap:6px}
+    .bar{flex:1 1 auto;display:flex;align-items:flex-end}
+    .bar div{width:100%;height:20%;background:#c7d2fe;border-radius:6px 6px 0 0}
+    .bar .label{font-size:.75rem;text-align:center;margin-top:6px;color:#6b7280}
+    .list{display:grid;gap:6px}
+    .row{display:flex;justify-content:space-between;border:1px dashed #e5e7eb;border-radius:10px;padding:8px 10px}
+
+    .empty{color:#6b7280;padding:6px 0}
+    .select{padding:6px 8px;border:1px solid #e5e7eb;border-radius:10px}
+    .input{padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px}
+    @media (max-width: 1000px){ .kpis{grid-template-columns:repeat(2,1fr)} .spend-grid{grid-template-columns:1fr} .cats{grid-template-columns:repeat(2,1fr)} }
+  </style>
+</head>
+<body>
+  <!-- Sidebar (unchanged) -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-procurement.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> Dashboard</a>
+      <a href="procurement-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="supplies-procurement.html"><i class="fa-solid fa-warehouse"></i> Manage Supplies</a>
+      <a href="expenses-procurement.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Expenses</a>
+      <a href="reports-procurement.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <!-- HERO -->
+    <div class="hero">
+      <div>
+        <h1>Procurement Dashboard</h1>
+        <p class="sub">Supplies, stock risks, and spend at a glance.</p>
+      </div>
+      <div class="qactions">
+        <a class="btn" href="supplies-procurement.html#add"><i class="fa-solid fa-plus"></i> Add Supply</a>
+        <a class="btn ghost" href="expenses-procurement.html#add"><i class="fa-solid fa-file-invoice-dollar"></i> Log Expense</a>
+        <a class="btn ghost" href="reports-procurement.html"><i class="fa-solid fa-chart-column"></i> Generate Report</a>
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <section class="kpis">
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">Total SKUs</span><span class="chip info" id="kpi-skus-delta" style="visibility:hidden">—</span></div>
+        <div class="num" id="kpi-skus">—</div>
+        <div class="muted">distinct items</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">Low-Stock Items</span><span class="chip warn" id="kpi-low-delta" style="visibility:hidden">—</span></div>
+        <div class="num" id="kpi-low">—</div>
+        <div class="muted">Feed ≤ 10 • Others ≤ 3</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">Monthly Spend</span><span class="chip success" id="kpi-month-delta" style="visibility:hidden">—</span></div>
+        <div class="num" id="kpi-month">—</div>
+        <div class="muted" id="kpi-month-label">—</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-top"><span class="label">All-Time Spend</span><span class="chip" style="visibility:hidden">—</span></div>
+        <div class="num" id="kpi-all">—</div>
+        <div class="muted">lifetime total</div>
+      </div>
+    </section>
+
+    <!-- INVENTORY HEALTH -->
+    <section class="block">
+      <div class="block-head">
+        <h2><i class="fa-solid fa-heart-pulse"></i> Inventory Health</h2>
+        <div class="toolbar">
+          <select id="filterCategory" class="select">
+            <option value="">All categories</option>
+          </select>
+          <label class="select"><input type="checkbox" id="filterCritical" style="margin-right:6px">Critical only</label>
+          <input id="search" class="input search" placeholder="Search item or category..."/>
+        </div>
+      </div>
+
+      <div class="queue" id="lowQueue"></div>
+      <div class="empty" id="lowEmpty" hidden>All set! No low-stock items.</div>
+
+      <div class="divider"></div>
+
+      <div class="cats" id="catCards">
+        <!-- category cards go here -->
+      </div>
+    </section>
+
+    <!-- SPEND & RECENT -->
+    <section class="block">
+      <div class="block-head">
+        <h2><i class="fa-solid fa-peso-sign"></i> Spend Overview</h2>
+        <div>
+          <select id="monthFilter" class="select"></select>
+        </div>
+      </div>
+
+      <div class="spend-grid">
+        <div>
+          <div class="chart" id="chartBars" aria-label="Monthly spend chart"></div>
+          <div class="muted" id="topCatLabel" style="margin-top:6px">Top category —</div>
+        </div>
+        <div>
+          <div class="list" id="recentExpenses"></div>
+          <div class="empty" id="recentEmpty" hidden>No expenses yet. <a href="expenses-procurement.html#add">Log one</a>.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_BASE = "http://localhost:8000/api"; // FastAPI base
+
+    // ===== helpers =====
+    const pesos = n => "₱" + (Number.parseFloat(n||0)).toLocaleString("en-PH",{minimumFractionDigits:2,maximumFractionDigits:2});
+    const num = v => Number.parseFloat(String(v ?? "").replace(/,/g,"")) || 0;
+    const ym = d => {
+      if(!d) return "";
+      const x = new Date(d);
+      if(!Number.isNaN(x)) return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0");
+      const m = String(d).match(/^(\d{4})-(\d{2})-/); return m ? m[1]+"-"+m[2] : "";
+    };
+    const monthName = k => new Date(k+"-01T00:00:00").toLocaleString("en",{month:"long",year:"numeric"});
+
+    // thresholds (you chose defaults)
+    const isLowStock = s => {
+      const qty = num(s.quantity);
+      const cat = String(s.category||"").toLowerCase();
+      const min = (cat === "feed") ? 10 : 3;
+      return qty <= min;
+    };
+    const severity = s => {
+      const qty = num(s.quantity);
+      const cat = String(s.category||"").toLowerCase();
+      const min = (cat === "feed") ? 10 : 3;
+      if (qty <= min) return qty <= 0 ? "crit" : "warn";
+      if (qty <= min * 1.5) return "warn";
+      return "ok";
+    };
+
+    // ===== DOM =====
+    const elSkus = document.getElementById("kpi-skus");
+    const elLow = document.getElementById("kpi-low");
+    const elMonth = document.getElementById("kpi-month");
+    const elMonthLabel = document.getElementById("kpi-month-label");
+    const elAll = document.getElementById("kpi-all");
+
+    const elFilterCat = document.getElementById("filterCategory");
+    const elFilterCrit = document.getElementById("filterCritical");
+    const elSearch = document.getElementById("search");
+    const elLowQueue = document.getElementById("lowQueue");
+    const elLowEmpty = document.getElementById("lowEmpty");
+    const elCatCards = document.getElementById("catCards");
+
+    const elChart = document.getElementById("chartBars");
+    const elMonthFilter = document.getElementById("monthFilter");
+    const elTopCatLabel = document.getElementById("topCatLabel");
+    const elRecent = document.getElementById("recentExpenses");
+    const elRecentEmpty = document.getElementById("recentEmpty");
+
+    // ===== fetchers =====
+    async function getSupplies(){
+      const r = await fetch(`${API_BASE}/supplies`, { headers:{Accept:"application/json"} });
+      if(!r.ok) throw new Error(await r.text()); return r.json();
+    }
+    async function getExpenses(){
+      const r = await fetch(`${API_BASE}/expenses`, { headers:{Accept:"application/json"} });
+      if(!r.ok) throw new Error(await r.text()); return r.json();
+    }
+
+    // ===== inventory render =====
+    function renderCategories(list){
+      // build options + cards
+      const byCat = {};
+      (list||[]).forEach(s => {
+        const k = s.category || "Uncategorized";
+        byCat[k] = (byCat[k]||0) + 1;
+      });
+
+      // filter select
+      elFilterCat.innerHTML = `<option value="">All categories</option>` +
+        Object.keys(byCat).sort().map(k => `<option value="${k}">${k}</option>`).join("");
+
+      // mini cards
+      elCatCards.innerHTML = Object.entries(byCat).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>`
+        <div class="cat" data-cat="${k}">
+          <div class="muted">${k}</div>
+          <span class="big">${v}</span>
+          <div class="muted" style="margin-top:4px"><a href="supplies-procurement.html#${encodeURIComponent(k)}">View</a></div>
+        </div>
+      `).join("");
+    }
+
+    function renderLowQueue(list){
+      const term = elSearch.value.trim().toLowerCase();
+      const cat = elFilterCat.value;
+      const critOnly = elFilterCrit.checked;
+
+      const lows = (list||[])
+        .filter(s => isLowStock(s))
+        .filter(s => !cat || (s.category||"") === cat)
+        .filter(s => !term || (String(s.item_name||"").toLowerCase().includes(term) || String(s.category||"").toLowerCase().includes(term)))
+        .filter(s => !critOnly || severity(s) === "crit");
+
+      elLow.textContent = String((list||[]).filter(isLowStock).length || 0);
+
+      elLowQueue.innerHTML = "";
+      if (!lows.length){
+        elLowEmpty.hidden = false; return;
+      }
+      elLowEmpty.hidden = true;
+
+      lows.slice(0,12).forEach(s=>{
+        const sev = severity(s);
+        const min = (String(s.category||"").toLowerCase()==="feed") ? 10 : 3;
+        elLowQueue.insertAdjacentHTML("beforeend", `
+          <div class="qcard ${sev==='crit'?'crit':(sev==='warn'?'warn':'')}">
+            <div class="qhead">
+              <div class="qtitle">${s.item_name}</div>
+              <span class="pill ${sev}">${sev==='crit'?'Critical':'Warning'}</span>
+            </div>
+            <div class="pills">
+              <span class="pill">${s.category || 'Uncategorized'}</span>
+              <span class="pill">${num(s.quantity)} ${s.unit || ''} on hand</span>
+              <span class="pill">Min ${min}</span>
+            </div>
+            <div class="actions">
+              <a class="btn-sm primary" href="supplies-procurement.html?item=${encodeURIComponent(s.item_name)}#restock">Restock</a>
+              <a class="btn-sm" href="supplies-procurement.html?item=${encodeURIComponent(s.item_name)}#adjust-min">Adjust Min</a>
+            </div>
+          </div>
+        `);
+      });
+    }
+
+    // ===== spend render =====
+    function buildMonthOptions(expenses){
+      const keys = Array.from(new Set((expenses||[]).map(e=>ym(e.date_spent)))).filter(Boolean).sort().reverse();
+      elMonthFilter.innerHTML = `<option value="">All months</option>` +
+        keys.map(k => `<option value="${k}">${monthName(k)}</option>`).join("");
+    }
+
+    function renderSpend(expenses){
+      // KPIs
+      const totalAll = (expenses||[]).reduce((a,e)=>a+num(e.amount),0);
+      elAll.textContent = pesos(totalAll);
+
+      // month group map
+      const bucket = {};
+      (expenses||[]).forEach(e=>{
+        const key = ym(e.date_spent); if(!key) return;
+        bucket[key] = (bucket[key]||0) + num(e.amount);
+      });
+      const months = Object.keys(bucket).sort().slice(-12); // last 12
+      const nowKey = months[months.length-1] || "";
+      const monthTotal = bucket[nowKey] || 0;
+      elMonth.textContent = pesos(monthTotal);
+      elMonthLabel.textContent = nowKey ? monthName(nowKey) : "—";
+
+      // tiny bars
+      elChart.innerHTML = "";
+      const max = Math.max(...months.map(k=>bucket[k]||0), 1);
+      months.forEach(k=>{
+        const h = Math.max(8, Math.round((bucket[k]/max)*100));
+        const bar = document.createElement("div");
+        bar.className = "bar";
+        bar.innerHTML = `<div style="height:${h}%"></div>`;
+        bar.title = `${monthName(k)} — ${pesos(bucket[k])}`;
+        elChart.appendChild(bar);
+      });
+
+      // month filter & top category
+      buildMonthOptions(expenses);
+      const updateMonth = () => {
+        const chosen = elMonthFilter.value;
+        const filtered = (expenses||[]).filter(e => !chosen || ym(e.date_spent) === chosen);
+        // top category
+        const byC = {};
+        filtered.forEach(e => { const k = e.category || "Uncategorized"; byC[k] = (byC[k]||0) + num(e.amount); });
+        const top = Object.entries(byC).sort((a,b)=>b[1]-a[1])[0];
+        elTopCatLabel.textContent = top ? `Top category — ${top[0]} (${pesos(top[1])})` : "Top category —";
+
+        // recent list
+        elRecent.innerHTML = filtered.sort((a,b)=>new Date(b.date_spent)-new Date(a.date_spent))
+                                    .slice(0,8)
+                                    .map(e => `
+          <div class="row">
+            <div>
+              <div><strong>${e.description || 'Expense'}</strong></div>
+              <div class="muted">${new Date(e.date_spent).toLocaleDateString()} • ${e.category || 'Uncategorized'}</div>
+            </div>
+            <div><strong>${pesos(e.amount)}</strong></div>
+          </div>
+        `).join("");
+        elRecentEmpty.hidden = !!filtered.length;
+      };
+      elMonthFilter.onchange = updateMonth;
+      updateMonth();
+    }
+
+    // ===== init =====
+    (async function init(){
+      try {
+        const [supplies, expenses] = await Promise.all([getSupplies(), getExpenses()]);
+        // KPIs: distinct skus
+        elSkus.textContent = String((supplies||[]).length || 0);
+
+        renderCategories(supplies||[]);
+        renderLowQueue(supplies||[]);
+
+        renderSpend(expenses||[]);
+
+        // filters wiring
+        [elFilterCat, elFilterCrit].forEach(el => el.addEventListener("change", ()=>renderLowQueue(supplies||[])));
+        elSearch.addEventListener("input", ()=>renderLowQueue(supplies||[]));
+      } catch (e) {
+        console.error("Procurement dashboard load failed:", e);
+        // soft empties
+        elLowEmpty.hidden = false;
+        elRecentEmpty.hidden = false;
+        elSkus.textContent = "0"; elLow.textContent = "0";
+        elMonth.textContent = "₱0.00"; elAll.textContent = "₱0.00";
+      }
+    })();
+
+    // logout
+    document.getElementById("logout")?.addEventListener("click",(e)=>{
+      e.preventDefault();
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("access_token");
+      window.location.href = "/Zhomepage/login.html";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>SwineTech | Sales Staff — Sales</title>
+  <link rel="stylesheet" href="/Sales-Staff/sales.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    .tabs { display:flex; gap:8px; margin:14px 0 18px; }
+    .tab-btn { background:#f0f0f0; border:none; padding:8px 12px; cursor:pointer; border-radius:8px; }
+    .tab-btn.active { background:#2e7d32; color:#fff; }
+
+    .toolbar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:10px 0 16px; }
+    .quick-dates { display:inline-flex; gap:6px; }
+    .quick-dates button { background:#f6f6f6; border:1px solid #e2e2e2; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .quick-dates button.active { background:#2e7d32; border-color:#2e7d32; color:#fff; }
+    .badge { background:#eef3ef; color:#2e7d32; border-radius:999px; padding:2px 8px; font-size:.85rem; margin-left:6px; }
+
+    .admin-table { width:100%; border-collapse:collapse; }
+    .admin-table th, .admin-table td { border:1px solid #ddd; padding:8px; text-align:center; font-size:14px; }
+    .admin-table th { background:#f7f7f7; }
+    .actions { display:flex; gap:6px; justify-content:center; }
+    .btn { border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:.9rem; }
+    .btn-add { background:#2e7d32; color:#fff; }
+    .btn-edit { background:#FFA726; color:#fff; }
+    .btn-archive { background:#B3261E; color:#fff; }
+    .btn-restore { background:#29B6F6; color:#fff; }
+    .empty { text-align:center; color:#777; padding:16px 8px; }
+
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10; }
+    .modal .content { width:560px; max-width:95vw; background:#fff; margin:6% auto; border-radius:12px; padding:18px; box-shadow:0 20px 40px rgba(0,0,0,.25); }
+    .content h2, .content h3 { margin:0 0 12px; }
+    .form-group { margin-bottom:12px; text-align:left; }
+    label { display:block; margin-bottom:6px; font-weight:600; }
+    input, select, textarea { width:100%; padding:10px 12px; border:1px solid #ddd; border-radius:10px; }
+    .modal .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+    .btn-close { background:#ddd; }
+    .btn-primary { background:#2e7d32; color:#fff; }
+    .btn-secondary { background:#ccc; color:#111; }
+    .toast { position:fixed; bottom:16px; right:16px; background:#1e7b4f; color:#fff; padding:10px 12px; border-radius:10px; display:none; z-index:1000; }
+    .warn { color:#92400e; background:#fff7ed; border:1px solid #ffedd5; padding:10px; border-radius:8px; }
+
+    /* Simple modal stacking */
+    #confirmSaleModal { z-index: 20; }
+    #confirmSaleModal2 { z-index: 30; }
+
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech(Sales Staff)</div>
+    <nav>
+      <a href="dashboard-sales.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+      <a href="salesstaff-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="bookings-sales.html"><i class="fa-solid fa-calendar-check"></i> Bookings</a>
+      <a href="sales-records.html" class="active"><i class="fa-solid fa-receipt"></i> Sales Transactions</a>
+      <a href="reports-sales.html"><i class="fa-solid fa-file-lines"></i> Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Sales</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="live">Sales</button>
+      <button class="tab-btn" data-tab="archived">Archived</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div><button class="btn btn-add" id="btnAdd"><i class="fa-solid fa-circle-plus"></i> Record Sale</button></div>
+      <div style="margin-left:auto;"></div>
+      <strong>Date:</strong>
+      <div class="quick-dates" id="dateTabs">
+        <button data-range="all" class="active">All</button>
+        <button data-range="today">Today</button>
+        <button data-range="week">This week</button>
+      </div>
+      <span class="badge" id="countBadge">0</span>
+    </div>
+
+    <!-- Sales table -->
+    <section id="liveSection">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Sale_ID</th>
+            <th>Booking_ID</th>
+            <th>Item_Type</th>
+            <th>Description</th>
+            <th>Total</th>
+            <th>Payment_Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="salesTable"><tr><td colspan="7" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </section>
+
+    <!-- Archived table -->
+    <section id="archivedSection" style="display:none;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Sale_ID</th>
+            <th>Booking_ID</th>
+            <th>Item_Type</th>
+            <th>Description</th>
+            <th>Total</th>
+            <th>Payment_Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="archivedSales"><tr><td colspan="7" class="empty">Nothing archived.</td></tr></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Add Sale Modal (Admin-like) -->
+  <div class="modal" id="addSaleModal">
+    <div class="content">
+      <h2>Add Sale</h2>
+      <form id="saleForm">
+        <div class="form-group">
+          <label>Booking (approved only)</label>
+          <select id="saleBookingSelect" required>
+            <option value="" disabled selected>— Select approved booking —</option>
+          </select>
+          <small style="display:block;margin-top:4px;color:#6b7280">Item_Type auto-locks from booking</small>
+        </div>
+
+        <div class="form-group">
+          <label>Item_Type</label>
+          <select id="saleItem" required disabled>
+            <option value="" disabled selected>-- Select --</option>
+            <option value="pig">pig</option>
+            <option value="lechon">lechon</option>
+          </select>
+          <small style="display:block;margin-top:4px;color:#6b7280">Locked by booking type</small>
+        </div>
+
+        <div class="form-group">
+          <label>Description (optional)</label>
+          <input type="text" id="saleDesc" placeholder="e.g., Grower 70kg" />
+        </div>
+
+        <div class="form-group">
+          <label>Total</label>
+          <input type="number" id="saleTotal" step="0.01" min="0.01" required />
+        </div>
+
+        <div class="form-group">
+          <label>Payment_Date</label>
+          <input type="date" id="saleDate" required />
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="saleCancel">Cancel</button>
+          <button class="btn btn-add" type="submit" id="saleSubmit" disabled>Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Sale Modal (step 1) -->
+  <div class="modal" id="confirmSaleModal">
+    <div class="content">
+      <span style="float:right;cursor:pointer;color:#6b7280" id="closeConfirm1">&times;</span>
+      <h3 style="margin-top:0;">Confirm Sale Details</h3>
+      <div id="confirmSaleSummary" style="white-space:pre-wrap;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin:10px 0;"></div>
+      <p class="warn">⚠️ Sales will trigger status changes in related tables.</p>
+      <div class="actions">
+        <button class="btn btn-primary" id="confirmSaleYes">Yes, save</button>
+        <button class="btn btn-secondary" id="confirmSaleNo">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final “Are you sure?” Modal (step 2) -->
+  <div class="modal" id="confirmSaleModal2">
+    <div class="content">
+      <span style="float:right;cursor:pointer;color:#6b7280" id="closeConfirm2">&times;</span>
+      <h3>Final check</h3>
+      <p class="warn">Are you absolutely sure you want to record this sale? This action may update related records and cannot be undone.</p>
+      <div class="actions">
+        <button class="btn btn-primary" id="confirmSaleReallyYes">Yes, record sale</button>
+        <button class="btn btn-secondary" id="confirmSaleReallyNo">Go back</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Edit Modal -->
+<div class="modal" id="confirmEditModal" style="z-index:25">
+  <div class="content">
+    <span id="closeConfirmEdit" style="float:right;cursor:pointer;color:#6b7280">&times;</span>
+    <h3 style="margin-top:0;">Confirm Updates</h3>
+    <div id="confirmEditSummary" style="white-space:pre-wrap;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin:10px 0;"></div>
+    <p class="warn">⚠️ Updating a sale will modify existing records.</p>
+    <div class="actions">
+      <button class="btn btn-primary" id="confirmEditYes">Yes, update</button>
+      <button class="btn btn-secondary" id="confirmEditNo">Cancel</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Edit Sale Modal (Admin-like: only 3 fields) -->
+  <div class="modal" id="editSaleModal">
+    <div class="content">
+      <h2>Edit Sale</h2>
+      <form id="editSaleForm">
+        <input type="hidden" id="editSaleId" />
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="editSaleDesc" placeholder="e.g., Grower 70kg" />
+        </div>
+        <div class="form-group">
+          <label>Total</label>
+          <input type="number" id="editSaleTotal" step="0.01" min="0.01" required />
+        </div>
+        <div class="form-group">
+          <label>Payment_Date</label>
+          <input type="date" id="editSaleDate" required />
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-secondary" id="editSaleCancel">Cancel</button>
+          <button class="btn btn-add" type="submit">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Simple toast -->
+  <div class="toast" id="toastBox">Saved</div>
+
+  <script type="module">
+    /* ====== Config / Auth ====== */
+    const API_BASE = "http://localhost:8000/api";
+    const TOKEN = localStorage.getItem("token") || "";
+    const authHeader = TOKEN ? { "Authorization": `Bearer ${TOKEN}` } : {};
+
+    document.getElementById("logout")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      window.location.href = "/Zhomepage/login.html";
+    });
+
+    /* ====== Elements ====== */
+    const $ = (id) => document.getElementById(id);
+    const salesT = $("salesTable");
+    const archivedT = $("archivedSales");
+    const countBadge = $("countBadge");
+
+    // Add modal (admin-like)
+    const addSaleModal = $("addSaleModal");
+    const saleForm = $("saleForm");
+    const saleBookingSelect = $("saleBookingSelect");
+    const saleItem = $("saleItem");
+    const saleDesc = $("saleDesc");
+    const saleTotal = $("saleTotal");
+    const saleDate = $("saleDate");
+    const saleSubmit = $("saleSubmit");
+    const saleCancel = $("saleCancel");
+
+    // Confirm modals
+    const confirmSaleModal = $("confirmSaleModal");
+    const confirmSaleModal2 = $("confirmSaleModal2");
+    const confirmSaleSummary = $("confirmSaleSummary");
+    const confirmSaleYes = $("confirmSaleYes");
+    const confirmSaleNo = $("confirmSaleNo");
+    const confirmSaleReallyYes = $("confirmSaleReallyYes");
+    const confirmSaleReallyNo = $("confirmSaleReallyNo");
+    const closeConfirm1 = $("closeConfirm1");
+    const closeConfirm2 = $("closeConfirm2");
+
+    // Edit modal
+    const editSaleModal = $("editSaleModal");
+    const editSaleForm = $("editSaleForm");
+    const editSaleId = $("editSaleId");
+    const editSaleDesc = $("editSaleDesc");
+    const editSaleTotal = $("editSaleTotal");
+    const editSaleDate = $("editSaleDate");
+    const editSaleCancel = $("editSaleCancel");
+
+    // Toolbar etc.
+    const btnAdd = $("btnAdd");
+
+    /* ====== State ====== */
+    let allSales = [];              // full list from backend
+    let approvedBookings = [];      // for dropdown
+    let dateFilter = "all";         // all | today | week
+    let pendingSalePayload = null;  // for 2-step confirm
+    let pendingEditId = null;
+    let pendingEditPayload = null;
+    let currentEditingOriginal = null; // snapshot of values when opening Edit
+
+
+    /* ====== Helpers ====== */
+    function showToast(text="Saved"){
+      const t = $("toastBox");
+      t.textContent = text;
+      t.style.display = "block";
+      setTimeout(()=>{ t.style.display = "none"; }, 1600);
+    }
+    function fmtMoney(v){ const n = Number(v||0); return "₱" + n.toLocaleString(); }
+    function fmtDate(iso){ if(!iso) return "-"; const d=new Date(iso); return Number.isNaN(d)? String(iso).slice(0,10) : d.toISOString().slice(0,10); }
+    function todayYMD(){ return new Date().toISOString().slice(0,10); }
+    function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+    function inToday(iso){
+      if(!iso) return false; const d=new Date(iso), n=new Date();
+      return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
+    }
+    function weekBounds(date=new Date()){
+      const d=new Date(date), day=d.getDay(), diff=(day+6)%7;
+      const mon=new Date(d); mon.setDate(d.getDate()-diff); mon.setHours(0,0,0,0);
+      const sun=new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+      return [mon,sun];
+    }
+    function inThisWeek(iso){
+      if(!iso) return false; const d=new Date(iso); const [s,e]=weekBounds(new Date()); return d>=s && d<=e;
+    }
+    function byDateFilter(rows){
+      if(dateFilter==="all") return rows;
+      if(dateFilter==="today") return rows.filter(r => inToday(r.payment_date));
+      if(dateFilter==="week") return rows.filter(r => inThisWeek(r.payment_date));
+      return rows;
+    }
+
+    function tr(html){ const el=document.createElement("tr"); el.innerHTML=html; return el; }
+
+    function deriveItemTypeFromBooking(bk){
+      const t = String(bk?.type ?? bk?.booking_type ?? "").toLowerCase();
+      if (t.includes("lechon")) return "lechon";
+      if (t.includes("pig"))    return "pig";
+      return "pig";
+    }
+
+    function salesRow(r){
+      const row = tr(`
+        <td>${r.id ?? r.sale_id ?? ""}</td>
+        <td>${r.booking_id ?? ""}</td>
+        <td>${escapeHtml(r.item_type ?? "")}</td>
+        <td>${escapeHtml(r.item_description ?? "")}</td>
+        <td>${fmtMoney(r.total_amount ?? 0)}</td>
+        <td>${fmtDate(r.payment_date)}</td>
+        <td class="actions">
+          <button class="btn btn-edit" data-id="${r.id ?? r.sale_id}"><i class="fa-solid fa-pen"></i> Edit</button>
+          <button class="btn btn-archive" data-archive="${r.id ?? r.sale_id}"><i class="fa-solid fa-box-archive"></i> Archive</button>
+        </td>
+      `);
+      row.querySelector('[data-id]')?.addEventListener('click', () => openEdit(r));
+      row.querySelector('[data-archive]')?.addEventListener('click', () => archiveRow(row));
+      return row;
+    }
+
+    function archivedRow(rHtml){
+      const row = tr(rHtml);
+      // Replace action cell with Restore
+      const td = row.querySelector("td:last-child");
+      td.innerHTML = `<button class="btn btn-restore"><i class="fa-solid fa-rotate-left"></i> Restore</button>`;
+      td.querySelector("button")?.addEventListener("click", () => {
+        row.querySelector("td:last-child").innerHTML = ""; 
+        salesT.prepend(row);
+        updateArchivedPlaceholder();
+      });
+      return row;
+    }
+
+    function updateCountBadge(){
+      countBadge.textContent = byDateFilter(allSales).length.toString();
+    }
+
+    function updateArchivedPlaceholder(){
+      if(archivedT.children.length === 0){
+        archivedT.innerHTML = `<tr><td colspan="7" class="empty">Nothing archived.</td></tr>`;
+      }else{
+        if(archivedT.children.length===1 && archivedT.querySelector(".empty")) return;
+      }
+    }
+
+    /* ====== API ====== */
+    async function fetchSales(){
+      const res = await fetch(`${API_BASE}/sales`, { headers: { "Accept":"application/json", ...authHeader }});
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function fetchApprovedBookings(){
+      const res = await fetch(`${API_BASE}/bookings?status=approved`, { headers: { "Accept":"application/json", ...authHeader }});
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function createSale(payload){
+      const res = await fetch(`${API_BASE}/sales`, {
+        method:"POST",
+        headers:{ "Accept":"application/json","Content-Type":"application/json", ...authHeader },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    async function updateSale(id, payload){
+      const res = await fetch(`${API_BASE}/sales/${id}`, {
+        method:"PUT",
+        headers:{ "Accept":"application/json","Content-Type":"application/json", ...authHeader },
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error(await res.text());
+      return res.json();
+    }
+
+    /* ====== Render ====== */
+    function renderSales(){
+      salesT.innerHTML = "";
+      const rows = byDateFilter(allSales);
+      if(!rows.length){
+        salesT.innerHTML = `<tr><td colspan="7" class="empty">No sales to show.</td></tr>`;
+        updateCountBadge();
+        return;
+      }
+      rows.forEach(r => salesT.appendChild(salesRow(r)));
+      updateCountBadge();
+    }
+
+    /* ====== Archive (client-only) ====== */
+    function archiveRow(row){
+      const clone = archivedRow(row.outerHTML);
+      if(archivedT.children.length===1 && archivedT.querySelector(".empty")) archivedT.innerHTML = "";
+      archivedT.prepend(clone);
+      row.remove();
+      updateArchivedPlaceholder();
+    }
+
+    /* ====== Modal: Add Sale (Admin-like) ====== */
+    function openAdd(){
+      // Reset form
+      saleForm.reset();
+      saleItem.disabled = true;
+      saleItem.value = "";
+      saleDate.value = todayYMD();
+      saleSubmit.disabled = true;
+
+      // Populate dropdown from cache
+      fillApprovedBookingOptions();
+      addSaleModal.style.display = "block";
+    }
+
+    function closeAdd(){ addSaleModal.style.display = "none"; }
+    saleCancel.addEventListener("click", closeAdd);
+    btnAdd.addEventListener("click", openAdd);
+    window.addEventListener("click", (e)=>{ 
+      if(e.target === addSaleModal) closeAdd();
+      if(e.target === confirmSaleModal) confirmSaleModal.style.display = "none";
+      if(e.target === confirmSaleModal2) confirmSaleModal2.style.display = "none";
+      if(e.target === editSaleModal) editSaleModal.style.display = "none";
+    });
+
+    function fillApprovedBookingOptions(){
+      saleBookingSelect.innerHTML = `<option value="" disabled selected>— Select approved booking —</option>` +
+        approvedBookings.map(b => {
+          const id = b.id ?? b.booking_id;
+          const typ = (b.type ?? b.booking_type ?? 'booking');
+          const d = fmtDate(b.booking_date);
+          return `<option value="${id}">#${id} • ${escapeHtml(typ)} (${d})</option>`;
+        }).join("");
+    }
+
+    saleBookingSelect.addEventListener("change", ()=>{
+      const id = Number(saleBookingSelect.value || 0);
+      if(!id){
+        saleItem.value = ""; saleItem.disabled = true; saleSubmit.disabled = true; return;
+      }
+      const bk = approvedBookings.find(x => Number(x.id ?? x.booking_id) === id);
+      saleItem.value = deriveItemTypeFromBooking(bk);
+      saleItem.disabled = true;
+      saleSubmit.disabled = false;
+    });
+
+    function summarizeSalePayload(p){
+      const lines = [
+        `Booking_ID: ${p.booking_id ?? ''}`,
+        `Item_Type: ${p.item_type ?? ''}`,
+        `Description: ${p.item_description ?? ''}`,
+        `Total: ${p.total_amount != null ? '₱' + Number(p.total_amount).toLocaleString() : '(auto/blank)'}`,
+        `Payment_Date: ${p.payment_date ?? ''}`,
+      ];
+      return lines.join('\\n');
+    }
+
+    function diffSummary(oldObj={}, newObj={}){
+      const keys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+      const lines = [];
+      keys.forEach(k=>{
+        const a = oldObj[k] ?? '';
+        const b = newObj[k] ?? '';
+        if(String(a) !== String(b)){
+          lines.push(`${k}: ${a || '—'} → ${b || '—'}`);
+        }
+      });
+      return lines.length ? lines.join('\n') : 'No changes.';
+    }
+
+
+    // Add Sale submit → Confirm (step 1)
+    saleForm.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const payload = {
+        booking_id: Number(saleBookingSelect.value || 0) || undefined,
+        item_type: saleItem.value || undefined,
+        item_description: saleDesc.value.trim() || undefined,
+        total_amount: saleTotal.value ? Number(saleTotal.value) : undefined,
+        payment_date: saleDate.value || undefined,
+      };
+      if(!payload.booking_id) return alert("Booking selection is required");
+      if(!payload.item_type)  return alert("Item_Type is required");
+
+      // Duplicate guard (frontend)
+      try{
+        const dup = allSales.some(s => Number(s.booking_id) === payload.booking_id);
+        if(dup) return alert(`A sale for Booking_ID #${payload.booking_id} already exists.`);
+      }catch(_){ /* rely on backend if anything fails */ }
+
+      pendingSalePayload = payload;
+      confirmSaleSummary.textContent = summarizeSalePayload(payload);
+      confirmSaleModal.style.display = "block";
+    });
+
+    // Confirm step 1 actions
+    closeConfirm1.addEventListener("click", ()=> confirmSaleModal.style.display="none");
+    confirmSaleNo.addEventListener("click", ()=> confirmSaleModal.style.display="none");
+    confirmSaleYes.addEventListener("click", ()=>{
+      // Step 2 modal
+      confirmSaleModal.style.display = "none";
+      confirmSaleModal2.style.display = "block";
+    });
+
+    // Confirm step 2 actions
+    closeConfirm2.addEventListener("click", ()=> confirmSaleModal2.style.display="none");
+    confirmSaleReallyNo.addEventListener("click", ()=> confirmSaleModal2.style.display="none");
+    confirmSaleReallyYes.addEventListener("click", async ()=>{
+      if(!pendingSalePayload){ confirmSaleModal2.style.display="none"; return; }
+      try {
+        const created = await createSale(pendingSalePayload);
+        allSales.unshift(created);
+        renderSales();
+        confirmSaleModal2.style.display = "none";
+        closeAdd();
+        showToast("Sale recorded");
+      } catch (err) {
+        alert(err?.message || "Failed to record sale");
+      } finally {
+        pendingSalePayload = null;
+      }
+    });
+
+    /* ====== Edit Sale (Admin-like: only 3 fields) ====== */
+    function openEdit(r){
+      const isoDate = r.payment_date ? String(r.payment_date).slice(0,10) : "";
+
+      // keep an original snapshot for the diff
+      currentEditingOriginal = {
+        item_description: r.item_description ?? "",
+        total_amount:     r.total_amount ?? "",
+        payment_date:     isoDate
+      };
+
+      editSaleId.value   = r.id ?? r.sale_id ?? "";
+      editSaleDesc.value = currentEditingOriginal.item_description;
+      editSaleTotal.value= currentEditingOriginal.total_amount;
+      editSaleDate.value = currentEditingOriginal.payment_date;
+
+      editSaleModal.style.display = "block";
+    }
+
+    function closeEdit(){ editSaleModal.style.display = "none"; }
+    editSaleCancel.addEventListener("click", closeEdit);
+
+    editSaleForm.addEventListener("submit", (e)=>{
+      e.preventDefault();
+      const id = editSaleId.value;
+      if(!id) return closeEdit();
+
+      // Build the intended update payload
+      const payload = {
+        item_description: (editSaleDesc.value ?? "").trim() || undefined,
+        total_amount:     editSaleTotal.value ? Number(editSaleTotal.value) : undefined,
+        payment_date:     editSaleDate.value || undefined,
+      };
+
+      // Compute and show diff
+      const summary = diffSummary(currentEditingOriginal || {}, {
+        item_description: payload.item_description ?? "",
+        total_amount:     payload.total_amount ?? "",
+        payment_date:     payload.payment_date ?? ""
+      });
+
+      // If nothing changed, you can short-circuit (optional)
+      if (summary === 'No changes.'){
+        alert('No changes detected.');
+        return;
+      }
+
+      pendingEditId = id;
+      pendingEditPayload = payload;
+
+      document.getElementById("confirmEditSummary").textContent = summary;
+      document.getElementById("confirmEditModal").style.display = "block";
+    });
+
+    const confirmEditModal = document.getElementById("confirmEditModal");
+    const confirmEditYes   = document.getElementById("confirmEditYes");
+    const confirmEditNo    = document.getElementById("confirmEditNo");
+    const closeConfirmEdit = document.getElementById("closeConfirmEdit");
+
+    function closeConfirmEditModal(){
+      confirmEditModal.style.display = "none";
+    }
+
+    closeConfirmEdit?.addEventListener("click", closeConfirmEditModal);
+    confirmEditNo?.addEventListener("click", closeConfirmEditModal);
+
+    // Proceed with the actual PUT
+    confirmEditYes?.addEventListener("click", async ()=>{
+      if(!pendingEditId || !pendingEditPayload){
+        closeConfirmEditModal();
+        return;
+      }
+      try{
+        const updated = await updateSale(pendingEditId, pendingEditPayload);
+        const idx = allSales.findIndex(s => String(s.id ?? s.sale_id) === String(pendingEditId));
+        if(idx >= 0) allSales[idx] = updated;
+
+        renderSales();
+        closeConfirmEditModal();
+        closeEdit();
+        showToast("Sale updated");
+      }catch(err){
+        alert(err?.message || "Failed to update sale");
+      }finally{
+        pendingEditId = null;
+        pendingEditPayload = null;
+      }
+    });
+
+    window.addEventListener("click", (e)=>{
+      if(e.target === addSaleModal) closeAdd();
+      if(e.target === confirmSaleModal) confirmSaleModal.style.display = "none";
+      if(e.target === confirmSaleModal2) confirmSaleModal2.style.display = "none";
+      if(e.target === editSaleModal) editSaleModal.style.display = "none";
+      if(e.target === confirmEditModal) confirmEditModal.style.display = "none"; // <— add this
+    });
+
+    /* ====== Date filters ====== */
+    document.querySelectorAll("#dateTabs button").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        document.querySelectorAll("#dateTabs button").forEach(x=>x.classList.remove("active"));
+        b.classList.add("active");
+        dateFilter = b.dataset.range;
+        renderSales();
+      });
+    });
+
+    /* ====== Tabs (Live / Archived) ====== */
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    tabButtons.forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        tabButtons.forEach(x=>x.classList.remove("active"));
+        btn.classList.add("active");
+        const isLive = btn.dataset.tab === "live";
+        document.getElementById("liveSection").style.display = isLive ? "" : "none";
+        document.getElementById("archivedSection").style.display = isLive ? "none" : "";
+      });
+    });
+
+    /* ====== Init ====== */
+    async function init(){
+      try{
+        // Approved bookings for dropdown
+        approvedBookings = await fetchApprovedBookings().catch(()=>[]);
+        // Sales
+        allSales = await fetchSales().catch(()=>[]);
+        renderSales();
+        updateArchivedPlaceholder();
+
+        // Pre-wire Add modal date to today on first load
+        saleDate.value = todayYMD();
+      }catch(e){
+        salesT.innerHTML = `<tr><td colspan="7" class="empty">${escapeHtml(e.message || 'Failed to load data.')}</td></tr>`;
+      }
+    }
+    init();
+  </script>
+</body>
+</html>

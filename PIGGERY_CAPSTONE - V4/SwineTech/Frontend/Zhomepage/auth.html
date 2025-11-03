@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Authentication</title>
+  <!-- These CSS files should be in /Frontend/Zhomepage/ -->
+  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="index2.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="navbar">
+    <div class="logo">🐖 SwineTech</div>
+    <nav>
+      <a href="/Zhomepage/index2.html#index">Home</a>
+      <a href="/Zhomepage/index2.html#about">About</a>
+      <a href="/Zhomepage/index2.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <div class="auth-body">
+    <div class="auth-container">
+      <div class="auth-card">
+        <h2 id="auth-title">Login</h2>
+        <form id="auth-form" action="#" method="POST" novalidate>
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Enter your username" required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <label class="show-pass">
+              <input type="checkbox" id="togglePassword"> Show password
+            </label>
+          </div>
+
+          <p id="form-error" class="form-error" aria-live="polite" role="status"></p>
+          <button type="submit" class="btn btn-auth">Login</button>
+
+          <p class="auth-switch">
+            Don’t have an account?
+            <a href="/Zhomepage/register.html">Register</a> |
+            <a href="/Zhomepage/guest.html">Continue as Guest</a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="auth-footer">
+    <p>© 2025 SwineTech | Group 5 - Ruloma Farms Project</p>
+  </footer>
+
+  <script>
+    // -------- Config --------
+    const isLocalFE = location.hostname === "localhost" && location.port === "5500";
+    const API       = isLocalFE ? "http://localhost:8000/api" : "/api";
+    const TOKEN_KEY = "token";
+
+    // Role → dashboard map (root-absolute)
+    const ROLE_ROUTES = {
+      ADMIN:        "/Admin/dashboard-admin.html",
+      SALES:        "/Sales-Staff/dashboard-sales.html",
+      PROCUREMENT:  "/Procurement-Staff/dashboard-procurement.html",
+      CARETAKER:    "/Caretaker/dashboard-caretaker.html",
+      CLIENT:       "/Client/dashboard-client.html",
+    };
+
+    // -------- Helpers --------
+    function saveToken(t){ localStorage.setItem(TOKEN_KEY, t); }
+    function getToken(){ return localStorage.getItem(TOKEN_KEY) || ""; }
+    function getAuthHeaders(){
+      const t = getToken();
+      return { "Authorization": `Bearer ${t}`, "Accept": "application/json" };
+    }
+    function setError(msg){
+      const el = document.getElementById("form-error");
+      el.textContent = msg || "";
+    }
+    function clearError(){ setError(""); }
+
+    function gotoRoleDashboard(roleVal){
+      const r = String(roleVal?.value || roleVal || "").toUpperCase();
+      const target = ROLE_ROUTES[r] || ROLE_ROUTES.CLIENT;
+      window.location.href = target;
+    }
+
+    async function fetchMe(){
+      const res = await fetch(`${API}/auth/me`, { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to fetch profile");
+      return res.json();
+    }
+
+    // Login using form-encoded body (matches FastAPI OAuth2PasswordRequestForm)
+    async function login(username, password){
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" },
+        body: new URLSearchParams({ username, password })
+      });
+      if (!res.ok) {
+        let msg = "Invalid username or password.";
+        try { const j = await res.json(); msg = j.detail || msg; } catch {}
+        throw new Error(msg);
+      }
+      const data = await res.json();
+      const token = data.access_token || data.token;
+      if (!token) throw new Error("No token returned by server.");
+      saveToken(token);
+    }
+
+    // If already logged in, bounce to dashboard
+    (async function redirectIfLoggedIn(){
+      const t = getToken();
+      if (!t) return;
+      try {
+        const me = await fetchMe();
+        gotoRoleDashboard(me.role);
+      } catch {
+        // invalid token, ignore
+      }
+    })();
+
+    // -------- Form wiring --------
+    const form = document.getElementById("auth-form");
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearError();
+
+      const username = document.getElementById("username").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!username || !password){
+        setError("Please enter both username and password.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Signing in...";
+
+      try {
+        await login(username, password);
+        const me = await fetchMe();
+        gotoRoleDashboard(me.role);
+      } catch (err) {
+        setError(err.message || "Login error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Login";
+      }
+    });
+
+    // Toggle password visibility
+    const togglePassword = document.getElementById("togglePassword");
+    const pwd = document.getElementById("password");
+    if (togglePassword && pwd) {
+      togglePassword.addEventListener("change", () => {
+        pwd.type = togglePassword.checked ? "text" : "password";
+      });
+    }
+  </script>
+</body>
+</html>

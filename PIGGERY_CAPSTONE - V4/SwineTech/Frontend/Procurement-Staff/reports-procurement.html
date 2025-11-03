@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Reports</title>
+
+  <link rel="stylesheet" href="/Admin/admin.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+  <style>
+    .page-desc { margin: 6px 0 18px; color:#555; }
+    .report-actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; align-items:center; }
+    .btn-add { background:#29B6F6; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+    .btn-add:disabled { opacity:.6; cursor:not-allowed; }
+    .btn-view { background:#43A047; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; }
+    .empty { padding:18px; background:#fff; border:1px solid #eee; border-radius:8px; color:#666; }
+    .tag { display:inline-block; padding:2px 8px; border-radius:999px; background:#eef; font-size:.85rem; }
+    .muted { color:#777; font-size:.9rem; }
+    .modal pre { white-space:pre-wrap; }
+    .picker { display:flex; gap:10px; align-items:center; }
+    .picker select { padding:8px 10px; border-radius:8px; border:1px solid #dcdcdc; background:#fff; }
+    /* ---- Aesthetic report template ---- */
+.report-wrap { font: 14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; color:#222; }
+.report-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0 14px; }
+.report-brand { display:flex; align-items:center; gap:10px; }
+.report-brand .logo { width:32px; height:32px; border-radius:8px; display:grid; place-items:center; background:#43A047; color:#fff; font-weight:700; }
+.report-title { font-size:1.25rem; font-weight:700; margin:0; }
+.report-meta { color:#666; font-size:.9rem; }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:.8rem; background:#eef; color:#334; }
+.badge.green { background:#e9f7ef; color:#1e7e34; }
+.badge.red { background:#fdecea; color:#b02a37; }
+.section { background:#fff; border:1px solid #eee; border-radius:10px; padding:14px; margin:12px 0; }
+.section h4 { margin:0 0 10px; font-size:1.05rem; }
+.kv { display:flex; flex-wrap:wrap; gap:10px 18px; margin:6px 0 0; }
+.kv div { color:#555; font-size:.9rem; }
+.table { width:100%; border-collapse:collapse; }
+.table th, .table td { padding:10px; border-top:1px solid #eee; text-align:left; vertical-align:top; }
+.table thead th { background:#fafafa; border-top:none; font-size:.9rem; color:#555; }
+.table tfoot td { font-weight:700; border-top:2px solid #eee; }
+.report-actions { display:flex; gap:8px; margin:10px 0 0; }
+.btn-ghost { border:1px solid #d6d6d6; background:#fff; padding:6px 10px; border-radius:8px; cursor:pointer; }
+.btn-ghost:hover { background:#f7f7f7; }
+
+/* Print friendly */
+@media print {
+  .modal, .modal * { box-shadow:none !important; }
+  .modal .modal-content { border:none; width:auto; margin:0; padding:0; }
+  .report-actions { display:none !important; }
+}
+/* Responsive, scrollable modal */
+.modal{
+  display:none; position:fixed; inset:0; z-index:50;
+  background:rgba(17,24,39,.55);
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+}
+.modal .modal-content{
+  width:min(1100px, 92vw);
+  max-height:92vh;
+  overflow:auto;                /* scroll inside modal, not page */
+  background:#fff; border:1px solid #eef2f6;
+  border-radius:16px; box-shadow:0 20px 40px rgba(16,24,40,.25);
+  padding:18px 18px 16px;
+  display:flex; flex-direction:column; gap:12px;
+}
+.modal .close{position:sticky; top:0; align-self:flex-end; font-size:22px; cursor:pointer; color:#6b7280}
+.modal .close:hover{color:#ef4444}
+
+/* Chart area + optional toolbar */
+.chart-box{ position:relative; height:300px; margin:6px 0 12px; overflow:visible; }
+#reportChart{ display:block; width:100% !important; height:100% !important; }
+#chartToolbar{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0; }
+
+/* Pretty report wrapper (works with your renderReportHTML) */
+.report-wrap { font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; color:#222; }
+.report-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.btn-ghost{ border:1px solid #d6d6d6; background:#fff; padding:6px 10px; border-radius:8px; cursor:pointer; }
+.btn-ghost:hover{ background:#f7f7f7; }
+
+@media (max-width:480px){
+  .modal{ padding:12px; }
+  .chart-box{ height:220px; }
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-procurement.html"><i class="fa-solid fa-boxes-stacked"></i> Dashboard</a>
+      <a href="procurement-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="supplies-procurement.html"><i class="fa-solid fa-warehouse"></i> Manage Supplies</a>
+      <a href="expenses-procurement.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Expenses</a>
+      <a href="reports-procurement.html" class="active"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="dashboard">
+    <h1>Reports</h1>
+    <p class="page-desc">Generate and view reports. Non-admins can only see the reports they generated.</p>
+
+    <!-- Actions area -->
+    <div id="report-actions" class="report-actions"></div>
+
+    <!-- History -->
+    <div class="report-results">
+      <h2 style="margin:14px 0"><i class="fa-solid fa-clock-rotate-left"></i> Generated Report History</h2>
+
+      <table class="admin-table" id="reportsTable" style="display:none">
+        <thead>
+          <tr>
+            <th>Report ID</th>
+            <th>Type</th>
+            <th>Generated By (user_id)</th>
+            <th>Date Generated</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="reportsTbody"></tbody>
+      </table>
+
+      <div id="reportsEmpty" class="empty" style="display:none">No reports yet.</div>
+    </div>
+  </main>
+
+  <!-- View Modal -->
+<!-- View Modal -->
+<div id="reportModal" class="modal" style="display:none">
+  <div class="modal-content">
+    <span class="close" id="modalClose" style="cursor:pointer">&times;</span>
+
+    <h2 style="margin:0 0 6px;">Report Details</h2>
+    <p><strong>Report Type:</strong> <span id="modalType" class="tag"></span></p>
+    <p class="muted">
+      <strong>Generated At:</strong> <span id="modalWhen">—</span> •
+      <strong>By:</strong> <span id="modalBy">—</span>
+    </p>
+
+    <!-- Chart toolbar + chart -->
+    <div id="chartToolbar"></div>
+    <div class="chart-box">
+      <canvas id="reportChart"></canvas>
+    </div>
+
+    <!-- Pretty detail (renderReportHTML output) -->
+    <div id="modalData">Loading…</div>
+
+    <div class="report-actions">
+      <button class="btn-ghost" id="btnExport"><i class="fa-solid fa-file-excel"></i> Export CSV</button>
+      <button class="btn-ghost" id="btnPrint"><i class="fa-solid fa-print"></i> Print</button>
+      <button class="btn-ghost" id="btnPdf"><i class="fa-solid fa-file-pdf"></i> Download PDF</button>
+    </div>
+  </div>
+</div>
+
+
+  <script type="module">
+    import { authApi, reportsApi, clearToken } from "/_shared/api.js";
+
+    const $ = (sel) => document.querySelector(sel);
+    const reportActions = $("#report-actions");
+    const reportsTable  = $("#reportsTable");
+    const reportsTbody  = $("#reportsTbody");
+    const reportsEmpty  = $("#reportsEmpty");
+
+    const modal     = $("#reportModal");
+    const modalType = $("#modalType");
+    const modalWhen = $("#modalWhen");
+    const modalBy   = $("#modalBy");
+    const modalData = $("#modalData");
+    $("#modalClose").addEventListener("click", () => modal.style.display = "none");
+    window.addEventListener("click", (e) => { if (e.target === modal) modal.style.display = "none"; });
+
+    let currentUser = null;
+
+    const TYPE_LABEL = {
+      inventory: "Inventory",
+      feed_consumption: "Feed Consumption",
+      sales: "Sales",
+      mortality: "Mortality",
+    };
+      // --- Aesthetic report renderer helpers (paste here) ---
+function esc(s){ return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+function code(json) { try { return JSON.stringify(json, null, 2); } catch { return String(json ?? ""); } }
+
+function renderReportHTML(r) {
+  const type = String(r.report_type || "").toLowerCase();
+  const when = new Date(r.generated_at).toLocaleString();
+  const by   = r.generated_by ?? "—";
+  const data = typeof r.data === "string" ? (()=>{ try { return JSON.parse(r.data); } catch { return {raw:r.data}; } })() : (r.data || {});
+
+  if (type === "inventory") {
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    // put this inside the Inventory branch of renderReportHTML
+    const qty = (v) => Number.parseFloat(v ?? 0);
+
+    // exact rule: only "feed" uses 10; everything else 3
+    const thresholdFor = (cat) =>
+      (String(cat).trim().toLowerCase() === "feed" ? 10 : 3);
+
+    // recompute lows strictly from items & rule (IGNORE backend low_stock)
+    const lows  = items.filter(it => qty(it.quantity) <= thresholdFor(it.category));
+
+
+
+    const rows = items.map(it => `
+      <tr>
+        <td>${esc(it.item_name)}</td>
+        <td>${esc(it.category)}</td>
+        <td>${Number(it.quantity ?? 0)}</td>
+        <td>${esc(it.unit ?? "")}</td>
+        <td>${esc(it.updated_at ?? "").toString().replace("T"," ").slice(0,19)}</td>
+      </tr>
+    `).join("");
+
+    const lowRows = lows.length ? lows.map(it => `
+      <tr>
+        <td>${esc(it.item_name)}</td>
+        <td>${esc(it.category)}</td>
+        <td>${Number(it.quantity ?? 0)}</td>
+        <td>${esc(it.unit ?? "")}</td>
+        <td>≤ ${thresholdFor(it.category)}</td>
+        <td><span class="badge red">Low</span></td>
+      </tr>
+    `).join("") : `<tr><td colspan="6" style="color:#777;">No low-stock items.</td></tr>`;
+
+    return `
+      <div class="report-wrap">
+        <div class="report-head">
+          <div class="report-brand">
+            <div class="logo">🐖</div>
+            <div>
+              <h3 class="report-title">Inventory Report</h3>
+              <div class="report-meta">Generated ${when} • By ${by}</div>
+            </div>
+          </div>
+          <span class="badge">Rule: Feed ≤ 10 • Others ≤ 3</span>
+        </div>
+
+        <div class="section">
+          <h4>Summary</h4>
+          <div class="kv">
+            <div><b>Total items:</b> ${items.length}</div>
+            <div><b>Low stock:</b> ${lows.length}</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h4>Low Stock</h4>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Item</th><th>Category</th><th>Qty</th><th>Unit</th><th>Limit</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody>${lowRows}</tbody>
+          </table>
+        </div>
+
+        <div class="section">
+          <h4>All Items</h4>
+          <table class="table">
+            <thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Unit</th><th>Updated</th></tr></thead>
+            <tbody>${rows || `<tr><td colspan="5" style="color:#777;">No items.</td></tr>`}</tbody>
+          </table>
+        </div>
+
+        <div class="report-actions">
+          <button class="btn-ghost" onclick="window.print()">Print / Save PDF</button>
+          <button class="btn-ghost" onclick="downloadJSON(${JSON.stringify(r.id)})">Download JSON</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (type === "feed_consumption") {
+    const rows  = Array.isArray(data.rows) ? data.rows : [];
+    const total = data.total_kg ?? rows.reduce((s,x)=>s+Number(x.amount_kg||0),0);
+
+    const body = rows.map(x => `
+      <tr>
+        <td>${esc(x.date)}</td>
+        <td>${esc(x.feed_type ?? "")}</td>
+        <td>${(x.sow_id ?? x.litter_id ?? "—")}</td>
+        <td>${Number(x.amount_kg ?? 0).toFixed(2)}</td>
+      </tr>
+    `).join("");
+
+    return `
+      <div class="report-wrap">
+        <div class="report-head">
+          <div class="report-brand">
+            <div class="logo">🍽️</div>
+            <div>
+              <h3 class="report-title">Feed Consumption</h3>
+              <div class="report-meta">Generated ${when} • By ${by}</div>
+            </div>
+          </div>
+          <span class="badge green">Total: ${Number(total).toFixed(2)} kg</span>
+        </div>
+
+        <div class="section">
+          <h4>Details</h4>
+          <table class="table">
+            <thead><tr><th>Date</th><th>Feed Type</th><th>Sow/Litter</th><th>Amount (kg)</th></tr></thead>
+            <tbody>${body || `<tr><td colspan="4" style="color:#777;">No rows.</td></tr>`}</tbody>
+            <tfoot><tr><td colspan="3">Total</td><td>${Number(total).toFixed(2)} kg</td></tr></tfoot>
+          </table>
+        </div>
+
+        <div class="report-actions">
+          <button class="btn-ghost" onclick="window.print()">Print / Save PDF</button>
+          <button class="btn-ghost" onclick="downloadJSON(${JSON.stringify(r.id)})">Download JSON</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // fallback
+  return `
+    <div class="report-wrap">
+      <div class="report-head">
+        <div class="report-brand">
+          <div class="logo">📄</div>
+          <div>
+            <h3 class="report-title">${esc(r.report_type)}</h3>
+            <div class="report-meta">Generated ${when} • By ${by}</div>
+          </div>
+        </div>
+      </div>
+      <div class="section"><pre>${code(data)}</pre></div>
+      <div class="report-actions"><button class="btn-ghost" onclick="window.print()">Print / Save PDF</button></div>
+    </div>
+  `;
+}
+
+let chart;                                           // single chart instance
+const chartCanvas = document.getElementById("reportChart");
+const chartToolbar = document.getElementById("chartToolbar");
+
+document.getElementById("modalClose").addEventListener("click", () => {
+  resetChart(); clearToolbar(); modal.style.display="none"; document.body.style.overflow="";
+});
+window.addEventListener("click", (e) => {
+  if (e.target === modal) { resetChart(); clearToolbar(); modal.style.display="none"; document.body.style.overflow=""; }
+});
+
+
+function resetChart(){ if(chart){ chart.destroy(); chart=null; } }
+function ctx(){ return chartCanvas.getContext("2d"); }
+function clearToolbar(){ chartToolbar.innerHTML=""; }
+
+const fmtCompact = (n) =>
+  (Number(n)||0).toLocaleString(undefined,{notation:"compact",maximumFractionDigits:1});
+
+function drawFeedChart(data){
+  resetChart(); clearToolbar();
+  const rows = Array.isArray(data.by_feed_type) ? data.by_feed_type : [];
+  const labels = rows.map(r => r.feed_type || "Unknown");
+  const values = rows.map(r => Number(r.kg || 0));
+  const total  = values.reduce((a,b)=>a+b,0);
+
+  chart = new Chart(ctx(), {
+    type:"bar",
+    data:{ labels, datasets:[{ label:"Kg", data: values }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ bottom: 16 } },
+      plugins:{
+        legend:{ position:"top" },
+        tooltip:{ callbacks:{
+          label: c => {
+            const v = Math.round(c.parsed.y||0);
+            const pct = total ? ((v/total)*100).toFixed(1) : "0.0";
+            return `Kg: ${v} (${pct}%)`;
+          }
+        }}
+      },
+      scales:{ y:{ ticks:{ precision:0 } } }
+    }
+  });
+}
+
+// Inventory charts + toggle
+function drawInventoryTop10(data){
+  resetChart();
+  const items = Array.isArray(data.items)?data.items:[];
+  const lowSet = new Set((data.low_stock||[]).map(it => (it.item_name||it.name||"").toLowerCase()));
+  const threshold = 0 + (data.low_stock_threshold ?? 0); // safe number
+
+  const top = items
+    .map(it => ({name: it.item_name||it.name, qty:Number(it.quantity||0), category:it.category||"other", unit:it.unit||""}))
+    .sort((a,b)=>b.qty-a.qty).slice(0,10);
+
+  const labels = top.map(x=>x.name);
+  const values = top.map(x=>x.qty);
+  const meta   = top.map(x=>({category:x.category, unit:x.unit}));
+  const colors = top.map(x=>{
+    const isLow = lowSet.has((x.name||"").toLowerCase()) || (threshold && x.qty<=threshold);
+    return isLow ? "#ef4444" : "#60a5fa";
+  });
+
+  chart = new Chart(ctx(), {
+    type:"bar",
+    data:{ labels, datasets:[{ label:"Quantity", data: values, backgroundColor: colors }] },
+    options:{
+      indexAxis:"y", responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ bottom: 16 } },
+      plugins:{
+        legend:{ position:"top" },
+        tooltip:{ callbacks:{ label:c=>{
+          const v = c.parsed.x||0;
+          const m = meta[c.dataIndex]||{};
+          const isLow = colors[c.dataIndex]==="#ef4444";
+          const unit = m.unit ? ` ${m.unit}` : "";
+          const cat  = m.category ? ` — ${m.category}` : "";
+          return `Qty: ${v}${unit}${cat}${isLow?"  (LOW)":""}`;
+        }}}
+      },
+      scales:{ x:{ ticks:{ precision:0 } }, y:{ ticks:{ autoSkip:false } } }
+    }
+  });
+}
+
+function drawInventoryByCategory(data){
+  resetChart();
+  const rows = Array.isArray(data.by_category)?data.by_category:[];
+  chart = new Chart(ctx(), {
+    type:"bar",
+    data:{ labels: rows.map(r=>r.category||"other"),
+           datasets:[{ label:"Quantity", data: rows.map(r=>Number(r.total_quantity||0)) }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{ padding:{ bottom: 16 } },
+      plugins:{ legend:{ position:"top" } },
+      scales:{ y:{ ticks:{ precision:0 } } }
+    }
+  });
+}
+
+function renderInventoryToolbar(data){
+  clearToolbar();
+  const btnTop = Object.assign(document.createElement("button"),{ className:"btn-ghost", textContent:"Top 10 Items" });
+  const btnCat = Object.assign(document.createElement("button"),{ className:"btn-ghost", textContent:"By Category" });
+  chartToolbar.append(btnTop, btnCat);
+
+  const onTop = ()=>{ drawInventoryTop10(data); btnTop.className="btn-ghost"; btnCat.className="btn-ghost"; btnTop.style.background="#eef3ff"; };
+  const onCat = ()=>{ drawInventoryByCategory(data); btnTop.className="btn-ghost"; btnCat.className="btn-ghost"; btnCat.style.background="#eef3ff"; };
+
+  onTop();
+  btnTop.onclick = onTop;
+  btnCat.onclick = onCat;
+}
+
+
+window.downloadJSON = async function(id){
+  try{
+    const r = await reportsApi.get(id);
+    const blob = new Blob([typeof r.data==="string" ? r.data : JSON.stringify(r.data,null,2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `report-${id}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }catch(e){ alert(e.message || "Download failed"); }
+};
+
+
+
+    // ---------- init ----------
+    init().catch(e => alert(e?.message || "Failed to load."));
+
+    async function init(){
+      currentUser = await authApi.me();
+      renderActionsByRole(currentUser.role);
+      await loadReports();
+    }
+
+    // ---- NEW: Procurement dropdown picker (inventory + feed_only) ----
+    function renderProcurementPicker(){
+      reportActions.innerHTML = `
+        <div class="picker">
+          <label for="reportType" class="muted"><i class="fa-solid fa-list"></i> Report type:</label>
+          <select id="reportType" aria-label="Report type">
+            <option value="inventory">Inventory</option>
+            <option value="feed_consumption">Feed Consumption</option>
+          </select>
+          <button id="btnGenerate" class="btn-add"><i class="fa-solid fa-play"></i> Generate</button>
+        </div>
+      `;
+      $("#btnGenerate").addEventListener("click", async () => {
+        const type = $("#reportType").value;     // "inventory" | "feed_consumption"
+        await handleGenerate(type, $("#btnGenerate"));
+      });
+    }
+
+    // keep your old buttons for non-procurement (optional)
+    function renderButtonsForOtherRoles(role){
+      const R = String(role||"").toUpperCase();
+      const can = {
+        sales:            R === "ADMIN" || R === "SALES",
+        inventory:        R === "ADMIN" || R === "PROCUREMENT",
+        feed_consumption: R === "ADMIN" || R === "PROCUREMENT",
+        mortality:        R === "ADMIN",
+      };
+      const btn = (type, label, emoji) => `<button class="btn-add" data-type="${type}">${emoji} Generate ${label}</button>`;
+
+      let html = "";
+      if (can.sales)            html += btn("sales","Sales Report","💰");
+      if (can.inventory)        html += btn("inventory","Inventory Report","📦");
+      if (can.feed_consumption) html += btn("feed_consumption","Feed Consumption Report","🍽️");
+      if (can.mortality)        html += btn("mortality","Mortality Report","⚠️");
+
+      reportActions.innerHTML = html || `<span class="muted">You do not have permission to generate reports.</span>`;
+      reportActions.querySelectorAll("button[data-type]").forEach(b =>
+        b.addEventListener("click", () => handleGenerate(b.dataset.type, b))
+      );
+    }
+
+    function renderActionsByRole(role){
+      const R = String(role||"").toUpperCase();
+      if (R === "PROCUREMENT") {
+        // ✅ Only inventory + feed_consumption via dropdown
+        renderProcurementPicker();
+      } else {
+        // keep existing multi-button UI for other roles
+        renderButtonsForOtherRoles(R);
+      }
+    }
+
+    async function loadReports(){
+      let rows = [];
+      try { rows = await reportsApi.list(); }
+      catch(e){ alert(e.message || "Failed to load reports"); return; }
+
+      // Only show Inventory + Feed Consumption
+      rows = (rows || []).filter(r => {
+        const t = String(r.report_type || "").toLowerCase();
+        return t === "inventory" || t === "feed_consumption";
+      });
+
+      if (!rows.length){
+        reportsTable.style.display = "none";
+        reportsEmpty.style.display = "block";
+        reportsTbody.innerHTML = "";
+        return;
+      }
+
+      reportsTbody.innerHTML = rows.map(r => trReport(r)).join("");
+      reportsTable.style.display = "";
+      reportsEmpty.style.display = "none";
+      reportsTbody.querySelectorAll("[data-view]").forEach(btn =>
+        btn.addEventListener("click", () => openReport(btn.dataset.id))
+      );
+    }
+
+
+    function trReport(r){
+      const id = r.id;
+      const type = TYPE_LABEL[r.report_type] || r.report_type;
+      const by = r.generated_by ?? "—";
+      const when = fmtDate(r.generated_at);
+      return `
+        <tr>
+          <td>${id}</td>
+          <td><span class="tag">${type}</span></td>
+          <td>${by}</td>
+          <td>${when}</td>
+          <td><button class="btn-view" data-view data-id="${id}"><i class="fa-solid fa-eye"></i> View</button></td>
+        </tr>
+      `;
+    }
+
+    async function handleGenerate(type, btn){
+      btn.disabled = true;
+
+      const today = new Date();
+      const dTo   = today.toISOString().slice(0,10);
+      const dFrom = new Date(today.getTime() - 30*24*3600*1000).toISOString().slice(0,10);
+
+      const payload = {
+        report_type: type,                 // "inventory" | "feed_consumption"
+        filters: {
+          date_from: dFrom,
+          date_to: dTo,
+          low_stock_threshold: type === "inventory" ? 10 : undefined,
+        },
+        snapshot: true,
+      };
+
+      try {
+        const created = await reportsApi.generate(payload);
+        alert(`Generated ${TYPE_LABEL[type] || type} report (id ${created.id}).`);
+        await loadReports();
+      } catch(e) {
+        alert(e.message || "Failed to generate report");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function openReport(id){
+      try{
+        const r = await reportsApi.get(id);
+        const type = String(r.report_type||"").toLowerCase();
+
+        // header bits
+        modalType.textContent = (type==="inventory") ? "Inventory" :
+                                (type==="feed_consumption") ? "Feed Consumption" : r.report_type;
+        modalWhen.textContent = new Date(r.generated_at).toLocaleString();
+        modalBy.textContent   = r.generated_by ?? "—";
+
+        // pretty HTML
+        modalData.innerHTML = renderReportHTML(r);
+
+        // chart per type (A: chart + pretty HTML)
+        resetChart(); clearToolbar();
+        if (type === "feed_consumption"){
+          // expects r.data.by_feed_type
+          drawFeedChart(r.data || {});
+        } else if (type === "inventory"){
+          // toolbar with Top10 / ByCategory toggle
+          renderInventoryToolbar(r.data || {});
+        } else {
+          // non-target types (shouldn’t show due to filter), just nuke chart
+          resetChart(); clearToolbar();
+        }
+
+        // actions
+        document.getElementById("btnExport").onclick = () => {
+          // simple CSV for these two types
+          const rows = [];
+          const esc = v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g,'""')}"` : v;
+          if (type==="feed_consumption" && Array.isArray(r?.data?.by_feed_type)){
+            rows.push("feed_type,kg");
+            r.data.by_feed_type.forEach(x=>rows.push([esc(x.feed_type), esc(x.kg)].join(",")));
+          } else if (type==="inventory" && Array.isArray(r?.data?.items)){
+            rows.push("item_name,category,quantity,unit,updated_at");
+            r.data.items.forEach(x=>rows.push([x.item_name,x.category,x.quantity,x.unit,x.updated_at].map(esc).join(",")));
+          } else {
+            rows.push("type,json"); rows.push([type, esc(JSON.stringify(r.data||{}))].join(","));
+          }
+          const blob = new Blob([rows.join("\n")],{type:"text/csv;charset=utf-8"});
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `report_${type}_${id}.csv`;
+          a.click();
+        };
+        document.getElementById("btnPrint").onclick = () => window.print();
+        document.getElementById("btnPdf").onclick   = () => window.print();
+
+        // show modal
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+        setTimeout(()=> chart?.resize(), 0);
+      }catch(e){
+        alert(e?.message || "Failed to load report");
+      }
+    }
+
+
+
+    function fmtDate(s){
+      if (!s) return "—";
+      try { return new Date(s).toLocaleString(); }
+      catch { return s; }
+    }
+
+    // logout
+    $("#logout")?.addEventListener("click", (e)=>{
+      e.preventDefault();
+      clearToken();
+      window.location.href = "/Zhomepage/login.html";
+    });
+  </script>
+</body>
+</html>
