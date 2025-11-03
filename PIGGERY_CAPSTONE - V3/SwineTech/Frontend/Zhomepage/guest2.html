@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Guest View</title>
+
+  <!-- Keep your existing styles to preserve brand colors/theme -->
+  <link rel="stylesheet" href="guest2.css">
+  <link rel="stylesheet" href="index2.css">
+  <link rel="stylesheet" href="guest2.css">
+
+  <!-- Minimal enhancements only (system fonts; light, unobtrusive) -->
+  <style>
+    :root {
+      --surface: #ffffff;
+      --muted: #6b7280;      /* text-secondary */
+      --border: #e5e7eb;     /* neutral border */
+    }
+
+    /* Hero */
+    .hero {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 56px 16px;
+      background:
+        radial-gradient(1200px 400px at 50% -200px, rgba(0,0,0,0.04), transparent),
+        linear-gradient(180deg, rgba(0,0,0,0.02), transparent 120px);
+    }
+    .hero h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 36px); }
+    .hero p  { margin: 0; color: var(--muted); }
+
+    /* Benefits grid */
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      padding: 24px 16px 8px;
+    }
+    .benefit {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .benefit h3 { margin: 0 0 6px; font-size: 16px; }
+    .benefit p  { margin: 0; color: var(--muted); font-size: 14px; }
+
+    /* Cards */
+    .pig-section {
+      padding: 8px 16px 28px;
+    }
+    .pig-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .pig-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .pig-card img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      background: #f3f4f6;
+    }
+    .pig-card .content {
+      padding: 14px;
+      display: grid;
+      gap: 6px;
+    }
+    .pig-card h3 { margin: 0; font-size: 18px; }
+    .pig-card p  { margin: 0; color: var(--muted); }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 14px 14px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+    }
+    .btn-auth { /* your brand primary from existing CSS should style this; fallback here is minimal */
+      border: none;
+    }
+    .btn-outline{
+      background: transparent;
+      border: 1px solid #5B2C83;     /* brand purple */
+      color: #5B2C83;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+
+    /* Skeletons */
+    .skeleton-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .skeleton-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+    .sk-img { height:160px; background: #f3f4f6; }
+    .sk-line {
+      height: 12px; margin: 10px 14px; border-radius: 6px;
+      background: linear-gradient(90deg, #f3f4f6, #ececec, #f3f4f6);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+    }
+    .sk-line.short { width: 40%; }
+    .sk-line.med   { width: 70%; }
+    .sk-line.long  { width: 90%; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* Pagination */
+    .pager {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin: 18px 0 8px;
+    }
+    .pager button {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .pager .page-info { color: var(--muted); font-size: 14px; }
+    .pager button[disabled] { opacity: .6; cursor: not-allowed; }
+    /* ===== Contrast & readability for 'Available Pigs' ===== */
+
+/* Headings: darker, crisper */
+.guest-body h1,
+.guest-body h2,
+.section-title {
+  color: #1f1f1f;          /* near-black for strong contrast */
+  letter-spacing: 0.1px;
+}
+
+/* Optional: soft panel behind the whole listings block */
+.available-wrap {
+  background: #F3F4F6;     /* light gray panel */
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+/* Cards: subtle border + shadow so they don’t blend into the page */
+.pig-card {
+  background: #fff;
+  border: 1px solid #E5E7EB;            /* visible on light bg */
+  box-shadow: 0 1px 2px rgba(16,24,40,.06);
+}
+
+/* Card text & labels */
+.pig-card h3 { color: #111827; }        /* slightly darker than body */
+.pig-card p  { color: #374151; }        /* mid/dark gray */
+
+/* Image area keeps a neutral backdrop even if the image fails */
+.pig-card img {
+  background: #F5F5F7;
+  border-radius: 10px;
+}
+
+/* Buttons: ensure the outline button is visible at rest */
+.btn-outline{
+  background: transparent;
+  border: 1px solid #5B2C83;            /* brand purple */
+  color: #5B2C83;
+}
+.btn-outline:hover{ background:#5B2C83; color:#fff; }
+
+/* Primary button (login) remains strong */
+.btn-auth { background:#5B2C83; color:#fff; }
+.btn-auth:hover { filter: brightness(.92); }
+
+/* Skeleton loaders: slightly darker shimmer so they read on light panels */
+.skeleton,
+.skel {
+  background: linear-gradient(90deg, #E6E7EC 25%, #F1F2F6 37%, #E6E7EC 63%);
+}
+
+  </style>
+</head>
+<body>
+  <!-- Navbar (unchanged) -->
+  <header class="navbar">
+    <div class="logo">🐖 SwineTech</div>
+    <nav>
+      <a href="/Zhomepage/index2.html">Home</a>
+      <a href="/Zhomepage/index2.html#about">About</a>
+      <a href="/Zhomepage/index2.html#contact">Contact</a>
+      <a href="/Zhomepage/login.html">Login</a>
+      <a href="/Zhomepage/register.html">Register</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero" aria-labelledby="guest-hero-title">
+      <div>
+        <h1 id="guest-hero-title">Browse Available Pigs</h1>
+        <p>View real-time availability. Booking is available to registered users.</p>
+      </div>
+    </section>
+
+    <!-- Benefits -->
+    <section class="benefits" aria-labelledby="benefits-title">
+      <h2 id="benefits-title" class="sr-only">Why browse as a guest</h2>
+      <article class="benefit">
+        <h3>Instant Access</h3>
+        <p>See what’s currently available without creating an account.</p>
+      </article>
+      <article class="benefit">
+        <h3>Up-to-Date Listings</h3>
+        <p>Data is pulled directly from our farm inventory.</p>
+      </article>
+      <article class="benefit">
+        <h3>Simple Booking</h3>
+        <p>Log in to reserve or purchase when you’re ready.</p>
+      </article>
+      <article class="benefit">
+        <h3>Clear Details</h3>
+        <p>Each listing shows a pig ID and approximate weight.</p>
+      </article>
+    </section>
+
+    <!-- Pig List -->
+    <section class="pig-section" aria-labelledby="available-pigs-title">
+      <h2 id="available-pigs-title" style="margin:0 0 6px 0;">Available Pigs</h2>
+
+      <!-- Skeletons (visible while loading) -->
+      <div id="skeletonWrap" class="skeleton-list" aria-hidden="true"></div>
+
+      <!-- Cards -->
+      <div id="pigList" class="pig-list" aria-live="polite"></div>
+
+      <!-- Empty state -->
+      <p id="emptyState" style="text-align:center; color:#666; display:none;">
+        No available pigs right now. Please check back later.
+      </p>
+
+      <!-- Pagination -->
+      <div id="pager" class="pager" style="display:none;">
+        <button id="prevBtn" type="button" aria-label="Previous page">&larr; Prev</button>
+        <span id="pageInfo" class="page-info">Page 1 of 1</span>
+        <button id="nextBtn" type="button" aria-label="Next page">Next &rarr;</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="guest-footer">
+    <p>© 2025 SwineTech | Group 5 - Ruloma Farms Project</p>
+  </footer>
+
+  <script>
+  // FE on :5500 -> talk to BE on :8000
+  const isLocalFE = location.hostname === "localhost" && location.port === "5500";
+  const API_BASE  = isLocalFE ? "http://localhost:8000/api" : "/api";
+
+  // Pagination config
+  const PAGE_SIZE = 8;
+  let _allPigs = [];
+  let _page = 1;
+
+  // Build skeletons (N placeholders)
+  function showSkeletons(n = PAGE_SIZE) {
+    const wrap = document.getElementById("skeletonWrap");
+    wrap.innerHTML = "";
+    for (let i = 0; i < n; i++) {
+      const card = document.createElement("div");
+      card.className = "skeleton-card";
+      card.innerHTML = `
+        <div class="sk-img"></div>
+        <div class="sk-line long"></div>
+        <div class="sk-line med"></div>
+        <div class="sk-line short"></div>
+      `;
+      wrap.appendChild(card);
+    }
+    wrap.style.display = "grid";
+  }
+  function hideSkeletons() {
+    const wrap = document.getElementById("skeletonWrap");
+    wrap.style.display = "none";
+    wrap.innerHTML = "";
+  }
+
+  async function loadAvailablePigs() {
+    showSkeletons();
+    try {
+      const res = await fetch(API_BASE + "/available-pigs?status=available");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return await res.json(); // expected: [{ pigs_id, weight_kg }, ...]
+    } catch (e) {
+      showEmpty("Unable to load pigs at the moment.");
+      return [];
+    } finally {
+      hideSkeletons();
+    }
+  }
+
+  function showEmpty(msg) {
+    document.getElementById("pigList").innerHTML = "";
+    const el = document.getElementById("emptyState");
+    el.textContent = msg || el.textContent;
+    el.style.display = "block";
+    document.getElementById("pager").style.display = "none";
+  }
+
+  function renderPage(page) {
+    if (!page) page = 1;
+
+    const list = document.getElementById("pigList");
+    const empty = document.getElementById("emptyState");
+    const pager = document.getElementById("pager");
+    const pageInfo = document.getElementById("pageInfo");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+
+    list.innerHTML = "";
+    empty.style.display = "none";
+
+    if (!_allPigs.length) {
+      showEmpty();
+      return;
+    }
+
+    const total = _allPigs.length;
+    const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    _page = Math.min(Math.max(1, page), pages);
+
+    const start = (_page - 1) * PAGE_SIZE;
+    const slice = _allPigs.slice(start, start + PAGE_SIZE);
+
+    slice.forEach(function(p) {
+      const pigId = (p.pigs_id != null ? p.pigs_id : "-");
+      const weight = (p.weight_kg != null ? p.weight_kg : "-");
+
+      const card = document.createElement("div");
+      card.className = "pig-card";
+      card.innerHTML = `
+        <img src="img/pig-placeholder.jpg" alt="Healthy farm-raised pig image">
+        <div class="content">
+          <h3>Pig #${pigId}</h3>
+          <p><strong>Approx. weight:</strong> ${weight} kg</p>
+        </div>
+        <div class="card-actions">
+          <a href="/Zhomepage/login.html" class="btn btn-auth">Login to book</a>
+          <a href="/Zhomepage/register.html" class="btn btn-outline">Create account</a>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    pager.style.display = pages > 1 ? "flex" : "none";
+    pageInfo.textContent = "Page " + _page + " of " + pages;
+    prevBtn.disabled = _page <= 1;
+    nextBtn.disabled = _page >= pages;
+  }
+
+  // Pagination controls
+  document.getElementById("prevBtn").addEventListener("click", function () { renderPage(_page - 1); });
+  document.getElementById("nextBtn").addEventListener("click", function () { renderPage(_page + 1); });
+
+  (async function () {
+    _allPigs = await loadAvailablePigs();
+    renderPage(1);
+  })();
+</script>

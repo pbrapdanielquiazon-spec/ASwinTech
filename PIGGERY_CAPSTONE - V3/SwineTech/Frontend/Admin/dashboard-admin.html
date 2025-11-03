@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwineTech | Admin Dashboard</title>
+  <link rel="stylesheet" href="/Admin/admin.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+   
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    /* ====== KPI Cards ====== */
+    .cards{
+      display:grid; gap:18px; grid-template-columns:repeat(4,minmax(220px,1fr));
+      margin:18px 0 8px;
+    }
+    .card{
+      background:#fff; border-radius:16px; padding:18px 18px 16px;
+      box-shadow:0 10px 24px rgba(16,24,40,.06); display:flex; flex-direction:column;
+      align-items:flex-start; gap:10px; border:1px solid #eef2f6;
+    }
+    .card i{
+      display:inline-grid; place-items:center; width:40px; height:40px; border-radius:12px;
+      background:#f1f5ff; color:#2745d1; font-size:18px;
+    }
+    .card h2{ margin:0; font-size:24px; font-weight:700; color:#111827; }
+    .card p{ margin:0; color:#6b7280; font-size:13px; }
+
+    /* ====== Table shell (rounded, sticky header, zebra, hover) ====== */
+    .table-wrap{
+      background:#fff; border-radius:16px; box-shadow:0 10px 24px rgba(16,24,40,.06);
+      overflow:hidden; border:1px solid #eef2f6;
+    }
+    .admin-table{ width:100%; border-collapse:separate; border-spacing:0; font-size:14px; }
+    .admin-table thead th{
+      position:sticky; top:0; z-index:1; text-align:left;
+      background:#f8fafb; color:#374151; font-weight:600; letter-spacing:.02em;
+      padding:12px 14px; border-bottom:1px solid #e6ebf0;
+    }
+    .admin-table tbody td{ padding:12px 14px; border-bottom:1px solid #eef2f6; color:#1f2937; }
+    .admin-table tbody tr:nth-child(even) td{ background:#fbfdfe; }
+    .admin-table tbody tr:hover td{ background:#f3f7fb; }
+    .table-empty{ text-align:center; color:#6b7280; padding:22px; }
+
+    /* ====== Status Badges ====== */
+    .badge{
+      display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px;
+      font-size:12px; font-weight:700;
+    }
+    .badge .dot{ width:8px; height:8px; border-radius:50%; background:currentColor; }
+    .badge--approved{ color:#166534; background:#e9f7ef; }
+    .badge--pending{ color:#92400e; background:#fff4e5; }
+    .badge--declined{ color:#991b1b; background:#fee2e2; }
+
+    /* ====== Buttons (reuse your existing classes) ====== */
+    .btn{ border:0; cursor:pointer; }
+    .btn-edit{
+      background:#fff3d6; color:#a36200; border:1px solid #ffe3a3; padding:7px 12px; border-radius:10px;
+    }
+    .btn-archive{
+      background:#ffe5e5; color:#b42318; border:1px solid #ffc9c9; padding:7px 12px; border-radius:10px;
+    }
+    .btn-ghost{
+      background:#fff; color:#374151; border:1px solid #e5e7eb; padding:7px 12px; border-radius:10px;
+    }
+    .btn:disabled{ opacity:.5; cursor:not-allowed; }
+
+    /* ====== Pager row ====== */
+    #bk-pager{ margin-top:10px; display:flex; gap:8px; align-items:center; }
+
+    /* ====== Skeleton while loading ====== */
+    .skel-row td{
+      position:relative; overflow:hidden; border-bottom:1px solid #eef2f6; height:44px;
+    }
+    .skel{
+      display:inline-block; width:100%; height:12px; border-radius:6px;
+      background:linear-gradient(90deg,#eef2f6,#f5f7fa,#eef2f6);
+      background-size:200% 100%; animation:shimmer 1.1s infinite linear;
+    }
+    @keyframes shimmer{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ====== Responsive collapse ====== */
+    @media (max-width: 980px){
+      .cards{ grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width: 640px){
+      .cards{ grid-template-columns:1fr; }
+      .admin-table thead{ display:none; }
+      .admin-table, .admin-table tbody, .admin-table tr, .admin-table td{ display:block; width:100%; }
+      .admin-table tr{ padding:12px; border:1px solid #eef2f6; border-radius:12px; margin-bottom:10px; background:#fff; }
+      .admin-table td{ border:0; padding:8px 2px; }
+      .admin-table td::before{
+        content:attr(data-label); display:block; font-size:12px; color:#6b7280; margin-bottom:2px; text-transform:uppercase;
+      }
+    }
+
+    .badge {display:inline-block;padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;}
+    .badge-new {background:#e5e7eb;color:#374151;}
+    .badge-due {background:#fee2e2;color:#991b1b;}
+    .badge-breached {background:#fde68a;color:#92400e;}
+    .chip {display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;font-weight:600;font-size:12px;}
+    .chip-inquiry {background:#e0f2fe;color:#075985;}
+    .chip-booking {background:#ede9fe;color:#5b21b6;}
+    .btn-mini{padding:6px 10px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;cursor:pointer}
+    .btn-mini:hover{background:#eef2ff}
+
+  </style>
+
+
+</head>
+<body>
+    
+  <!-- Sidebar -->
+    <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html" class="active"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logout" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+ <main  class="dashboard">
+   <h1>Admin Dashboard</h1>
+
+    <!-- Cards -->
+    <div class="cards">
+      <div class="card">
+        <i class="fa-solid fa-piggy-bank"></i>
+        <h2>120 Pigs</h2>
+        <p>Available for sale</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-calendar-check"></i>
+        <h2>15 Bookings</h2>
+        <p>Pending approval</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-cash-register"></i>
+        <h2>₱250,000</h2>
+        <p>Sales this month</p>
+      </div>
+      <div class="card">
+        <i class="fa-solid fa-users"></i>
+        <h2>— Users</h2>
+        <p>Registered accounts</p>
+      </div>
+    </div>
+
+    <!-- Action Center (Consolidated queue) -->
+    <section style="margin-top:22px">
+      <h2 style="margin:0 0 10px;">Action Center</h2>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:110px;">Type</th>
+              <th style="width:90px;">Client</th>
+              <th>Message / Item</th>
+              <th style="width:110px;">Age</th>
+              <th style="width:120px;">Status</th>
+              <th style="width:160px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="actionTbody">
+            <tr><td colspan="6" style="text-align:center;color:#6b7280;">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Quick Respond modal -->
+    <div id="quickRespondModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('quickRespondModal')">&times;</span>
+        <h3>Respond to Inquiry</h3>
+        <p style="margin:-4px 0 8px;color:#6b7280;">Max 1000 characters.</p>
+        <textarea id="quickResponseField" rows="6" style="width:100%;"></textarea>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+          <button class="btn-auth" onclick="openModal('confirmQuickRespondModal')">Send</button>
+          <button class="btn-auth" style="background:#ccc;color:#111" onclick="closeModal('quickRespondModal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm modal (top-most) -->
+    <div id="confirmQuickRespondModal" class="modal" style="z-index:100">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal('confirmQuickRespondModal')">&times;</span>
+        <h3 style="margin-top:0;">Send this response?</h3>
+        <p style="color:#b42318;background:#fff3f3;border:1px solid #ffdcdc;padding:10px;border-radius:8px;">
+          ⚠️ Once submitted, this response cannot be edited or deleted.
+        </p>
+        <div id="quickConfirmPreview" style="white-space:pre-wrap;border:1px solid #e5e7eb;border-radius:8px;padding:10px;max-height:180px;overflow:auto;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;">
+          <button class="btn-auth" onclick="doQuickRespond()">Yes, send</button>
+          <button class="btn-auth" style="background:#ccc;color:#111" onclick="closeModal('confirmQuickRespondModal')">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+
+
+   </main>
+
+   <script type="module">
+  import { getToken, clearToken, setLoginRedirect, authApi, availApi, bookingsApi, salesApi, adminApi, inquiriesApi } from "/_shared/api.js";
+
+  // If your login lives elsewhere, change this path
+  setLoginRedirect("/Zhomepage/login.html");
+
+  // Elements
+  const els = {
+    pigsCard: document.querySelector('.cards .card:nth-child(1) h2'),
+    pendingCard: document.querySelector('.cards .card:nth-child(2) h2'),
+    salesCard: document.querySelector('.cards .card:nth-child(3) h2'),
+    usersCard: document.querySelector('.cards .card:nth-child(4) h2'), // we won't use now
+    logout: document.getElementById('logout'),
+  };
+
+  // Utils
+  const peso = (n) => '₱' + (Number(n || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth(); // 0..11
+  const isThisMonth = (iso) => {
+    if (!iso) return false;
+    const d = new Date(iso);
+    return d.getFullYear() === y && d.getMonth() === m;
+  };
+
+  async function requireAuth() {
+    if (!getToken()) {
+      window.location.href = "/Zhomepage/login.html";
+      return false;
+    }
+    try {
+      await authApi.me(); // smoke test token
+      return true;
+    } catch {
+      clearToken();
+      window.location.href = "/Zhomepage/login.html";
+      return false;
+    }
+  }
+
+  async function loadPigsCount() {
+    try {
+      // Admin can call /available-pigs (you enabled ADMIN/CARETAKER)
+      const list = await availApi.list(); // returns available pigs (public fields)
+      els.pigsCard.textContent = `${Array.isArray(list) ? list.length : 0} Pigs`;
+    } catch (e) {
+      console.warn("available-pigs failed:", e);
+      els.pigsCard.textContent = "—";
+    }
+  }
+
+  async function loadPendingBookingsCount() {
+    try {
+      // NOTE: bookingsApi.list expects a STRING, not an object.
+      const rows = await bookingsApi.list("pending");
+      const count = Array.isArray(rows) ? rows.length : 0;
+      els.pendingCard.textContent = `${count} Bookings`;
+    } catch (e) {
+      console.warn("bookings count failed:", e);
+      els.pendingCard.textContent = "—";
+    }
+  }
+
+
+  async function loadSalesThisMonth() {
+    try {
+      const rows = await salesApi.list(); // no filters; sum client-side by payment_date in current month
+      let sum = 0;
+      if (Array.isArray(rows)) {
+        for (const s of rows) {
+          if (isThisMonth(s?.payment_date)) {
+            // total_amount is Decimal in API → may arrive as string
+            const val = Number(s?.total_amount ?? 0);
+            if (!Number.isNaN(val)) sum += val;
+          }
+        }
+      }
+      els.salesCard.textContent = peso(sum);
+    } catch (e) {
+      console.warn("sales failed:", e);
+      els.salesCard.textContent = "₱—";
+    }
+  }
+  async function loadUserCount() {
+  try {
+    // true = count only active users (set to false if you want ALL)
+    const total = await adminApi.usersTotal(true);
+    els.usersCard.textContent = `${total} Users`;
+  } catch (e) {
+    console.warn("users count failed:", e);
+    els.usersCard.textContent = "—";
+  }
+}
+
+  // Logout
+  els.logout?.addEventListener("click", (e) => {
+    e.preventDefault();
+    clearToken();
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  // Boot
+  (async () => {
+    const ok = await requireAuth();
+    if (!ok) return;
+
+    await Promise.all([
+      loadPigsCount(),
+      loadPendingBookingsCount(),
+      loadSalesThisMonth(),
+      loadUserCount(), // new
+    ]);
+  })();
+
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-bid], .btn-view, [data-action="view"][data-id]');
+    if (!btn) return;
+
+    let id = btn.dataset.bid || btn.dataset.id;
+    if (!id) {
+      const row = btn.closest('tr');
+      if (row && row.cells && row.cells.length) id = row.cells[0].innerText.trim();
+    }
+    if (!id) return;
+
+    const kind = (btn.dataset.kind || '').toLowerCase();
+    const hash = kind === 'inquiry' ? '#inquiries' : '#bookings';
+
+    window.location.href =
+      `/Admin/admin-manage-sales-expenses-bookings.html${hash}?focus=${encodeURIComponent(id)}`;
+  });
+
+  // ---------- Action Center ----------
+  const tbody = document.getElementById('actionTbody');
+  let quickInquiryId = null;
+
+  function parseAsLocalDateTime(iso) {
+    if (!iso) return null;
+    // If it's a date-only string, interpret as local midnight to avoid UTC offset issues
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      const [Y, M, D] = iso.split('-').map(Number);
+      return new Date(Y, M - 1, D, 0, 0, 0);
+    }
+    // Otherwise, let Date handle full ISO (with time)
+    return new Date(iso);
+  }
+
+  function ageHours(iso) {
+    const d = parseAsLocalDateTime(iso);
+    if (!d || Number.isNaN(d.getTime())) return 0;
+    return Math.max(0, (Date.now() - d.getTime()) / 36e5);
+  }
+
+  function slaBadge(kind, hrs) {
+    if (kind !== 'inquiry') return `<span class="badge badge-new">—</span>`;
+    if (hrs >= 12) return `<span class="badge badge-breached">Breached</span>`;
+    if (hrs >= 1)  return `<span class="badge badge-due">Due</span>`;
+    return `<span class="badge badge-new">New</span>`;
+  }
+  function typeChip(kind) {
+    return kind === 'inquiry'
+      ? `<span class="chip chip-inquiry">✉️ Inquiry</span>`
+      : `<span class="chip chip-booking">📅 Booking</span>`;
+  }
+
+  async function loadActionCenter() {
+    try {
+      const [pendingBookings, allInquiries] = await Promise.all([
+        bookingsApi.list?.('pending') ?? [],
+        inquiriesApi.list?.() ?? []
+      ]);
+
+      // Keep only pending bookings
+      // Keep only pending bookings
+      const bookings = (pendingBookings || []).map(b => {
+        // prefer server timestamps that reflect when it entered the system
+        const stamp =
+          b.created_at ??
+          b.submitted_at ??
+          b.updated_at ??
+          b.booking_date; // LAST resort
+
+        return {
+          kind: 'booking',
+          id: String(b.id ?? b.booking_id ?? ''),
+          client_id: b.client_id ?? '-',
+          title: b.item_details || b.type || '(booking)',
+          submitted_at: stamp,
+          status: (b.status || 'pending').toLowerCase(),
+          age: ageHours(stamp)
+        };
+      });
+
+
+      // Only unread/unresponded inquiries
+      const inquiries = (allInquiries || [])
+        .filter(q => String(q.status || '').toLowerCase() !== 'responded')
+        .map(q => ({
+          kind: 'inquiry',
+          id: String(q.id ?? q.inquiry_id ?? ''),
+          client_id: q.client_id ?? '-',
+          title: q.message || q.subject || '(inquiry)',
+          submitted_at: q.submitted_at,
+          status: (q.status || 'unread').toLowerCase(),
+          age: ageHours(q.submitted_at)
+        }));
+
+      // Priority: 0 = inquiry age>=12, 1 = inquiry <12, 2 = booking pending
+      function priority(x) {
+        if (x.kind === 'inquiry') return x.age >= 12 ? 0 : 1;
+        if (x.kind === 'booking' && x.status === 'pending') return 2;
+        return 99;
+      }
+
+      const items = [...inquiries, ...bookings]
+        .map(x => ({ ...x, pri: priority(x) }))
+        .sort((a,b) => a.pri - b.pri || b.age - a.age);
+
+      renderActionRows(items);
+    } catch (e) {
+      console.error(e);
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#b42318;">Failed to load Action Center.</td></tr>`;
+    }
+  }
+
+function renderActionRows(items) {
+  if (!items.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center;color:#6b7280;">
+          All caught up! No pending bookings or unread inquiries.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  items.forEach(row => {
+    const ageTxt = `${Math.floor(row.age)}h`;
+
+    // Actions:
+    // - Inquiry: Respond + View
+    // - Booking (pending): Approve + Decline + View
+    // - Booking (anything else): just View (safety)
+    let actions = '';
+    if (row.kind === 'inquiry') {
+      actions = `
+        <button class="btn-mini" data-respond="${row.id}">Respond</button>
+        <button class="btn-mini btn-view" data-bid="${row.id}" data-kind="inquiry">View</button>
+      `;
+    } else {
+      const isPending = (row.status || '').toLowerCase() === 'pending';
+      actions = `
+        ${isPending ? `<button class="btn-mini" data-approve="${row.id}">Approve</button>
+                        <button class="btn-mini" data-decline="${row.id}">Decline</button>` : ''}
+        <button class="btn-mini btn-view" data-bid="${row.id}" data-kind="booking">View</button>
+      `;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${typeChip(row.kind)}</td>
+      <td>${row.client_id}</td>
+      <td>${escapeHtml(row.title)}</td>
+      <td>${ageTxt} ${slaBadge(row.kind, row.age)}</td>
+      <td>${escapeHtml(row.status)}</td>
+      <td>${actions}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+
+  // Respond flow
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-respond]');
+    if (!btn) return;
+    quickInquiryId = btn.dataset.respond;
+    document.getElementById('quickResponseField').value = '';
+    openModal('quickRespondModal');
+  });
+
+  // Approve / Decline (bookings) from Action Center
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-approve],[data-decline]');
+  if (!btn) return;
+
+  const id = btn.getAttribute('data-approve') || btn.getAttribute('data-decline');
+  const isApprove = btn.hasAttribute('data-approve');
+
+  try {
+    await bookingsApi.decide(id, isApprove ? 'approved' : 'declined');
+    toast(`Booking ${id} ${isApprove ? 'approved' : 'declined'}.`);
+    // refresh Action Center + top KPI card
+    await Promise.all([loadActionCenter(), loadPendingBookingsCount()]);
+  } catch (err) {
+    console.error(err);
+    toast('Failed to update booking. Please try again.', true);
+  }
+});
+
+
+  // Limit and preview
+  document.getElementById('quickResponseField')?.addEventListener('input', (e)=>{
+    const v = e.target.value;
+    if (v.length > 1000) e.target.value = v.slice(0, 1000);
+    document.getElementById('quickConfirmPreview').innerText = e.target.value.trim();
+  });
+
+  // Send
+  async function doQuickRespond() {
+    try {
+      const text = document.getElementById('quickResponseField').value.trim();
+      if (!text) return toast('Response cannot be empty', true);
+      if (text.length > 1000) return toast('Response must be at most 1000 characters', true);
+
+      await inquiriesApi.respond(Number(quickInquiryId), text);
+      toast('Response sent');
+      closeModal('confirmQuickRespondModal');
+      closeModal('quickRespondModal');
+      await loadActionCenter(); // refresh list
+    } catch (err) {
+      // 409 -> already has response
+      toast(err?.message || 'Failed to send response', true);
+    } finally {
+      quickInquiryId = null;
+    }
+  }
+  window.doQuickRespond = doQuickRespond; // expose for button
+
+  // Small helpers (reuse your openModal/closeModal if you already have them)
+  function openModal(id){ const el=document.getElementById(id); if(el) el.style.display='block'; }
+  function closeModal(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
+  function escapeHtml(s){ return (''+s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+  function toast(msg, isErr=false){
+    // quick inline toast
+    const t=document.createElement('div');
+    t.textContent=msg;
+    t.style.cssText=`position:fixed;right:16px;bottom:16px;z-index:9999;padding:10px 14px;border-radius:10px;
+      background:${isErr?'#fee2e2':'#e7f5e8'};color:${isErr?'#991b1b':'#14532d'};box-shadow:0 6px 20px rgba(0,0,0,.15);font-weight:600`;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(), 1800);
+  }
+
+  // make them available to inline onclick="" in the HTML
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+
+  // Init
+  await loadActionCenter();
+
+  // close modals by clicking backdrop
+  window.addEventListener('click', (e)=>{
+    document.querySelectorAll('.modal').forEach(m=>{ if(e.target===m) m.style.display='none'; });
+  });
+</script>
+
+</body>
+</html>

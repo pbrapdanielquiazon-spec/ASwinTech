@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwineTech | Manage Supplies</title>
+  <link rel="stylesheet" href="/Admin/admin.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ========== Tabs (match Pig Records) ========== */
+    .tabs{margin:20px 0;display:flex;flex-wrap:wrap;gap:8px}
+    .tab-btn{
+      background:#f3f4f6;border:1px solid #e5e7eb;padding:10px 14px;border-radius:10px;
+      cursor:pointer;font-weight:600;color:#374151
+    }
+    .tab-btn.active{background:#1a7f37;color:#fff;border-color:#1a7f37}
+
+    /* ========== Carded table wrapper ========== */
+    .table-wrap{
+      background:#fff;border-radius:16px;border:1px solid #eef2f6;
+      box-shadow:0 10px 24px rgba(16,24,40,.06);overflow:hidden;margin-top:12px
+    }
+
+    /* ========== Modern table ========== */
+    .admin-table{width:100%;border-collapse:separate;border-spacing:0;font-size:14px}
+    .admin-table thead th{
+      position:sticky;top:0;z-index:1;background:#f8fafb;color:#374151;font-weight:700;
+      padding:12px 14px;border-bottom:1px solid #e6ebf0;text-align:left;letter-spacing:.02em
+    }
+    .admin-table tbody td{padding:12px 14px;border-bottom:1px solid #eef2f6;color:#1f2937}
+    .admin-table tbody tr:nth-child(even) td{background:#fbfdfe}
+    .admin-table tbody tr:hover td{background:#f3f7fb}
+
+    /* ========== Buttons ========== */
+    .btn-add,.btn-edit,.btn-archive,.btn-restore,.btn-qty{
+      padding:7px 12px;border-radius:10px;border:1px solid transparent;cursor:pointer;font-weight:600
+    }
+    .btn-add{background:#e8f5ff;color:#0b6bcb;border-color:#cde8ff}
+    .btn-edit{background:#fff3d6;color:#a36200;border-color:#ffe3a3}
+    .btn-archive{background:#ffe5e5;color:#b42318;border-color:#ffc9c9}
+    .btn-restore{background:#e8f7ee;color:#1e7b4f;border-color:#c3ecd7}
+    .btn-qty{background:#eef5ee;color:#2E7D32;border-color:#d7e8db}
+
+    /* ========== Controls ========== */
+    .controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+    .controls input,.controls select{
+      padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;outline:none
+    }
+
+    /* ========== Modals ========== */
+    .modal{display:none;position:fixed;inset:0;background:rgba(17,24,39,.55);z-index:50}
+    .modal-content{
+      background:#fff;margin:5% auto;max-width:680px;width:92%;border-radius:16px;padding:20px 22px;
+      box-shadow:0 20px 40px rgba(16,24,40,.25);border:1px solid #eef2f6
+    }
+    .close{float:right;font-size:22px;cursor:pointer;color:#6b7280}
+    .close:hover{color:#ef4444}
+
+    .form-group{margin-bottom:12px}
+    .form-group label{display:block;margin-bottom:6px;font-weight:600;color:#374151}
+    .form-group input,.form-group select{
+      width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;outline:none
+    }
+    .form-group input:focus,.form-group select:focus{
+      border-color:#93c5fd;box-shadow:0 0 0 3px rgba(59,130,246,.15)
+    }
+    .btn-auth{background:#1a7f37;color:#fff;border:none;padding:10px;border-radius:12px;cursor:pointer;font-weight:700}
+    .btn-auth:hover{background:#15652c}
+
+    /* ========== Responsive table collapse ========== */
+    @media (max-width: 880px){
+      .admin-table thead{display:none}
+      .admin-table,.admin-table tbody,.admin-table tr,.admin-table td{display:block;width:100%}
+      .admin-table tr{background:#fff;border:1px solid #eef2f6;border-radius:12px;margin:10px 0;padding:10px}
+      .admin-table td{border:0;padding:8px 4px}
+      .admin-table td::before{
+        content:attr(data-label);display:block;font-size:12px;color:#6b7280;margin-bottom:2px;text-transform:uppercase
+      }
+      .table-wrap{box-shadow:none;border:0;background:transparent}
+    }
+
+    /* ==== Supplies Overview card ==== */
+    .health-stats {
+      position: static;
+      background:#fff; border:1px solid #eef2f6; border-radius:16px;
+      box-shadow:0 10px 24px rgba(16,24,40,.06);
+      padding:12px 14px; margin:8px 0 10px;
+    }
+    .health-title { font-weight:800; color:#0f172a; margin-bottom:8px; font-size:1.25rem; letter-spacing:.02em; }
+    .health-group { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:6px 0 10px; }
+    .group-label { font-weight:800; color:#0f172a; margin-right:6px; }
+    .health-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-weight:700; border:1px solid #e2e8f0; background:#f8fafc; color:#334155; }
+    .health-chip.ok   { background:#e9f7ef; color:#166534; border-color:#bfead4; }
+    .health-chip.warn { background:#fff4e5; color:#92400e; border-color:#ffe6bf; }
+    .health-chip.low  { background:#fee2e2; color:#991b1b; border-color:#ffc7c7; }
+    .health-chip .unit { font-weight:600; opacity:.8; font-size:12px; }
+
+    @media (max-width:880px){
+      .health-stats{ position:static; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">🐖 SwineTech</div>
+    <nav>
+      <a href="dashboard-admin.html"><i class="fa-solid fa-chart-pie"></i> Admin Dashboard</a>
+      <a href="admin-profile.html"><i class="fa-solid fa-user"></i> My Profile</a>
+      <a href="admin-manage-user-accounts.html"><i class="fa-solid fa-users"></i> Manage User Accounts</a>
+      <a href="admin-manage-pig-records.html"><i class="fa-solid fa-piggy-bank"></i> Manage Pig Records</a>
+      <a href="admin-manage-feeding-schedule.html"><i class="fa-solid fa-bowl-food"></i> Manage Feeding & Schedule</a>
+      <a href="admin-manage-supplies.html" class="active"><i class="fa-solid fa-boxes-stacked"></i> Manage Supplies</a>
+      <a href="admin-manage-sales-expenses-bookings.html"><i class="fa-solid fa-money-bill-trend-up"></i> Manage Sales, Expenses & Bookings</a>
+      <a href="admin-manage-client-feedback-admin.html"><i class="fa-solid fa-comment-dots"></i> Manage Client Feedback</a>
+      <a href="admin-generate-reports.html"><i class="fa-solid fa-file-lines"></i> Generate Reports</a>
+      <a href="#" id="logoutLink" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <h1>Manage Supplies</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showView('supplies')">📦 Supplies</button>
+      <button class="tab-btn" onclick="showView('archived')">📂 Archived Supplies</button>
+    </div>
+
+    <!-- Supplies -->
+    <section id="supplies" class="record-view active">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <h2 style="margin-right:auto;">Supplies Records</h2>
+        <div class="controls">
+          <button class="btn-add" onclick="openModal('addSupplyModal')">+ Add Supply</button>
+          <input id="searchName" placeholder="Search by item name">
+          <select id="sortCategory" title="Sort by category">
+            <option value="">Sort: Category (A→Z)</option>
+            <option value="asc">Category ↑</option>
+            <option value="desc">Category ↓</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- SUPPLIES OVERVIEW -->
+      <div id="suppliesOverview" class="health-stats" aria-live="polite">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <div class="health-title" style="margin:0;">Supplies Overview</div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+            <label for="overviewFilter" class="group-label" style="margin:0;">Show:</label>
+            <select id="overviewFilter">
+              <option value="all" selected>All</option>
+              <option value="feed">Feed</option>
+              <option value="medicine">Medicine</option>
+              <option value="vaccine">Vaccine</option>
+              <option value="tool">Tool</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Feed stage chips (renamed to Feed Totals) -->
+        <div class="health-group" id="feedStageRow" style="display:none;">
+          <span class="group-label">Feed Totals</span>
+          <span id="stageChips"></span>
+        </div>
+
+        <!-- Category-by-unit rows (Feed removed per request) -->
+        <div class="health-group" id="medicineRow">
+          <span class="group-label">Medicine Totals</span>
+          <span id="medicineChips"></span>
+        </div>
+
+        <div class="health-group" id="vaccineRow">
+          <span class="group-label">Vaccine Totals</span>
+          <span id="vaccineChips"></span>
+        </div>
+
+        <div class="health-group" id="toolRow">
+          <span class="group-label">Tool Totals</span>
+          <span id="toolChips"></span>
+        </div>
+
+        <div class="health-group" id="otherRow">
+          <span class="group-label">Other Totals</span>
+          <span id="otherChips"></span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Item Name</th><th>Category</th><th>Quantity</th>
+              <th>Unit</th><th>Updated At</th><th>Updated By</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="supplyTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Archived Supplies (front-end only) -->
+    <section id="archived" class="record-view">
+      <h2>Archived Supplies</h2>
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Item Name</th><th>Category</th><th>Quantity</th>
+              <th>Unit</th><th>Updated At</th><th>Updated By</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="archivedSupply"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Add Supply Modal -->
+  <div id="addSupplyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('addSupplyModal')">&times;</span>
+      <h2>Add Supply</h2>
+      <form id="addSupplyForm">
+        <div class="form-group"><label>Item Name</label><input type="text" id="supplyName" required></div>
+        <div class="form-group"><label>Category</label>
+          <select id="supplyCategory" required>
+            <option>Feed</option><option>Medicine</option><option>Vaccine</option><option>Tool</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="supplyQuantity" required></div>
+        <div class="form-group"><label>Unit</label>
+          <select id="supplyUnit" required>
+            <!-- all choices; guarded dynamically -->
+            <option>kg</option><option>pc</option><option>bottle</option><option>pack</option>
+            <option>sack</option><option>bag</option><option>vial</option><option>sachet</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-auth">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Supply Modal -->
+  <div id="editSupplyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('editSupplyModal')">&times;</span>
+      <h2>Edit Supply</h2>
+      <form id="editSupplyForm">
+        <input type="hidden" id="editSupplyId" />
+        <div class="form-group"><label>Item Name</label><input type="text" id="editSupplyName" required></div>
+        <div class="form-group"><label>Category</label>
+          <select id="editSupplyCategory" required>
+            <option>Feed</option><option>Medicine</option><option>Vaccine</option><option>Tool</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Quantity</label><input type="number" id="editSupplyQuantity" required></div>
+        <div class="form-group"><label>Unit</label>
+          <select id="editSupplyUnit" required>
+            <!-- all choices; guarded dynamically -->
+            <option>kg</option><option>pc</option><option>bottle</option><option>pack</option>
+            <option>sack</option><option>bag</option><option>vial</option><option>sachet</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-auth">Update</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Adjust Quantity Modal -->
+  <div id="qtyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('qtyModal')">&times;</span>
+      <h2>Adjust Quantity</h2>
+      <form id="qtyForm">
+        <input type="hidden" id="qtySupplyId" />
+        <div class="form-group">
+          <label>Quantity change (e.g., +10 or -5)</label>
+          <input type="number" id="qtyDelta" step="1" required />
+        </div>
+        <button type="submit" class="btn-auth">Apply</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Archive Confirmation -->
+  <div id="archiveModal" class="modal">
+    <div class="modal-content">
+      <h3>⚠️ Are you sure you want to archive this supply?</h3>
+      <button id="archiveYesBtn">Yes, Archive</button>
+      <button onclick="closeModal('archiveModal')">Cancel</button>
+    </div>
+  </div>
+
+  <div id="historyModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('historyModal')">&times;</span>
+      <h2>Record History</h2>
+      <div id="historyBody" style="margin-top:10px">
+        <div class="form-group">
+          <label>Created At</label>
+          <div id="hist_created_at" class="chip"></div>
+        </div>
+        <div class="form-group">
+          <label>Created By</label>
+          <div id="hist_created_by" class="chip"></div>
+        </div>
+        <div class="form-group">
+          <label>Last Updated At</label>
+          <div id="hist_updated_at" class="chip"></div>
+        </div>
+        <div class="form-group">
+          <label>Last Updated By</label>
+          <div id="hist_updated_by" class="chip"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Confirm Modal (generic) — SAME AS FEEDING & SCHEDULES -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('confirmModal')">&times;</span>
+      <h3 id="confirmTitle">Confirm</h3>
+      <div id="confirmBody" style="margin:10px 0 16px; font-size:14px;"></div>
+      <div style="display:flex; gap:8px; justify-content:flex-end">
+        <button id="confirmNo"  class="btn-archive">Cancel</button>
+        <button id="confirmYes" class="btn-auth">Yes, proceed</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- Success/Error -->
+  <div id="successModal" class="modal"><div class="modal-content"><h3 id="successMsg">✅ Saved!</h3><button onclick="closeModal('successModal')">OK</button></div></div>
+  <div id="errorModal" class="modal"><div class="modal-content"><h3 id="errorMsg">❌ Error</h3><button onclick="closeModal('errorModal')">OK</button></div></div>
+
+  <!-- Logic -->
+  <script type="module">
+  const API_BASE = window.location.host.includes('localhost:5500')
+  ? 'http://localhost:8000/api/api'
+  : '/api';
+
+  import { authApi, suppliesApi, getToken, clearToken } from "/_shared/api.js";
+
+
+    async function fetchMetaForSupply(id) {
+  const r = await fetch(`${API_BASE}/supplies/${id}/meta`, {
+    headers: { Accept: "application/json" }
+    // If your meta endpoint is protected, add the bearer:
+    // , headers: { Accept:"application/json", Authorization:`Bearer ${getToken()}` }
+  });
+  if (!r.ok) throw new Error(`Meta fetch failed: ${r.status}`);
+  return r.json();
+}
+
+function renderHistory(meta) {
+  const el = document.getElementById("historyBody");
+  const fmt = (iso) => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+  const esc = (s) => (""+ (s ?? "—"))
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+
+  el.innerHTML = `
+    <div>
+      <div><strong>Created At:</strong> ${fmt(meta?.created_at)}</div>
+      <div><strong>Created By:</strong> ${esc(meta?.created_by)}</div>
+      <div style="height:8px"></div>
+      <div><strong>Last Updated:</strong> ${fmt(meta?.updated_at)}</div>
+      <div><strong>Updated By:</strong> ${esc(meta?.updated_by)}</div>
+    </div>`;
+}
+
+async function openHistoryForSupply(id) {
+  try {
+    const meta = await fetchMetaForSupply(id);
+    renderHistory(meta || {});
+    openModal("historyModal");
+  } catch (e) {
+    fail(e?.message || "Failed to load history");
+  }
+}
+
+
+  /* ===== Small DOM helpers ===== */
+  const $ = (id) => document.getElementById(id);
+  const on = (id, evt, handler) => { const el = $(id); if (el) el.addEventListener(evt, handler); };
+
+  function showView(v){
+    document.querySelectorAll(".record-view").forEach(s=>s.classList.remove("active"));
+    $(v)?.classList.add("active"); 
+    document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+    document.querySelector(`.tab-btn[onclick="showView('${v}')"]`)?.classList.add("active");
+  }
+  function _openModalRaw(id){ $(id) && ($(id).style.display="block"); }
+  function openModal(id){
+    _openModalRaw(id);
+    if (id === "addSupplyModal"){
+      attachGuard("supplyCategory","supplyUnit",{usePlaceholderOnChange:true});
+    }
+    if (id === "editSupplyModal"){
+      attachGuard("editSupplyCategory","editSupplyUnit",{usePlaceholderOnChange:true});
+      enforceEditLegacyUnit();
+    }
+  }
+  function closeModal(id){ $(id) && ($(id).style.display="none"); }
+  function success(msg="Saved!"){ $("successMsg").innerText = "✅ " + msg; _openModalRaw("successModal"); }
+  function fail(msg="Something went wrong"){ $("errorMsg").innerText = "❌ " + msg; _openModalRaw("errorModal"); }
+  function escapeHtml(s){ return (""+s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+
+
+
+function setText(id, v){ const el = document.getElementById(id); if (el) el.textContent = v || "—"; }
+
+
+
+  /* ===== ENUMS ===== */
+  const CATEGORY_ENUM = new Set(["feed","medicine","vaccine","tool","other"]);
+  const UNIT_ENUM = new Set(["kg","pc","bottle","pack","sack","bag","vial","sachet"]);
+
+  /* ===== Overview thresholds & helpers ===== */
+  const FEED_THRESHOLDS_KG = { prestarter:100, starter:150, grower:200, finisher:200 };
+  const HEALTH_UNITS_ORDER = ["bottle","vial","pack","sachet","bag","sack","pc","kg"];
+  const PER_UNIT_THRESHOLDS = { bottle:10, vial:20, pack:10, sachet:50, bag:5, sack:5, pc:10, kg:10 };
+
+  function detectStage(itemNameRaw){
+    const s = String(itemNameRaw || "").toLowerCase();
+    if (/\bpre[\s-]?starter\b/.test(s)) return "prestarter";
+    if (/\bstarter\b/.test(s))         return "starter";
+    if (/\bgrower\b/.test(s))          return "grower";
+    if (/\bfinisher\b/.test(s))        return "finisher";
+    return null;
+  }
+
+  function fmtLocal(iso){
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
+  function normalizeSupply(s, me){
+    const id = Number(s.supply_id ?? s.id ?? 0);
+    return {
+      id,
+      item_name: s.item_name ?? s.name ?? "",
+      category:  (s.category ?? "").toString(),
+      quantity:  Number(s.quantity ?? 0),
+      unit:      (s.unit ?? "").toString(),
+      updated_at: s.updated_at ?? s.created_at ?? "",
+      updated_by: s.updated_by ?? null,
+      updated_by_name: (s.updated_by != null && me && Number(s.updated_by) === Number(me.user_id))
+        ? (me.name ?? me.full_name ?? me.username ?? me.email ?? `#${s.updated_by}`)
+        : (s.updated_by != null ? `#${s.updated_by}` : "-"),
+    };
+  }
+
+  /* ===== Supplies Overview computation ===== */
+  function computeOverviewTotals() {
+    const byCat = { medicine:new Map(), vaccine:new Map(), tool:new Map(), other:new Map() };
+    const feedStages = { prestarter: 0, starter: 0, grower: 0, finisher: 0 };
+
+    for (const r of suppliesAll) {
+      const cat = String(r.category || "").toLowerCase();
+      const unit = String(r.unit || "").toLowerCase() || "pc";
+      const qty  = Number(r.quantity || 0);
+
+      if (cat === "feed") {
+        const stage = detectStage(r.item_name || r.name);
+        if (stage) feedStages[stage] += qty;
+      } else if (byCat[cat]) {
+        byCat[cat].set(unit, (byCat[cat].get(unit) || 0) + qty);
+      } else {
+        byCat.other.set(unit, (byCat.other.get(unit) || 0) + qty);
+      }
+    }
+    return { byCat, feedStages };
+  }
+
+  function chipHtml(label, val, unit, levelClass, titleText){
+    return `<span class="health-chip ${levelClass}" title="${titleText}">${label}: <span class="val">${val.toLocaleString()}</span> <span class="unit">${unit}</span></span>`;
+  }
+  function stageChip(label, kg, thr){
+    let cls="ok", title=`${label} healthy level`;
+    if (kg <= Math.max(thr*0.5,1)) { cls="low";  title = `${label} low (≤ ${Math.round(thr*0.5)} kg)`; }
+    else if (kg <= thr)            { cls="warn"; title = `${label} nearing low (≤ ${thr} kg)`; }
+    return chipHtml(label, kg, "kg", cls, title);
+  }
+
+  function renderUnitGroup(hostId, unitMap, groupLabel){
+    const host = $(hostId);
+    if (!host) return;
+
+    const entries = Array.from(unitMap.entries());
+    entries.sort((a,b)=>{
+      const ia = HEALTH_UNITS_ORDER.indexOf(a[0]);
+      const ib = HEALTH_UNITS_ORDER.indexOf(b[0]);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a[0].localeCompare(b[0]);
+    });
+
+    const html = entries.map(([unit, sum])=>{
+      const thr = PER_UNIT_THRESHOLDS[unit] ?? 10;
+      let cls="ok", title=`${groupLabel} healthy level`;
+      if (sum <= Math.max(thr*0.5,1)) { cls="low";  title = `${groupLabel} low (≤ ${Math.round(thr*0.5)} ${unit})`; }
+      else if (sum <= thr)            { cls="warn"; title = `${groupLabel} nearing low (≤ ${thr} ${unit})`; }
+      return chipHtml(`${groupLabel} ${unit}`, sum, unit, cls, title);
+    }).join(" ");
+
+    host.innerHTML = html || `<span class="health-chip" title="No items">No ${groupLabel.toLowerCase()} recorded</span>`;
+  }
+
+  function renderSuppliesOverview(){
+    const filter = ($("overviewFilter")?.value || "all").toLowerCase();
+    const { byCat, feedStages } = computeOverviewTotals();
+
+    const showFeed = (filter === "all" || filter === "feed");
+    const showMed  = (filter === "all" || filter === "medicine");
+    const showVac  = (filter === "all" || filter === "vaccine");
+    const showTool = (filter === "all" || filter === "tool");
+    const showOth  = (filter === "all" || filter === "other");
+
+    $("feedStageRow").style.display = showFeed ? "" : "none";
+    $("medicineRow").style.display  = showMed  ? "" : "none";
+    $("vaccineRow").style.display   = showVac  ? "" : "none";
+    $("toolRow").style.display      = showTool ? "" : "none";
+    $("otherRow").style.display     = showOth  ? "" : "none";
+
+    if (showFeed) {
+      const s = feedStages;
+      $("stageChips").innerHTML = [
+        stageChip("Pre-starter", s.prestarter, FEED_THRESHOLDS_KG.prestarter),
+        stageChip("Starter",     s.starter,    FEED_THRESHOLDS_KG.starter),
+        stageChip("Grower",      s.grower,     FEED_THRESHOLDS_KG.grower),
+        stageChip("Finisher",    s.finisher,   FEED_THRESHOLDS_KG.finisher),
+      ].join(" ");
+    }
+
+    renderUnitGroup("medicineChips", byCat.medicine, "Medicine");
+    renderUnitGroup("vaccineChips",  byCat.vaccine,  "Vaccine");
+    renderUnitGroup("toolChips",     byCat.tool,     "Tool");
+    renderUnitGroup("otherChips",    byCat.other,    "Other");
+  }
+
+ 
+  let _confirmYes = null;
+  
+  function openConfirm({ title, html, onYes }) {
+    document.getElementById("confirmTitle").textContent = title || "Confirm";
+    document.getElementById("confirmBody").innerHTML = html || "";
+    const yesBtn = document.getElementById("confirmYes");
+    const noBtn  = document.getElementById("confirmNo");
+
+    const cleanup = () => {
+      yesBtn.onclick = null;
+      noBtn.onclick = null;
+      closeModal("confirmModal");
+    };
+
+    yesBtn.onclick = async () => {
+      try { await onYes?.(); } finally { cleanup(); }
+    };
+    noBtn.onclick = cleanup;
+
+    openModal("confirmModal");
+  }
+
+
+  /* ===== Unit guard in Add/Edit modals ===== */
+  const GUARD_UNITS = {
+    feed:     ["kg","sack"],
+    medicine: ["bottle","vial","sachet","pack"],
+    vaccine:  ["bottle","vial"],
+    tool:     ["pc"],
+    other:    Array.from(UNIT_ENUM)
+  };
+
+  function isUnitAllowed(category, unit){
+    const allowed = GUARD_UNITS[category] || GUARD_UNITS.other;
+    return allowed.includes(unit);
+  }
+
+  function repopulateUnitSelect(selectEl, allowed, {placeholder = null, keepIfAllowed = true} = {}){
+    if (!selectEl) return;
+    const current = (selectEl.value || "").toLowerCase();
+
+    const opts = [];
+    if (placeholder){
+      opts.push(`<option value="" disabled selected>${placeholder}</option>`);
+    }
+    for (const u of allowed){ opts.push(`<option value="${u}">${u}</option>`); }
+    selectEl.innerHTML = opts.join("");
+
+    if (keepIfAllowed && current && allowed.includes(current)){
+      selectEl.value = current;
+    } else if (!placeholder) {
+      selectEl.value = allowed[0] ?? "";
+    } else {
+      selectEl.value = "";
+    }
+  }
+
+  function attachGuard(catSelectId, unitSelectId, {usePlaceholderOnChange = true} = {}){
+    const catEl = $(catSelectId);
+    const unitEl = $(unitSelectId);
+    if (!catEl || !unitEl) return;
+
+    // avoid duplicate listeners across repeated modal opens
+    if (catEl.dataset.guardAttached === "1") {
+      const cat = (catEl.value || "").toLowerCase();
+      repopulateUnitSelect(unitEl, GUARD_UNITS[cat] || GUARD_UNITS.other, { placeholder: null, keepIfAllowed: true });
+      return;
+    }
+
+    const applyInitial = () => {
+      const cat = (catEl.value || "").toLowerCase();
+      repopulateUnitSelect(unitEl, GUARD_UNITS[cat] || GUARD_UNITS.other, { placeholder: null, keepIfAllowed: true });
+    };
+
+    const onChange = () => {
+      const cat = (catEl.value || "").toLowerCase();
+      repopulateUnitSelect(
+        unitEl,
+        GUARD_UNITS[cat] || GUARD_UNITS.other,
+        { placeholder: usePlaceholderOnChange ? "Select unit" : null, keepIfAllowed: false }
+      );
+    };
+
+    catEl.addEventListener("change", onChange);
+    catEl.dataset.guardAttached = "1";
+    applyInitial();
+  }
+
+  function enforceEditLegacyUnit(){
+    const cat = ($("editSupplyCategory")?.value || "").toLowerCase();
+    const unit = ($("editSupplyUnit")?.value || "").toLowerCase();
+    const allowed = GUARD_UNITS[cat] || GUARD_UNITS.other;
+    if ($("editSupplyUnit") && !allowed.includes(unit)){
+      repopulateUnitSelect($("editSupplyUnit"), allowed, { placeholder: null, keepIfAllowed: false });
+    }
+  }
+
+  /* ===== Data + rendering ===== */
+  let suppliesAll = [];
+  let me = null;
+  let archiveTarget = null;
+
+  function trForSupply(s){
+    const n = normalizeSupply(s, me);
+    const tr = document.createElement("tr");
+    tr.dataset.id = n.id;
+    tr.innerHTML = `
+      <td>${n.id}</td>
+      <td>${escapeHtml(n.item_name)}</td>
+      <td>${escapeHtml(n.category)}</td>
+      <td>${Number(n.quantity)}</td>
+      <td>${escapeHtml(n.unit)}</td>
+      <td>${fmtLocal(n.updated_at)}</td>
+      <td>${escapeHtml(n.updated_by_name)}</td>
+      <td>
+        <button class="btn-qty"    data-id="${n.id}">Adjust Qty</button>
+        <button class="btn-edit"   data-id="${n.id}">Edit</button>
+        <button class="btn-archive" data-id="${n.id}">Archive</button>
+        <button class="btn-restore" style="display:none" data-id="${n.id}">Restore</button>
+        <button class="btn-add" data-action="history" data-id="${n.id}">History</button>
+      </td>`;
+    tr.querySelector(".btn-edit").onclick = () => openEditModalFromRow(tr);
+    tr.querySelector(".btn-archive").onclick = () => { archiveTarget = tr; openModal("archiveModal"); };
+    tr.querySelector(".btn-qty").onclick = () => openQtyModal(tr);
+    tr.querySelector('[data-action="history"]').onclick = () => openHistoryForSupply(n.id);
+
+    return tr;
+  }
+
+  async function reloadSupplies(){
+    try{
+      const raw = await suppliesApi.list();
+      suppliesAll = Array.isArray(raw) ? raw : (raw?.items ?? raw?.data ?? []);
+      renderSupplies();
+      recomputeTotalsAfterRender();
+    }catch(e){ fail(asMessage(e) || "Failed to load supplies"); }
+  }
+
+  function renderSupplies(){
+    let rows = suppliesAll.slice();
+    const q = ($("searchName")?.value || "").trim().toLowerCase();
+    if (q) rows = rows.filter(s => (s.item_name ?? s.name ?? "").toLowerCase().includes(q));
+    const sort = $("sortCategory")?.value || "";
+    if (sort === "asc" || sort === "desc") {
+      const dir = sort === "asc" ? 1 : -1;
+      rows.sort((a,b)=>{
+        const ca = (a.category ?? "").toLowerCase();
+        const cb = (b.category ?? "").toLowerCase();
+        if (ca < cb) return -1 * dir;
+        if (ca > cb) return  1 * dir;
+        return 0;
+      });
+    }
+    const tbody = $("supplyTable");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+    rows.forEach(s => tbody.appendChild(trForSupply(s)));
+  }
+
+  /* ===== Event bindings (SAFE) ===== */
+  on("searchName","input", renderSupplies);
+  on("sortCategory","change", renderSupplies);
+  on("overviewFilter","change", renderSuppliesOverview);
+
+  on("addSupplyForm","submit", async (e)=>{
+    e.preventDefault();
+    const body = {
+      item_name: $("supplyName").value.trim(),
+      category: $("supplyCategory").value.trim().toLowerCase(),
+      quantity: Number($("supplyQuantity").value),
+      unit: $("supplyUnit").value.trim().toLowerCase(),
+    };
+    if (!Number.isInteger(body.quantity) || body.quantity < 0) return fail("Quantity must be an integer ≥ 0");
+    if (!CATEGORY_ENUM.has(body.category)) return fail("Category must be one of: feed, medicine, vaccine, tool, other");
+    if (!UNIT_ENUM.has(body.unit)) return fail("Unit must be one of: kg, pc, bottle, pack, sack, bag, vial, sachet");
+    if (!isUnitAllowed(body.category, body.unit)) return fail("Selected unit is not allowed for this category");
+    if(!body.item_name) return fail("Please fill all fields correctly");
+
+    const summaryHtml = `
+      <div><strong>Item:</strong> ${escapeHtml(body.item_name)}</div>
+      <div><strong>Category:</strong> ${escapeHtml(body.category)}</div>
+      <div><strong>Quantity:</strong> ${Number(body.quantity)}</div>
+      <div><strong>Unit:</strong> ${escapeHtml(body.unit)}</div>
+    `;
+
+    openConfirm({
+      title: "Confirm Add Supply",
+      html: summaryHtml,
+      onYes: async () => {
+        const created = await suppliesApi.create(body);
+
+        // UI clean-up
+        $("addSupplyForm").reset();
+        closeModal("addSupplyModal");
+        success("Supply added");
+
+        // If no filters/sorts are active, push the new item to the very top.
+        const hasSearch = ($("searchName")?.value || "").trim().length > 0;
+        const sortVal   = $("sortCategory")?.value || "";
+
+        if (!hasSearch && !sortVal) {
+          // keep local state in sync
+          suppliesAll = [created, ...suppliesAll];
+
+          // paint the new row at the top
+          const tbody = $("supplyTable");
+          if (tbody) tbody.prepend(trForSupply(created));
+
+          // refresh overview chips without re-rendering the table
+          recomputeTotalsAfterRender();
+        } else {
+          // if user is filtering/sorting, keep consistency by reloading
+          await reloadSupplies();
+        }
+      }
+    });
+  });
+
+  function capitalizeFirst(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  function openEditModalFromRow(tr){
+    const cells = tr.cells;
+    $("editSupplyId").value       = tr.dataset.id;
+    $("editSupplyName").value     = cells[1].innerText;
+    $("editSupplyCategory").value = capitalizeFirst(cells[2].innerText.toLowerCase());
+    $("editSupplyQuantity").value = cells[3].innerText;
+    $("editSupplyUnit").value     = cells[4].innerText.toLowerCase();
+    openModal("editSupplyModal");
+  }
+
+  on("editSupplyForm","submit", async (e)=>{
+    e.preventDefault();
+    const id = $("editSupplyId").value;
+    const body = {
+      item_name: $("editSupplyName").value.trim(),
+      category: $("editSupplyCategory").value.trim().toLowerCase(),
+      quantity: Number.parseInt($("editSupplyQuantity").value,10),
+      unit: $("editSupplyUnit").value.trim().toLowerCase(),
+    };
+    if(!id) return fail("Missing id");
+    if (!Number.isInteger(body.quantity) || body.quantity < 0) return fail("Quantity must be an integer ≥ 0");
+    if (!CATEGORY_ENUM.has(body.category)) return fail("Category must be one of: feed, medicine, vaccine, tool, other");
+    if (!UNIT_ENUM.has(body.unit)) return fail("Unit must be one of: kg, pc, bottle, pack, sack, bag, vial, sachet");
+    if (!isUnitAllowed(body.category, body.unit)) return fail("Selected unit is not allowed for this category");
+    if(!body.item_name) return fail("Please fill all fields correctly");
+
+    const summaryHtml = `
+      <div><strong>Item:</strong> ${escapeHtml(body.item_name)}</div>
+      <div><strong>Category:</strong> ${escapeHtml(body.category)}</div>
+      <div><strong>Quantity:</strong> ${Number(body.quantity)}</div>
+      <div><strong>Unit:</strong> ${escapeHtml(body.unit)}</div>
+    `;
+
+    openConfirm({
+      title: "Confirm Update Supply",
+      html: summaryHtml,
+      onYes: async () => {
+        await suppliesApi.update(id, body);
+        closeModal("editSupplyModal");
+        success("Supply updated");
+        await reloadSupplies();
+      }
+    });
+  });
+
+  function openQtyModal(tr){
+    $("qtySupplyId").value = tr.dataset.id;
+    $("qtyDelta").value = "";
+    _openModalRaw("qtyModal");
+  }
+  on("qtyForm","submit", async (e)=>{
+  e.preventDefault();
+  const id = $("qtySupplyId").value;
+  const delta = Number.parseInt($("qtyDelta").value, 10);
+  if(!id || !Number.isInteger(delta) || delta === 0){ return fail("Enter a non-zero integer"); }
+
+  const summaryHtml = `
+    <div><strong>Supply ID:</strong> ${escapeHtml(id)}</div>
+    <div><strong>Quantity change:</strong> ${delta > 0 ? "+" : ""}${delta}</div>
+  `;
+
+  openConfirm({
+    title: "Confirm Adjust Quantity",
+    html: summaryHtml,
+    onYes: async () => {
+      try {
+        await suppliesApi.adjustQty(id, delta);
+        closeModal("qtyModal");
+        success("Quantity adjusted");
+        await reloadSupplies();
+      } catch (e) {
+        const msg = asMessage(e);
+        if (/negative|insufficient|below/i.test(msg)) return fail("Adjustment rejected: would result in negative inventory");
+        fail(msg || "Adjust failed");
+      }
+    }
+  });
+});
+
+
+  $("archiveYesBtn")?.addEventListener("click", ()=>{
+    if(!archiveTarget) return closeModal("archiveModal");
+    const clone = archiveTarget.cloneNode(true);
+    const actions = clone.querySelector("td:last-child");
+    actions.innerHTML = `<button class="btn-restore">Restore</button>`;
+    actions.querySelector(".btn-restore").onclick = ()=>{
+      const back = clone.cloneNode(true);
+      const id = clone.dataset.id;
+      const last = back.querySelector("td:last-child");
+      last.innerHTML = `
+        <button class="btn-qty" data-id="${id}">Adjust Qty</button>
+        <button class="btn-edit" data-id="${id}">Edit</button>
+        <button class="btn-archive" data-id="${id}">Archive</button>`;
+      back.querySelector(".btn-edit").onclick = () => openEditModalFromRow(back);
+      back.querySelector(".btn-archive").onclick = () => { archiveTarget = back; openModal("archiveModal"); };
+      back.querySelector(".btn-qty").onclick = () => openQtyModal(back);
+      $("supplyTable").appendChild(back);
+      clone.remove();
+      recomputeTotalsAfterRender();
+    };
+    $("archivedSupply").appendChild(clone);
+    archiveTarget.remove();
+    archiveTarget = null;
+    closeModal("archiveModal");
+    success("Archived (local only)");
+    recomputeTotalsAfterRender();
+  });
+
+  function asMessage(err){
+    if (!err) return "Unknown error";
+    if (typeof err === "string") return err;
+    if (err.error && err.error.message) return err.error.message;
+    if (err.detail && typeof err.detail === "string") return err.detail;
+    try { return JSON.parse(err.message)?.error?.message || err.message; } catch { return err.message || "Error"; }
+  }
+
+  function recomputeTotalsAfterRender(){ renderSuppliesOverview(); }
+
+  async function init(){
+    if(!getToken()){ return (window.location.href = "/Zhomepage/login.html"); }
+    try{ me = await authApi.me(); }catch(e){ clearToken(); return (window.location.href = "/Zhomepage/login.html"); }
+    await reloadSupplies();
+  }
+
+  // Ensure DOM is built before any binding
+  window.addEventListener("DOMContentLoaded", init);
+
+  // Dismiss modals by clicking backdrop
+  window.addEventListener("click",(e)=>{
+    document.querySelectorAll(".modal").forEach(m => { if(e.target === m) m.style.display = "none"; });
+  });
+
+  // Logout
+  on("logoutLink","click", (e) => {
+    e.preventDefault();
+    clearToken();
+    window.location.href = "/Zhomepage/login.html";
+  });
+
+  // expose minimal API for inline handlers
+  Object.assign(window, { showView, openModal, closeModal, reloadSupplies });
+</script>
+
+</body>
+</html>
